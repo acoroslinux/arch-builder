@@ -1,0 +1,52 @@
+# Load partition table and file system modules
+insmod part_gpt
+insmod part_msdos
+insmod fat
+insmod iso9660
+
+# Use graphics-mode output
+if loadfont "${prefix}/fonts/unicode.pf2" ; then
+    insmod all_video
+    set gfxmode="auto"
+    terminal_input console
+    terminal_output gfxterm
+fi
+
+# Get a human readable platform identifier
+if [ "${grub_platform}" == 'efi' ]; then
+    archiso_platform='UEFI'
+elif [ "${grub_platform}" == 'pc' ]; then
+    archiso_platform='BIOS'
+else
+    archiso_platform="${grub_cpu}-${grub_platform}"
+fi
+
+# Set default menu entry
+default=arch-live
+timeout=15
+timeout_style=menu
+
+
+# Menu entries
+#
+menuentry "@@BOOT_TITLE@@ (@@ARCH@@, ${archiso_platform})" --class arch --class gnu-linux --class gnu --class os --id 'arch-live' {
+    set gfxpayload=keep
+    linux /boot/@@KERNEL_FILE@@ archisobasedir=arch archisosearchuuid=@@ARCHISO_UUID@@ @@BOOT_CMDLINE@@
+    initrd /boot/@@INITRAMFS_FILE@@
+}
+#
+menuentry "@@BOOT_TITLE@@ (@@ARCH@@, ${archiso_platform}) - Rescue Mode" --hotkey r --class arch --class gnu-linux --class gnu --class os --id 'arch-rescue' {
+    set gfxpayload=keep
+    linux /boot/@@KERNEL_FILE@@ archisobasedir=arch archisosearchuuid=@@ARCHISO_UUID@@ nomodeset vga=normal @@BOOT_CMDLINE@@
+    initrd /boot/@@INITRAMFS_FILE@@
+}
+
+menuentry 'System shutdown' --class shutdown --class poweroff {
+    echo 'System shutting down...'
+    halt
+}
+
+menuentry 'System restart' --class reboot --class restart {
+    echo 'System rebooting...'
+    reboot
+}

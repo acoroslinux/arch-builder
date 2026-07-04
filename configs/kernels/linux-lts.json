@@ -1,0 +1,8 @@
+{
+  "name": "linux-lts",
+  "description": "Long-term support kernel profile.",
+  "platform_specific": {
+    "base_kernel": "vmlinuz-linux-lts",
+    "initramfs": "initramfs-linux-lts.img"
+  }
+}

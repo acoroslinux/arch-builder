@@ -1,0 +1,11 @@
+{
+  "customizations": {
+    "users": [
+      {
+        "name": "live",
+        "groups": ["audio", "video"],
+        "password": "live"
+      }
+    ]
+  }
+}

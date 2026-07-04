@@ -1,0 +1,9 @@
+{
+    "name": "base-networking",
+    "description": "Basic packages for network and DNS management.",
+    "packages": [
+        "netctl",
+        "resolvconf"
+    ],
+    "dependencies": ["pacman"]
+}

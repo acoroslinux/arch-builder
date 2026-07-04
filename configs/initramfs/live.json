@@ -1,0 +1,22 @@
+{
+    "name": "live-initramfs",
+    "description": "Initramfs configuration for live ISO boot with archiso hooks.",
+    "initramfs_config": {
+        "modules": [
+            "loop",
+            "overlay"
+        ],
+        "binaries": [
+            "fsck",
+            "fatfsck"
+        ],
+        "hooks": [
+            "base",
+            "udev",
+            "archiso",
+            "block",
+            "filesystems",
+            "keyboard"
+        ]
+    }
+}

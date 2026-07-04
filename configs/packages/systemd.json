@@ -1,0 +1,9 @@
+{
+    "name": "systemd",
+    "description": "Essential packages and tools for the systemd init system.",
+    "packages": [
+        "systemd",
+        "systemd-boot"
+    ],
+    "dependencies": ["pacman"]
+}

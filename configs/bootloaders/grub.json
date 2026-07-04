@@ -1,0 +1,16 @@
+{
+  "name": "grub",
+  "description": "GRUB-based bootloader profile (UEFI/BIOS compatible).",
+  "platform_specific": {
+    "packages": [
+      { "name": "grub" },
+      { "name": "efibootmgr" }
+    ]
+  },
+  "system": {
+    "binaries": {
+      "grub-mkrescue": "/usr/bin/grub-mkrescue",
+      "grub_mkrescue": "/usr/bin/grub-mkrescue"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "printing",
+  "description": "Printing support with CUPS and common helpers.",
+  "packages": [
+    "cups",
+    "cups-pdf",
+    "system-config-printer",
+    "ghostscript"
+  ],
+  "dependencies": ["pacman"]
+}

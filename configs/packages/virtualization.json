@@ -1,0 +1,13 @@
+{
+  "name": "virtualization",
+  "description": "KVM/QEMU virtualization host and management tooling.",
+  "packages": [
+    "qemu-full",
+    "libvirt",
+    "virt-manager",
+    "dnsmasq",
+    "bridge-utils",
+    "edk2-ovmf"
+  ],
+  "dependencies": ["pacman"]
+}

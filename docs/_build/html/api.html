@@ -1,0 +1,1516 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="prev" title="Development" href="development.html">
+
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>API Reference - Arch-Builder Documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=05190470" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #a2431f;
+  --color-brand-content: #8a3818;
+  --color-api-background: #f7efe4;
+  --color-background-primary: #f6f0e7;
+  --color-background-secondary: #fffaf3;
+  --color-sidebar-background: #201a16;
+  --color-sidebar-background-border: #3b3028;
+  --color-sidebar-link-text: #f6eee3;
+  --color-sidebar-link-text--top-level: #fff7ea;
+  --color-sidebar-item-background--current: #3a2a20;
+  --color-link: #9b3d1d;
+  --color-link--hover: #6f2912;
+  --font-stack: Inter, Segoe UI, Helvetica Neue, Arial, sans-serif;
+  --font-stack--headings: Space Grotesk, Inter, Segoe UI, sans-serif;
+  --font-stack--monospace: JetBrains Mono, Fira Code, monospace;
+  --admonition-font-size: 0.96rem;
+  --admonition-title-font-size: 0.96rem;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #ff9e6d;
+  --color-brand-content: #ffb38d;
+  --color-api-background: #2a211d;
+  --color-background-primary: #171311;
+  --color-background-secondary: #211b18;
+  --color-sidebar-background: #110d0b;
+  --color-sidebar-background-border: #342923;
+  --color-sidebar-link-text: #f2e7d8;
+  --color-sidebar-link-text--top-level: #fff4e5;
+  --color-sidebar-item-background--current: #34231b;
+  --color-link: #ffb38d;
+  --color-link--hover: #ffd1b6;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #ff9e6d;
+  --color-brand-content: #ffb38d;
+  --color-api-background: #2a211d;
+  --color-background-primary: #171311;
+  --color-background-secondary: #211b18;
+  --color-sidebar-background: #110d0b;
+  --color-sidebar-background-border: #342923;
+  --color-sidebar-link-text: #f2e7d8;
+  --color-sidebar-link-text--top-level: #fff4e5;
+  --color-sidebar-item-background--current: #34231b;
+  --color-link: #ffb38d;
+  --color-link--hover: #ffd1b6;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+<div class="announcement">
+  <aside class="announcement-content">
+     Profile-driven Arch ISO builds with isolated real-mode toolchain support. 
+  </aside>
+</div>
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Arch-Builder Documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Arch-Builder Documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="profiles/index.html">Profile Catalog</a><input aria-label="Toggle navigation of Profile Catalog" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="profiles/system-foundation.html">System Foundation Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiles/desktops.html">Desktop Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiles/live-users.html">Live-User Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiles/packages-services.html">Package And Service Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiles/assets-and-templates.html">Asset And Template Files</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Build Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build-pipeline.html">Build Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">API Reference</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/api.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="api-reference">
+<h1>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h1>
+<p>This section documents the main Python modules that drive build orchestration,
+configuration assembly, chroot execution, and ISO generation.</p>
+<section id="module-cli">
+<span id="cli-module"></span><h2>CLI Module<a class="headerlink" href="#module-cli" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.main">
+<span class="sig-prename descclassname"><span class="pre">cli.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/cli.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.main" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-core.orchestrator">
+<span id="orchestration"></span><h2>Orchestration<a class="headerlink" href="#module-core.orchestrator" title="Link to this heading">¶</a></h2>
+<section id="build-orchestrator-the-build-workflow-conductor">
+<h3>Build Orchestrator - The Build Workflow Conductor<a class="headerlink" href="#build-orchestrator-the-build-workflow-conductor" title="Link to this heading">¶</a></h3>
+<p>Coordinates all arch-builder components to run the complete
+ISO build process.</p>
+</section>
+<dl class="py exception">
+<dt class="sig sig-object py" id="core.orchestrator.BuildOrchestratorError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.orchestrator.</span></span><span class="sig-name descname"><span class="pre">BuildOrchestratorError</span></span><a class="reference internal" href="_modules/core/orchestrator.html#BuildOrchestratorError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.orchestrator.BuildOrchestratorError" title="Link to this definition">¶</a></dt>
+<dd><p>Exception raised for build orchestration failures.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.orchestrator.BuildOrchestrator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.orchestrator.</span></span><span class="sig-name descname"><span class="pre">BuildOrchestrator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_isolated_toolchain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain_debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain_debug_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain_pacman_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desktop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootloader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">package_profiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_profiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/orchestrator.html#BuildOrchestrator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.orchestrator.BuildOrchestrator" title="Link to this definition">¶</a></dt>
+<dd><p>Coordinates the build workflow.
+It ties together configuration, the architecture engine, and the chroot environment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arch</strong> (<em>str</em>)</p></li>
+<li><p><strong>config_path</strong> (<em>str</em>)</p></li>
+<li><p><strong>mode</strong> (<em>str</em>)</p></li>
+<li><p><strong>clean</strong> (<em>bool</em>)</p></li>
+<li><p><strong>force_isolated_toolchain</strong> (<em>bool</em>)</p></li>
+<li><p><strong>toolchain_debug</strong> (<em>bool</em>)</p></li>
+<li><p><strong>toolchain_debug_log</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>toolchain_pacman_retries</strong> (<em>int</em>)</p></li>
+<li><p><strong>desktop</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>kernel</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>bootloader</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>package_profiles</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>service_profiles</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>live_profile</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>live_user</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>live_groups</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.orchestrator.BuildOrchestrator.run_build">
+<span class="sig-name descname"><span class="pre">run_build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_iso</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/orchestrator.html#BuildOrchestrator.run_build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.orchestrator.BuildOrchestrator.run_build" title="Link to this definition">¶</a></dt>
+<dd><p>Run the full build pipeline by delegating to the builder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>output_iso</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Path</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-core.config_loader">
+<span id="configuration-loader"></span><h2>Configuration Loader<a class="headerlink" href="#module-core.config_loader" title="Link to this heading">¶</a></h2>
+<dl class="py exception">
+<dt class="sig sig-object py" id="core.config_loader.ConfigValidationError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.config_loader.</span></span><span class="sig-name descname"><span class="pre">ConfigValidationError</span></span><a class="reference internal" href="_modules/core/config_loader.html#ConfigValidationError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.ConfigValidationError" title="Link to this definition">¶</a></dt>
+<dd><p>Exception raised for configuration validation errors.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.config_loader.Config">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.config_loader.</span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#Config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.Config" title="Link to this definition">¶</a></dt>
+<dd><p>Data wrapper for configuration objects with dot-notation access.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>] </em><em>| </em><a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.config_loader.Config.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#Config.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.Config.get" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>str</em>)</p></li>
+<li><p><strong>default</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Any</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.config_loader.Config.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#Config.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.Config.to_dict" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Dict</em>[str, <em>Any</em>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.config_loader.ConfigAssembler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.config_loader.</span></span><span class="sig-name descname"><span class="pre">ConfigAssembler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_root</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#ConfigAssembler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.ConfigAssembler" title="Link to this definition">¶</a></dt>
+<dd><p>The assembler is the composition brain.
+It reads the global manifest and merges the configuration of all components
+(architectures, desktops, bootloaders, and so on) into a single
+configuration object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_root</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.config_loader.ConfigAssembler.assemble">
+<span class="sig-name descname"><span class="pre">assemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_arch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_desktop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_bootloader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">package_profiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_profiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_live_profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#ConfigAssembler.assemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.ConfigAssembler.assemble" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration assembly process:
+1. Load the global manifest (global_build.json).
+2. Load the architecture-specific configuration.
+3. Load the requested desktop profile.
+4. Merge everything together.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>target_arch</strong> (<em>str</em>)</p></li>
+<li><p><strong>target_desktop</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>target_kernel</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>target_bootloader</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>package_profiles</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>service_profiles</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>target_live_profile</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>live_user</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>live_groups</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.config_loader.ConfigLoader">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.config_loader.</span></span><span class="sig-name descname"><span class="pre">ConfigLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#ConfigLoader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.ConfigLoader" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config_root</strong> (<em>str</em><em> | </em><em>None</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.config_loader.ConfigLoader.load_arch_config">
+<span class="sig-name descname"><span class="pre">load_arch_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">global_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#ConfigLoader.load_arch_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.ConfigLoader.load_arch_config" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>global_path</strong> (<em>str</em>)</p></li>
+<li><p><strong>arch</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Dict</em>[str, <em>Any</em>] | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-core.iso_engine">
+<span id="iso-engine"></span><h2>ISO Engine<a class="headerlink" href="#module-core.iso_engine" title="Link to this heading">¶</a></h2>
+<p>core/iso_engine.py</p>
+<p>Central build engine definitions.
+<code class="docutils literal notranslate"><span class="pre">ISOBuilder</span></code> is the canonical high-level build API.
+<code class="docutils literal notranslate"><span class="pre">ArchBuilder</span></code> remains as a backward-compatible alias.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="core.iso_engine.ArchBuilder">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">ArchBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ArchBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ArchBuilder" title="Link to this definition">¶</a></dt>
+<dd><p>Backward-compatible alias for the historic builder name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arch_name</strong> (<em>str</em>)</p></li>
+<li><p><strong>config</strong> (<a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p></li>
+<li><p><strong>toolchain</strong> (<em>Any</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.iso_engine.ArchEngine">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">ArchEngine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ArchEngine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ArchEngine" title="Link to this definition">¶</a></dt>
+<dd><p>Engine in charge of x86_64 builds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arch</strong> (<em>str</em>)</p></li>
+<li><p><strong>config</strong> (<a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p></li>
+<li><p><strong>toolchain</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.ArchEngine.setup_chroot">
+<span class="sig-name descname"><span class="pre">setup_chroot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ArchEngine.setup_chroot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ArchEngine.setup_chroot" title="Link to this definition">¶</a></dt>
+<dd><p>Prepare the chroot environment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>workdir</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.ArchEngine.install_packages">
+<span class="sig-name descname"><span class="pre">install_packages</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ArchEngine.install_packages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ArchEngine.install_packages" title="Link to this definition">¶</a></dt>
+<dd><p>Install target packages inside the chroot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.ArchEngine.build_bootloaders">
+<span class="sig-name descname"><span class="pre">build_bootloaders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mountpoint</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ArchEngine.build_bootloaders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ArchEngine.build_bootloaders" title="Link to this definition">¶</a></dt>
+<dd><p>Generate bootloader artifacts for the target architecture.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mountpoint</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.ArchEngine.finalize_isofile">
+<span class="sig-name descname"><span class="pre">finalize_isofile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ArchEngine.finalize_isofile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ArchEngine.finalize_isofile" title="Link to this definition">¶</a></dt>
+<dd><p>Produce the final ISO file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>output_path</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.ArchEngine.post_install_configure">
+<span class="sig-name descname"><span class="pre">post_install_configure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ArchEngine.post_install_configure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ArchEngine.post_install_configure" title="Link to this definition">¶</a></dt>
+<dd><p>Run post-install configuration steps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.iso_engine.BaseEngine">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">BaseEngine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#BaseEngine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.BaseEngine" title="Link to this definition">¶</a></dt>
+<dd><p>Common engine behavior shared across all architecture-specific engines.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arch</strong> (<em>str</em>)</p></li>
+<li><p><strong>config</strong> (<a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p></li>
+<li><p><strong>toolchain</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.BaseEngine.setup_workdir">
+<span class="sig-name descname"><span class="pre">setup_workdir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#BaseEngine.setup_workdir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.BaseEngine.setup_workdir" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>workdir</strong> (<em>str</em><em> | </em><em>Path</em><em> | </em><em>None</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Path</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.BaseEngine.setup_chroot">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">setup_chroot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#BaseEngine.setup_chroot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.BaseEngine.setup_chroot" title="Link to this definition">¶</a></dt>
+<dd><p>Prepare the chroot environment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>workdir</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.BaseEngine.install_packages">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">install_packages</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#BaseEngine.install_packages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.BaseEngine.install_packages" title="Link to this definition">¶</a></dt>
+<dd><p>Install target packages inside the chroot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.BaseEngine.build_bootloaders">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">build_bootloaders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mountpoint</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#BaseEngine.build_bootloaders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.BaseEngine.build_bootloaders" title="Link to this definition">¶</a></dt>
+<dd><p>Generate bootloader artifacts for the target architecture.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mountpoint</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.BaseEngine.post_install_configure">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">post_install_configure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#BaseEngine.post_install_configure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.BaseEngine.post_install_configure" title="Link to this definition">¶</a></dt>
+<dd><p>Run post-install configuration steps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.BaseEngine.finalize_isofile">
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">finalize_isofile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#BaseEngine.finalize_isofile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.BaseEngine.finalize_isofile" title="Link to this definition">¶</a></dt>
+<dd><p>Produce the final ISO file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>output_path</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.iso_engine.Config">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#Config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.Config" title="Link to this definition">¶</a></dt>
+<dd><p>Data wrapper for configuration objects with dot-notation access.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>] </em><em>| </em><a class="reference internal" href="#core.iso_engine.Config" title="core.iso_engine.Config"><em>Config</em></a>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.Config.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#Config.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.Config.get" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>str</em>)</p></li>
+<li><p><strong>default</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Any</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.Config.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#Config.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.Config.to_dict" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Dict</em>[str, <em>Any</em>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.iso_engine.ISOBuilder">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">ISOBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_manager</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ISOBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ISOBuilder" title="Link to this definition">¶</a></dt>
+<dd><p>Canonical high-level build orchestrator used by the project.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arch</strong> (<em>str</em>)</p></li>
+<li><p><strong>config</strong> (<a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p></li>
+<li><p><strong>toolchain</strong> (<em>Any</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>chroot_manager</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.ISOBuilder.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ISOBuilder.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ISOBuilder.build" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_path</strong> (<em>str</em><em> | </em><em>Path</em>)</p></li>
+<li><p><strong>workdir</strong> (<em>str</em><em> | </em><em>Path</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Path</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.ISOBuilder.build_iso">
+<span class="sig-name descname"><span class="pre">build_iso</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ISOBuilder.build_iso"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ISOBuilder.build_iso" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>output_path</strong> (<em>str</em><em> | </em><em>Path</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>Path</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="core.iso_engine.ISOBuilderError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">ISOBuilderError</span></span><a class="reference internal" href="_modules/core/iso_engine.html#ISOBuilderError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ISOBuilderError" title="Link to this definition">¶</a></dt>
+<dd><p>Raised when the build orchestration flow cannot proceed.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.iso_engine.ISOEngine">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">ISOEngine</span></span><a class="reference internal" href="_modules/core/iso_engine.html#ISOEngine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ISOEngine" title="Link to this definition">¶</a></dt>
+<dd><p>Abstract base for architecture-specific build engines.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.ISOEngine.register">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ISOEngine.register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ISOEngine.register" title="Link to this definition">¶</a></dt>
+<dd><p>Register a virtual subclass of an ABC.</p>
+<p>Returns the subclass, to allow usage as a class decorator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>arch_name</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.iso_engine.LegacyEngine">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">LegacyEngine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#LegacyEngine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.LegacyEngine" title="Link to this definition">¶</a></dt>
+<dd><p>Legacy engine that currently reuses the x86_64 workflow.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arch</strong> (<em>str</em>)</p></li>
+<li><p><strong>config</strong> (<a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p></li>
+<li><p><strong>toolchain</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-core.chroot_manager">
+<span id="chroot-manager"></span><h2>Chroot Manager<a class="headerlink" href="#module-core.chroot_manager" title="Link to this heading">¶</a></h2>
+<p>core/chroot_manager.py</p>
+<p>Centralised management of the chroot environment (mock or real).</p>
+<p>This module provides:
+*   Mock filesystem handling for unit‑testing and development.
+*   A ChrootManager that can switch between mock and real modes.
+*   Integration with the central logging system (core.logger_setup).</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="core.chroot_manager.ChrootManagerError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.chroot_manager.</span></span><span class="sig-name descname"><span class="pre">ChrootManagerError</span></span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManagerError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManagerError" title="Link to this definition">¶</a></dt>
+<dd><p>Raised when chroot lifecycle or command execution fails.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="core.chroot_manager.ChrootError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.chroot_manager.</span></span><span class="sig-name descname"><span class="pre">ChrootError</span></span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootError" title="Link to this definition">¶</a></dt>
+<dd><p>Backward-compatible alias for older imports.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.chroot_manager.MockFSHandler">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.chroot_manager.</span></span><span class="sig-name descname"><span class="pre">MockFSHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#MockFSHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.MockFSHandler" title="Link to this definition">¶</a></dt>
+<dd><p>Simulates a minimal filesystem inside the chroot directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>base_dir</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.chroot_manager.MockFSHandler.create_file">
+<span class="sig-name descname"><span class="pre">create_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#MockFSHandler.create_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.MockFSHandler.create_file" title="Link to this definition">¶</a></dt>
+<dd><p>Simulate creating a file – logs the operation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>str</em>)</p></li>
+<li><p><strong>content</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.chroot_manager.MockFSHandler.read_file">
+<span class="sig-name descname"><span class="pre">read_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#MockFSHandler.read_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.MockFSHandler.read_file" title="Link to this definition">¶</a></dt>
+<dd><p>Simulate reading a file – logs the operation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.chroot_manager.MockFSHandler.list_directory">
+<span class="sig-name descname"><span class="pre">list_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#MockFSHandler.list_directory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.MockFSHandler.list_directory" title="Link to this definition">¶</a></dt>
+<dd><p>Simulate directory listing – used by tests.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>List</em>[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.chroot_manager.ChrootManager">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.chroot_manager.</span></span><span class="sig-name descname"><span class="pre">ChrootManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManager" title="Link to this definition">¶</a></dt>
+<dd><p>Manages a chroot environment that can operate in two modes:
+*   Mock mode – pure Python simulation (no external processes).
+*   Real mode – spawns subprocesses with sudo/chroot (requires privileges).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workdir</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>chroot_path</strong> (<em>Path</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>mode</strong> (<em>str</em>)</p></li>
+<li><p><strong>chroot_mode</strong> (<em>bool</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.chroot_manager.ChrootManager.set_real_mode">
+<span class="sig-name descname"><span class="pre">set_real_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManager.set_real_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManager.set_real_mode" title="Link to this definition">¶</a></dt>
+<dd><p>Switch from mock to real execution – requires sudo etc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.chroot_manager.ChrootManager.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManager.setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManager.setup" title="Link to this definition">¶</a></dt>
+<dd><p>Prepare the basic directory structure of the chroot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.chroot_manager.ChrootManager.cleanup">
+<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManager.cleanup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManager.cleanup" title="Link to this definition">¶</a></dt>
+<dd><p>Compatibility no-op used by the orchestrator in mock mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.chroot_manager.ChrootManager.run_command">
+<span class="sig-name descname"><span class="pre">run_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManager.run_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManager.run_command" title="Link to this definition">¶</a></dt>
+<dd><p>Execute a command either in mock mode (simple logging) or real mode
+(spawn a subprocess inside the chroot). Returns stdout.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>command</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>str</em>)</p></li>
+<li><p><strong>chroot_path</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.chroot_manager.ChrootManager.install_packages">
+<span class="sig-name descname"><span class="pre">install_packages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packages</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManager.install_packages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManager.install_packages" title="Link to this definition">¶</a></dt>
+<dd><p>Install official, local and AUR packages inside the chroot (mock or real).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>packages</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.chroot_manager.ChrootManager.generate_fstab">
+<span class="sig-name descname"><span class="pre">generate_fstab</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManager.generate_fstab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManager.generate_fstab" title="Link to this definition">¶</a></dt>
+<dd><p>Generate a simple /etc/fstab and persist it inside the chroot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-core.customizer">
+<span id="customizer"></span><h2>Customizer<a class="headerlink" href="#module-core.customizer" title="Link to this heading">¶</a></h2>
+<section id="system-configurator-system-customization-and-configuration">
+<h3>System Configurator - System Customization and Configuration<a class="headerlink" href="#system-configurator-system-customization-and-configuration" title="Link to this heading">¶</a></h3>
+<p>Responsible for applying customization rules that include:
+1. Copying files into the filesystem.
+2. Running system commands (for example, systemctl enable).</p>
+</section>
+<dl class="py exception">
+<dt class="sig sig-object py" id="core.customizer.ConfigError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">ConfigError</span></span><a class="reference internal" href="_modules/core/customizer.html#ConfigError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.ConfigError" title="Link to this definition">¶</a></dt>
+<dd><p>Exception raised for system configuration errors.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.customizer.SystemAction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">SystemAction</span></span><a class="reference internal" href="_modules/core/customizer.html#SystemAction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.SystemAction" title="Link to this definition">¶</a></dt>
+<dd><p>Base class for a configuration action.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.customizer.SystemAction.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#SystemAction.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.SystemAction.execute" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.customizer.OverlayAction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">OverlayAction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">overlay_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#OverlayAction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.OverlayAction" title="Link to this definition">¶</a></dt>
+<dd><p>Copy a full overlay directory onto the chroot (like airootfs).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>overlay_dir</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.customizer.OverlayAction.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#OverlayAction.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.OverlayAction.execute" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.customizer.FileAction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">FileAction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#FileAction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.FileAction" title="Link to this definition">¶</a></dt>
+<dd><p>Copy one file from a source path to a destination inside the chroot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>str</em>)</p></li>
+<li><p><strong>dest</strong> (<em>str</em>)</p></li>
+<li><p><strong>mode</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.customizer.FileAction.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#FileAction.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.FileAction.execute" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.customizer.CommandAction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">CommandAction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#CommandAction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.CommandAction" title="Link to this definition">¶</a></dt>
+<dd><p>Execute a command directly inside the chroot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>command</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.customizer.CommandAction.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#CommandAction.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.CommandAction.execute" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.customizer.UserAction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">UserAction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#UserAction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.UserAction" title="Link to this definition">¶</a></dt>
+<dd><p>Create users and apply their related settings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>user_config</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.customizer.UserAction.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#UserAction.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.UserAction.execute" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.customizer.ServiceAction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">ServiceAction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">services</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#ServiceAction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.ServiceAction" title="Link to this definition">¶</a></dt>
+<dd><p>Enable systemd services.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>services</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.customizer.ServiceAction.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#ServiceAction.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.ServiceAction.execute" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.customizer.MkinitcpioAction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">MkinitcpioAction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initramfs_config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#MkinitcpioAction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.MkinitcpioAction" title="Link to this definition">¶</a></dt>
+<dd><p>Configure initramfs generation through mkinitcpio.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>initramfs_config</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.customizer.MkinitcpioAction.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#MkinitcpioAction.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.MkinitcpioAction.execute" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.customizer.LocaleAction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">LocaleAction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#LocaleAction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.LocaleAction" title="Link to this definition">¶</a></dt>
+<dd><p>Configure locales, timezone, hostname, and keymap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.customizer.LocaleAction.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#LocaleAction.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.LocaleAction.execute" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.customizer.SystemConfigurator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">SystemConfigurator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#SystemConfigurator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.SystemConfigurator" title="Link to this definition">¶</a></dt>
+<dd><p>The configurator is the system customization coordinator.
+It processes configuration “customizations” and applies them to the environment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a><em> | </em><em>None</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.customizer.SystemConfigurator.load_from_config">
+<span class="sig-name descname"><span class="pre">load_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#SystemConfigurator.load_from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.SystemConfigurator.load_from_config" title="Link to this definition">¶</a></dt>
+<dd><p>Load actions from the Config object, which already contains merged data
+from global_build.json, architecture.json, and other sources.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<em>Any</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.customizer.SystemConfigurator.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_base_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#SystemConfigurator.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.SystemConfigurator.apply" title="Link to this definition">¶</a></dt>
+<dd><p>Apply all registered actions to the chroot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>source_base_dir</strong> (<em>Path</em><em> | </em><em>None</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-core.toolchain">
+<span id="toolchain"></span><h2>Toolchain<a class="headerlink" href="#module-core.toolchain" title="Link to this heading">¶</a></h2>
+<section id="toolchain-manager-build-environment">
+<h3>Toolchain Manager (Build Environment)<a class="headerlink" href="#toolchain-manager-build-environment" title="Link to this heading">¶</a></h3>
+<p>Manages a secondary chroot environment where build tools
+(pacman, mksquashfs, xorriso, mtools) are executed.
+This avoids polluting the host operating system and helps ensure
+reproducibility across any Linux distribution.</p>
+</section>
+<dl class="py class">
+<dt class="sig sig-object py" id="core.toolchain.ToolchainManager">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.toolchain.</span></span><span class="sig-name descname"><span class="pre">ToolchainManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir_base</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_isolated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pacman_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics_enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics_log_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pacman_cache_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/toolchain.html#ToolchainManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.toolchain.ToolchainManager" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workdir_base</strong> (<em>Path</em>)</p></li>
+<li><p><strong>mode</strong> (<em>str</em>)</p></li>
+<li><p><strong>force_isolated</strong> (<em>bool</em>)</p></li>
+<li><p><strong>pacman_retries</strong> (<em>int</em>)</p></li>
+<li><p><strong>diagnostics_enabled</strong> (<em>bool</em>)</p></li>
+<li><p><strong>diagnostics_log_path</strong> (<em>Path</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>pacman_cache_dir</strong> (<em>Path</em><em> | </em><em>None</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.toolchain.ToolchainManager.setup">
+<span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/toolchain.html#ToolchainManager.setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.toolchain.ToolchainManager.setup" title="Link to this definition">¶</a></dt>
+<dd><p>Ensure the tool environment is ready.
+In a real scenario without the required host tools, this would download
+an <code class="docutils literal notranslate"><span class="pre">archlinux-bootstrap.tar.gz</span></code> archive and extract it into
+<code class="docutils literal notranslate"><span class="pre">self.toolchain_dir</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.toolchain.ToolchainManager.run_tool">
+<span class="sig-name descname"><span class="pre">run_tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/toolchain.html#ToolchainManager.run_tool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.toolchain.ToolchainManager.run_tool" title="Link to this definition">¶</a></dt>
+<dd><p>Execute a build tool.
+If the tools are available on the host, run the command directly.
+Otherwise, execute it inside the isolated build chroot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>command</strong> (<em>list</em>)</p></li>
+<li><p><strong>cwd</strong> (<em>Path</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>CompletedProcess</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.toolchain.ToolchainManager.run_command">
+<span class="sig-name descname"><span class="pre">run_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/toolchain.html#ToolchainManager.run_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.toolchain.ToolchainManager.run_command" title="Link to this definition">¶</a></dt>
+<dd><p>Compatibility wrapper expected by ISOBuilder/BaseEngine.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>command</strong> (<em>list</em>)</p></li>
+<li><p><strong>chroot_path</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.toolchain.ToolchainManager.execute_command">
+<span class="sig-name descname"><span class="pre">execute_command</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/toolchain.html#ToolchainManager.execute_command"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.toolchain.ToolchainManager.execute_command" title="Link to this definition">¶</a></dt>
+<dd><p>Backward-compatible command runner alias.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>command</strong> (<em>list</em>)</p></li>
+<li><p><strong>chroot_path</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.toolchain.ToolchainManager.cleanup">
+<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/toolchain.html#ToolchainManager.cleanup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.toolchain.ToolchainManager.cleanup" title="Link to this definition">¶</a></dt>
+<dd><p>Release mounts created for isolated build hosts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          <a class="prev-page" href="development.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Development</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, Arch-Builder contributors
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">API Reference</a><ul>
+<li><a class="reference internal" href="#module-cli">CLI Module</a><ul>
+<li><a class="reference internal" href="#cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-core.orchestrator">Orchestration</a><ul>
+<li><a class="reference internal" href="#build-orchestrator-the-build-workflow-conductor">Build Orchestrator - The Build Workflow Conductor</a></li>
+<li><a class="reference internal" href="#core.orchestrator.BuildOrchestratorError"><code class="docutils literal notranslate"><span class="pre">BuildOrchestratorError</span></code></a></li>
+<li><a class="reference internal" href="#core.orchestrator.BuildOrchestrator"><code class="docutils literal notranslate"><span class="pre">BuildOrchestrator</span></code></a><ul>
+<li><a class="reference internal" href="#core.orchestrator.BuildOrchestrator.run_build"><code class="docutils literal notranslate"><span class="pre">BuildOrchestrator.run_build()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-core.config_loader">Configuration Loader</a><ul>
+<li><a class="reference internal" href="#core.config_loader.ConfigValidationError"><code class="docutils literal notranslate"><span class="pre">ConfigValidationError</span></code></a></li>
+<li><a class="reference internal" href="#core.config_loader.Config"><code class="docutils literal notranslate"><span class="pre">Config</span></code></a><ul>
+<li><a class="reference internal" href="#core.config_loader.Config.get"><code class="docutils literal notranslate"><span class="pre">Config.get()</span></code></a></li>
+<li><a class="reference internal" href="#core.config_loader.Config.to_dict"><code class="docutils literal notranslate"><span class="pre">Config.to_dict()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.config_loader.ConfigAssembler"><code class="docutils literal notranslate"><span class="pre">ConfigAssembler</span></code></a><ul>
+<li><a class="reference internal" href="#core.config_loader.ConfigAssembler.assemble"><code class="docutils literal notranslate"><span class="pre">ConfigAssembler.assemble()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.config_loader.ConfigLoader"><code class="docutils literal notranslate"><span class="pre">ConfigLoader</span></code></a><ul>
+<li><a class="reference internal" href="#core.config_loader.ConfigLoader.load_arch_config"><code class="docutils literal notranslate"><span class="pre">ConfigLoader.load_arch_config()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-core.iso_engine">ISO Engine</a><ul>
+<li><a class="reference internal" href="#core.iso_engine.ArchBuilder"><code class="docutils literal notranslate"><span class="pre">ArchBuilder</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.ArchEngine"><code class="docutils literal notranslate"><span class="pre">ArchEngine</span></code></a><ul>
+<li><a class="reference internal" href="#core.iso_engine.ArchEngine.setup_chroot"><code class="docutils literal notranslate"><span class="pre">ArchEngine.setup_chroot()</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.ArchEngine.install_packages"><code class="docutils literal notranslate"><span class="pre">ArchEngine.install_packages()</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.ArchEngine.build_bootloaders"><code class="docutils literal notranslate"><span class="pre">ArchEngine.build_bootloaders()</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.ArchEngine.finalize_isofile"><code class="docutils literal notranslate"><span class="pre">ArchEngine.finalize_isofile()</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.ArchEngine.post_install_configure"><code class="docutils literal notranslate"><span class="pre">ArchEngine.post_install_configure()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.iso_engine.BaseEngine"><code class="docutils literal notranslate"><span class="pre">BaseEngine</span></code></a><ul>
+<li><a class="reference internal" href="#core.iso_engine.BaseEngine.setup_workdir"><code class="docutils literal notranslate"><span class="pre">BaseEngine.setup_workdir()</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.BaseEngine.setup_chroot"><code class="docutils literal notranslate"><span class="pre">BaseEngine.setup_chroot()</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.BaseEngine.install_packages"><code class="docutils literal notranslate"><span class="pre">BaseEngine.install_packages()</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.BaseEngine.build_bootloaders"><code class="docutils literal notranslate"><span class="pre">BaseEngine.build_bootloaders()</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.BaseEngine.post_install_configure"><code class="docutils literal notranslate"><span class="pre">BaseEngine.post_install_configure()</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.BaseEngine.finalize_isofile"><code class="docutils literal notranslate"><span class="pre">BaseEngine.finalize_isofile()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.iso_engine.Config"><code class="docutils literal notranslate"><span class="pre">Config</span></code></a><ul>
+<li><a class="reference internal" href="#core.iso_engine.Config.get"><code class="docutils literal notranslate"><span class="pre">Config.get()</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.Config.to_dict"><code class="docutils literal notranslate"><span class="pre">Config.to_dict()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.iso_engine.ISOBuilder"><code class="docutils literal notranslate"><span class="pre">ISOBuilder</span></code></a><ul>
+<li><a class="reference internal" href="#core.iso_engine.ISOBuilder.build"><code class="docutils literal notranslate"><span class="pre">ISOBuilder.build()</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.ISOBuilder.build_iso"><code class="docutils literal notranslate"><span class="pre">ISOBuilder.build_iso()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.iso_engine.ISOBuilderError"><code class="docutils literal notranslate"><span class="pre">ISOBuilderError</span></code></a></li>
+<li><a class="reference internal" href="#core.iso_engine.ISOEngine"><code class="docutils literal notranslate"><span class="pre">ISOEngine</span></code></a><ul>
+<li><a class="reference internal" href="#core.iso_engine.ISOEngine.register"><code class="docutils literal notranslate"><span class="pre">ISOEngine.register()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.iso_engine.LegacyEngine"><code class="docutils literal notranslate"><span class="pre">LegacyEngine</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-core.chroot_manager">Chroot Manager</a><ul>
+<li><a class="reference internal" href="#core.chroot_manager.ChrootManagerError"><code class="docutils literal notranslate"><span class="pre">ChrootManagerError</span></code></a></li>
+<li><a class="reference internal" href="#core.chroot_manager.ChrootError"><code class="docutils literal notranslate"><span class="pre">ChrootError</span></code></a></li>
+<li><a class="reference internal" href="#core.chroot_manager.MockFSHandler"><code class="docutils literal notranslate"><span class="pre">MockFSHandler</span></code></a><ul>
+<li><a class="reference internal" href="#core.chroot_manager.MockFSHandler.create_file"><code class="docutils literal notranslate"><span class="pre">MockFSHandler.create_file()</span></code></a></li>
+<li><a class="reference internal" href="#core.chroot_manager.MockFSHandler.read_file"><code class="docutils literal notranslate"><span class="pre">MockFSHandler.read_file()</span></code></a></li>
+<li><a class="reference internal" href="#core.chroot_manager.MockFSHandler.list_directory"><code class="docutils literal notranslate"><span class="pre">MockFSHandler.list_directory()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.chroot_manager.ChrootManager"><code class="docutils literal notranslate"><span class="pre">ChrootManager</span></code></a><ul>
+<li><a class="reference internal" href="#core.chroot_manager.ChrootManager.set_real_mode"><code class="docutils literal notranslate"><span class="pre">ChrootManager.set_real_mode()</span></code></a></li>
+<li><a class="reference internal" href="#core.chroot_manager.ChrootManager.setup"><code class="docutils literal notranslate"><span class="pre">ChrootManager.setup()</span></code></a></li>
+<li><a class="reference internal" href="#core.chroot_manager.ChrootManager.cleanup"><code class="docutils literal notranslate"><span class="pre">ChrootManager.cleanup()</span></code></a></li>
+<li><a class="reference internal" href="#core.chroot_manager.ChrootManager.run_command"><code class="docutils literal notranslate"><span class="pre">ChrootManager.run_command()</span></code></a></li>
+<li><a class="reference internal" href="#core.chroot_manager.ChrootManager.install_packages"><code class="docutils literal notranslate"><span class="pre">ChrootManager.install_packages()</span></code></a></li>
+<li><a class="reference internal" href="#core.chroot_manager.ChrootManager.generate_fstab"><code class="docutils literal notranslate"><span class="pre">ChrootManager.generate_fstab()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-core.customizer">Customizer</a><ul>
+<li><a class="reference internal" href="#system-configurator-system-customization-and-configuration">System Configurator - System Customization and Configuration</a></li>
+<li><a class="reference internal" href="#core.customizer.ConfigError"><code class="docutils literal notranslate"><span class="pre">ConfigError</span></code></a></li>
+<li><a class="reference internal" href="#core.customizer.SystemAction"><code class="docutils literal notranslate"><span class="pre">SystemAction</span></code></a><ul>
+<li><a class="reference internal" href="#core.customizer.SystemAction.execute"><code class="docutils literal notranslate"><span class="pre">SystemAction.execute()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.customizer.OverlayAction"><code class="docutils literal notranslate"><span class="pre">OverlayAction</span></code></a><ul>
+<li><a class="reference internal" href="#core.customizer.OverlayAction.execute"><code class="docutils literal notranslate"><span class="pre">OverlayAction.execute()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.customizer.FileAction"><code class="docutils literal notranslate"><span class="pre">FileAction</span></code></a><ul>
+<li><a class="reference internal" href="#core.customizer.FileAction.execute"><code class="docutils literal notranslate"><span class="pre">FileAction.execute()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.customizer.CommandAction"><code class="docutils literal notranslate"><span class="pre">CommandAction</span></code></a><ul>
+<li><a class="reference internal" href="#core.customizer.CommandAction.execute"><code class="docutils literal notranslate"><span class="pre">CommandAction.execute()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.customizer.UserAction"><code class="docutils literal notranslate"><span class="pre">UserAction</span></code></a><ul>
+<li><a class="reference internal" href="#core.customizer.UserAction.execute"><code class="docutils literal notranslate"><span class="pre">UserAction.execute()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.customizer.ServiceAction"><code class="docutils literal notranslate"><span class="pre">ServiceAction</span></code></a><ul>
+<li><a class="reference internal" href="#core.customizer.ServiceAction.execute"><code class="docutils literal notranslate"><span class="pre">ServiceAction.execute()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.customizer.MkinitcpioAction"><code class="docutils literal notranslate"><span class="pre">MkinitcpioAction</span></code></a><ul>
+<li><a class="reference internal" href="#core.customizer.MkinitcpioAction.execute"><code class="docutils literal notranslate"><span class="pre">MkinitcpioAction.execute()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.customizer.LocaleAction"><code class="docutils literal notranslate"><span class="pre">LocaleAction</span></code></a><ul>
+<li><a class="reference internal" href="#core.customizer.LocaleAction.execute"><code class="docutils literal notranslate"><span class="pre">LocaleAction.execute()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core.customizer.SystemConfigurator"><code class="docutils literal notranslate"><span class="pre">SystemConfigurator</span></code></a><ul>
+<li><a class="reference internal" href="#core.customizer.SystemConfigurator.load_from_config"><code class="docutils literal notranslate"><span class="pre">SystemConfigurator.load_from_config()</span></code></a></li>
+<li><a class="reference internal" href="#core.customizer.SystemConfigurator.apply"><code class="docutils literal notranslate"><span class="pre">SystemConfigurator.apply()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-core.toolchain">Toolchain</a><ul>
+<li><a class="reference internal" href="#toolchain-manager-build-environment">Toolchain Manager (Build Environment)</a></li>
+<li><a class="reference internal" href="#core.toolchain.ToolchainManager"><code class="docutils literal notranslate"><span class="pre">ToolchainManager</span></code></a><ul>
+<li><a class="reference internal" href="#core.toolchain.ToolchainManager.setup"><code class="docutils literal notranslate"><span class="pre">ToolchainManager.setup()</span></code></a></li>
+<li><a class="reference internal" href="#core.toolchain.ToolchainManager.run_tool"><code class="docutils literal notranslate"><span class="pre">ToolchainManager.run_tool()</span></code></a></li>
+<li><a class="reference internal" href="#core.toolchain.ToolchainManager.run_command"><code class="docutils literal notranslate"><span class="pre">ToolchainManager.run_command()</span></code></a></li>
+<li><a class="reference internal" href="#core.toolchain.ToolchainManager.execute_command"><code class="docutils literal notranslate"><span class="pre">ToolchainManager.execute_command()</span></code></a></li>
+<li><a class="reference internal" href="#core.toolchain.ToolchainManager.cleanup"><code class="docutils literal notranslate"><span class="pre">ToolchainManager.cleanup()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=d6b6a36a"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    <script type="module" src="_static/mermaid-init.mjs?v=2b1ff50a"></script>
+    </body>
+</html>

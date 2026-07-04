@@ -1,0 +1,8 @@
+{
+  "name": "linux",
+  "description": "Default stable Arch Linux kernel profile.",
+  "platform_specific": {
+    "base_kernel": "vmlinuz-linux",
+    "initramfs": "initramfs-linux.img"
+  }
+}

@@ -1,0 +1,9 @@
+
+{
+  "name": "linux-zen",
+  "description": "Performance-oriented kernel profile for desktop usage.",
+  "platform_specific": {
+    "base_kernel": "vmlinuz-linux-zen",
+    "initramfs": "initramfs-linux-zen.img"
+  }
+}

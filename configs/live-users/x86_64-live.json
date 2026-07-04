@@ -1,0 +1,11 @@
+{
+  "customizations": {
+    "users": [
+      {
+        "name": "live",
+        "groups": ["wheel", "video", "audio", "networkmanager"],
+        "password": "live"
+      }
+    ]
+  }
+}

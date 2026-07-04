@@ -1,0 +1,12 @@
+{
+  "name": "security",
+  "description": "Security auditing and hardening utilities.",
+  "packages": [
+    "iptables-nft",
+    "nftables",
+    "fail2ban",
+    "lynis",
+    "clamav"
+  ],
+  "dependencies": ["pacman"]
+}

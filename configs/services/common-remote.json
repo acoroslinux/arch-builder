@@ -1,0 +1,9 @@
+{
+  "customizations": {
+    "services": [
+      "sshd",
+      "avahi-daemon",
+      "avahi-daemon.socket"
+    ]
+  }
+}

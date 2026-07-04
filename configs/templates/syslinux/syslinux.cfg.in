@@ -1,0 +1,39 @@
+UI vesamenu.c32
+PROMPT 0
+TIMEOUT 100
+ONTIMEOUT arch-live
+
+MENU TABMSG Press ENTER to boot or TAB to edit a menu entry
+MENU AUTOBOOT BIOS default device boot in # second{,s}...
+MENU BACKGROUND splash.png
+MENU WIDTH 78
+MENU MARGIN 4
+MENU ROWS 12
+MENU VSHIFT 2
+MENU TIMEOUTROW 13
+MENU TABMSGROW 2
+MENU CMDLINEROW 16
+MENU HELPMSGROW 20
+MENU HELPMSGENDROW 34
+
+MENU COLOR title         * #FF5255FF *
+MENU COLOR border        * #00000000 #00000000 none
+MENU COLOR sel           * #ffffffff #FF5255FF *
+
+LABEL arch-live
+MENU LABEL @@BOOT_TITLE@@ (@@ARCH@@) BIOS
+LINUX /boot/@@KERNEL_FILE@@
+APPEND initrd=/boot/@@INITRAMFS_FILE@@ archisobasedir=arch archisosearchuuid=@@ARCHISO_UUID@@ @@BOOT_CMDLINE@@
+
+LABEL arch-rescue
+MENU LABEL Rescue Mode (Command Line)
+LINUX /boot/@@KERNEL_FILE@@
+APPEND initrd=/boot/@@INITRAMFS_FILE@@ archisobasedir=arch archisosearchuuid=@@ARCHISO_UUID@@ nomodeset vga=normal @@BOOT_CMDLINE@@
+
+LABEL reboot
+MENU LABEL ^Reboot
+COM32 reboot.c32
+
+LABEL poweroff
+MENU LABEL ^Power Off
+COM32 poweroff.c32

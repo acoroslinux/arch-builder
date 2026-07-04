@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>core.customizer &#8212; Arch-Builder Documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=a66d8bb5" />
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Arch-Builder</a></h1>
+
+
+
+<p class="blurb">Modular Arch Linux ISO builder</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../build-pipeline.html">Build Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+              <div class="related top">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+    </ul>
+  </nav>
+              </div>
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for core.customizer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">System Configurator - System Customization and Configuration</span>
+<span class="sd">============================================================</span>
+<span class="sd">Responsible for applying customization rules that include:</span>
+<span class="sd">1. Copying files into the filesystem.</span>
+<span class="sd">2. Running system commands (for example, systemctl enable).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">core.chroot_manager</span> <span class="kn">import</span> <span class="n">ChrootError</span><span class="p">,</span> <span class="n">ChrootManager</span>
+<span class="kn">from</span> <span class="nn">core.path_utils</span> <span class="kn">import</span> <span class="n">project_root</span><span class="p">,</span> <span class="n">resolve_from_base</span><span class="p">,</span> <span class="n">resolve_from_project</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;SystemConfigurator&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ConfigError">
+<a class="viewcode-back" href="../../api.html#core.customizer.ConfigError">[docs]</a>
+<span class="k">class</span> <span class="nc">ConfigError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception raised for system configuration errors.&quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="SystemAction">
+<a class="viewcode-back" href="../../api.html#core.customizer.SystemAction">[docs]</a>
+<span class="k">class</span> <span class="nc">SystemAction</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for a configuration action.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SystemAction.execute">
+<a class="viewcode-back" href="../../api.html#core.customizer.SystemAction.execute">[docs]</a>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">ChrootManager</span><span class="p">,</span> <span class="n">source_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="OverlayAction">
+<a class="viewcode-back" href="../../api.html#core.customizer.OverlayAction">[docs]</a>
+<span class="k">class</span> <span class="nc">OverlayAction</span><span class="p">(</span><span class="n">SystemAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Copy a full overlay directory onto the chroot (like airootfs).&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overlay_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overlay_dir</span> <span class="o">=</span> <span class="n">overlay_dir</span>
+
+<div class="viewcode-block" id="OverlayAction.execute">
+<a class="viewcode-back" href="../../api.html#core.customizer.OverlayAction.execute">[docs]</a>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">ChrootManager</span><span class="p">,</span> <span class="n">source_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="n">overlay_path</span> <span class="o">=</span> <span class="n">resolve_from_base</span><span class="p">(</span><span class="n">source_base</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">overlay_dir</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">overlay_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[Overlay] Overlay directory not found: </span><span class="si">{</span><span class="n">overlay_path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Overlay] Applying overlay from </span><span class="si">{</span><span class="n">overlay_path</span><span class="si">}</span><span class="s2"> to rootfs...&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
+            <span class="c1"># Use cp or rsync from the toolchain to copy the overlay.</span>
+            <span class="n">chroot_path</span> <span class="o">=</span> <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span>
+            <span class="c1"># To copy the directory contents, overlay_path/* would be enough,</span>
+            <span class="c1"># but cp -a behaves poorly with an empty wildcard, so rsync or cp -aT is safer.</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># Ideally this would use shutil.copytree locally when possible,</span>
+                <span class="c1"># or defer to the chroot manager / toolchain.</span>
+                <span class="kn">import</span> <span class="nn">subprocess</span>
+
+                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                    <span class="p">[</span><span class="s2">&quot;cp&quot;</span><span class="p">,</span> <span class="s2">&quot;-aT&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">overlay_path</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_path</span><span class="p">)],</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Overlay] Failed to copy overlay: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] Simulated overlay: cp -aT </span><span class="si">{</span><span class="n">overlay_path</span><span class="si">}</span><span class="s2"> /&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="FileAction">
+<a class="viewcode-back" href="../../api.html#core.customizer.FileAction">[docs]</a>
+<span class="k">class</span> <span class="nc">FileAction</span><span class="p">(</span><span class="n">SystemAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Copy one file from a source path to a destination inside the chroot.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dest</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src</span> <span class="o">=</span> <span class="n">src</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dest</span> <span class="o">=</span> <span class="n">dest</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
+
+<div class="viewcode-block" id="FileAction.execute">
+<a class="viewcode-back" href="../../api.html#core.customizer.FileAction.execute">[docs]</a>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">ChrootManager</span><span class="p">,</span> <span class="n">source_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="n">src_full</span> <span class="o">=</span> <span class="n">resolve_from_base</span><span class="p">(</span><span class="n">source_base</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src</span><span class="p">)</span>
+        <span class="n">dest_full</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">src_full</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Config] Source not found: </span><span class="si">{</span><span class="n">src_full</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [File] </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">src</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
+            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mkdir -p </span><span class="si">{</span><span class="n">dest_full</span><span class="o">.</span><span class="n">parent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># For scripts, avoid routing through the toolchain because files may live outside it.</span>
+            <span class="c1"># Copy them into place and then adjust permissions.</span>
+            <span class="n">host_dest</span> <span class="o">=</span> <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+            <span class="n">host_dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">src_full</span><span class="p">,</span> <span class="n">host_dest</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">:</span>
+                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;chmod </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] Virtual copy from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">src</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CommandAction">
+<a class="viewcode-back" href="../../api.html#core.customizer.CommandAction">[docs]</a>
+<span class="k">class</span> <span class="nc">CommandAction</span><span class="p">(</span><span class="n">SystemAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Execute a command directly inside the chroot.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command</span> <span class="o">=</span> <span class="n">command</span>
+
+<div class="viewcode-block" id="CommandAction.execute">
+<a class="viewcode-back" href="../../api.html#core.customizer.CommandAction.execute">[docs]</a>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">ChrootManager</span><span class="p">,</span> <span class="n">source_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [Cmd] Running: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
+            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] Simulated command: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="UserAction">
+<a class="viewcode-back" href="../../api.html#core.customizer.UserAction">[docs]</a>
+<span class="k">class</span> <span class="nc">UserAction</span><span class="p">(</span><span class="n">SystemAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create users and apply their related settings.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">user_config</span> <span class="o">=</span> <span class="n">user_config</span>
+
+<div class="viewcode-block" id="UserAction.execute">
+<a class="viewcode-back" href="../../api.html#core.customizer.UserAction.execute">[docs]</a>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">ChrootManager</span><span class="p">,</span> <span class="n">source_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">groups</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;groups&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">password</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">user_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;password&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [User] Creating user: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
+            <span class="c1"># Create groups if needed. groupadd can handle some cases, but we keep it simple.</span>
+            <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
+                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;getent group </span><span class="si">{</span><span class="n">group</span><span class="si">}</span><span class="s2"> &gt;/dev/null 2&gt;&amp;1 || groupadd </span><span class="si">{</span><span class="n">group</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">groups_str</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">groups</span><span class="p">)</span>
+            <span class="n">group_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;-G </span><span class="si">{</span><span class="n">groups_str</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">groups_str</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="c1"># Create the user.</span>
+            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;useradd -m </span><span class="si">{</span><span class="n">group_cmd</span><span class="si">}</span><span class="s2"> -s /bin/bash </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Set the password.</span>
+            <span class="k">if</span> <span class="n">password</span><span class="p">:</span>
+                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;echo &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">password</span><span class="si">}</span><span class="s2">&#39; | chpasswd&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Grant sudo privileges for users in the wheel group.</span>
+            <span class="k">if</span> <span class="s2">&quot;wheel&quot;</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
+                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
+                    <span class="s2">&quot;sed -i &#39;s/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/&#39; /etc/sudoers&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] Create user: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> (groups: </span><span class="si">{</span><span class="n">groups</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ServiceAction">
+<a class="viewcode-back" href="../../api.html#core.customizer.ServiceAction">[docs]</a>
+<span class="k">class</span> <span class="nc">ServiceAction</span><span class="p">(</span><span class="n">SystemAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Enable systemd services.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">services</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">services</span> <span class="o">=</span> <span class="n">services</span>
+
+<div class="viewcode-block" id="ServiceAction.execute">
+<a class="viewcode-back" href="../../api.html#core.customizer.ServiceAction.execute">[docs]</a>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">ChrootManager</span><span class="p">,</span> <span class="n">source_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">srv</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">services</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [Service] Enable </span><span class="si">{</span><span class="n">srv</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
+                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;systemctl enable </span><span class="si">{</span><span class="n">srv</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] systemctl enable </span><span class="si">{</span><span class="n">srv</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MkinitcpioAction">
+<a class="viewcode-back" href="../../api.html#core.customizer.MkinitcpioAction">[docs]</a>
+<span class="k">class</span> <span class="nc">MkinitcpioAction</span><span class="p">(</span><span class="n">SystemAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configure initramfs generation through mkinitcpio.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initramfs_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">modules</span> <span class="o">=</span> <span class="n">initramfs_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;modules&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">binaries</span> <span class="o">=</span> <span class="n">initramfs_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;binaries&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">files</span> <span class="o">=</span> <span class="n">initramfs_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hooks</span> <span class="o">=</span> <span class="n">initramfs_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hooks&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+<div class="viewcode-block" id="MkinitcpioAction.execute">
+<a class="viewcode-back" href="../../api.html#core.customizer.MkinitcpioAction.execute">[docs]</a>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">ChrootManager</span><span class="p">,</span> <span class="n">source_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">binaries</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">hooks</span><span class="p">]):</span>
+            <span class="k">return</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;  [Initramfs] Configuring /etc/mkinitcpio.conf for Live ISO mode...&quot;</span>
+        <span class="p">)</span>
+        <span class="n">conf_content</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;MODULES=(</span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">)</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;BINARIES=(</span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">binaries</span><span class="p">)</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;FILES=(</span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">)</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;HOOKS=(</span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hooks</span><span class="p">)</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
+            <span class="n">target_conf</span> <span class="o">=</span> <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;etc&quot;</span> <span class="o">/</span> <span class="s2">&quot;mkinitcpio.conf&quot;</span>
+            <span class="n">target_conf</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">target_conf</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">conf_content</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;    [Mock] mkinitcpio.conf generated (hooks: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hooks</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LocaleAction">
+<a class="viewcode-back" href="../../api.html#core.customizer.LocaleAction">[docs]</a>
+<span class="k">class</span> <span class="nc">LocaleAction</span><span class="p">(</span><span class="n">SystemAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configure locales, timezone, hostname, and keymap.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hostname</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hostname&quot;</span><span class="p">,</span> <span class="s2">&quot;arch-builder&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timezone</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timezone&quot;</span><span class="p">,</span> <span class="s2">&quot;UTC&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">locale</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;locale&quot;</span><span class="p">,</span> <span class="s2">&quot;en_US.UTF-8&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keymap</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;keymap&quot;</span><span class="p">,</span> <span class="s2">&quot;us&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LocaleAction.execute">
+<a class="viewcode-back" href="../../api.html#core.customizer.LocaleAction.execute">[docs]</a>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">ChrootManager</span><span class="p">,</span> <span class="n">source_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;  [Locale] Hostname: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hostname</span><span class="si">}</span><span class="s2">, Timezone: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">timezone</span><span class="si">}</span><span class="s2">, Locale: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">locale</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
+            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;echo </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hostname</span><span class="si">}</span><span class="s2"> &gt; /etc/hostname&quot;</span><span class="p">)</span>
+            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;ln -sf /usr/share/zoneinfo/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">timezone</span><span class="si">}</span><span class="s2"> /etc/localtime&quot;</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Locales</span>
+            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;sed -i &#39;s/^#</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">locale</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">locale</span><span class="si">}</span><span class="s2">/&#39; /etc/locale.gen&quot;</span>
+            <span class="p">)</span>
+            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;locale-gen&quot;</span><span class="p">)</span>
+            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;echo &#39;LANG=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">locale</span><span class="si">}</span><span class="s2">&#39; &gt; /etc/locale.conf&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Vconsole / keymap</span>
+            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;echo &#39;KEYMAP=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">keymap</span><span class="si">}</span><span class="s2">&#39; &gt; /etc/vconsole.conf&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;    [Mock] Apply locale/timezone/hostname&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SystemConfigurator">
+<a class="viewcode-back" href="../../api.html#core.customizer.SystemConfigurator">[docs]</a>
+<span class="k">class</span> <span class="nc">SystemConfigurator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The configurator is the system customization coordinator.</span>
+<span class="sd">    It processes configuration &quot;customizations&quot; and applies them to the environment.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChrootManager</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chroot</span> <span class="o">=</span> <span class="n">chroot</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SystemAction</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="SystemConfigurator.load_from_config">
+<a class="viewcode-back" href="../../api.html#core.customizer.SystemConfigurator.load_from_config">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_from_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load actions from the Config object, which already contains merged data</span>
+<span class="sd">        from global_build.json, architecture.json, and other sources.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Retrieve the customization block.</span>
+        <span class="c1"># It may live under system_config or customizations.</span>
+        <span class="k">def</span> <span class="nf">_safe_get</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;get&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">default</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="c1"># Compatibility with legacy/mocked configs exposing get(key) only.</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">default</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">value</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;get&quot;</span><span class="p">):</span>
+            <span class="n">cust_config</span> <span class="o">=</span> <span class="n">_safe_get</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;customizations&quot;</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">sys_config</span> <span class="o">=</span> <span class="n">_safe_get</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;system_config&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># 1. Overlay</span>
+        <span class="n">overlay_dir</span> <span class="o">=</span> <span class="n">cust_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overlay_dir&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overlay_dir&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">overlay_dir</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OverlayAction</span><span class="p">(</span><span class="n">overlay_dir</span><span class="p">))</span>
+
+        <span class="c1"># 2. Locale / hostname</span>
+        <span class="k">if</span> <span class="n">cust_config</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LocaleAction</span><span class="p">(</span><span class="n">cust_config</span><span class="p">))</span>
+
+        <span class="c1"># 3. Users</span>
+        <span class="n">users</span> <span class="o">=</span> <span class="n">cust_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;users&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">users</span><span class="p">:</span>
+            <span class="c1"># Unwrap Config dict instances.</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="s2">&quot;_data&quot;</span><span class="p">):</span>
+                <span class="n">u</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">_data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UserAction</span><span class="p">(</span><span class="n">u</span><span class="p">))</span>
+
+        <span class="c1"># 4. Services</span>
+        <span class="n">services</span> <span class="o">=</span> <span class="n">cust_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;services&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">services</span><span class="p">:</span>
+            <span class="c1"># Backward compatibility.</span>
+            <span class="n">services</span> <span class="o">=</span> <span class="n">_safe_get</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;platform_specific.services&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="n">services</span><span class="p">:</span>
+            <span class="c1"># List of strings.</span>
+            <span class="n">srv_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">services</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ServiceAction</span><span class="p">(</span><span class="n">srv_list</span><span class="p">))</span>
+
+        <span class="c1"># 5. Commands (generic post-install scripts)</span>
+        <span class="n">commands</span> <span class="o">=</span> <span class="n">cust_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;commands&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;commands&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="n">commands</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CommandAction</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cmd</span><span class="p">)))</span>
+
+        <span class="c1"># 6. Initramfs (mkinitcpio configuration)</span>
+        <span class="n">initramfs</span> <span class="o">=</span> <span class="n">_safe_get</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;initramfs&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">_safe_get</span><span class="p">(</span>
+            <span class="n">config</span><span class="p">,</span> <span class="s2">&quot;platform_specific.initramfs_config&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">initramfs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">initramfs</span><span class="p">,</span> <span class="s2">&quot;_data&quot;</span><span class="p">):</span>
+                <span class="n">initramfs</span> <span class="o">=</span> <span class="n">initramfs</span><span class="o">.</span><span class="n">_data</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">initramfs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MkinitcpioAction</span><span class="p">(</span><span class="n">initramfs</span><span class="p">))</span>
+
+        <span class="c1"># 7. Standalone files (less common when overlay is used)</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="n">cust_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;get&quot;</span><span class="p">):</span>
+                <span class="n">src</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">)</span>
+                <span class="n">dest</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest&quot;</span><span class="p">)</span>
+                <span class="n">mode</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">src</span> <span class="ow">and</span> <span class="n">dest</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">FileAction</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">mode</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="SystemConfigurator.apply">
+<a class="viewcode-back" href="../../api.html#core.customizer.SystemConfigurator.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_base_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply all registered actions to the chroot.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">chroot</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Configurator called without a ChrootManager. No action was performed.&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">source_base_dir</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="n">source_base_dir</span> <span class="ow">or</span> <span class="n">project_root</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No pending system configuration actions to apply.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Applying </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">)</span><span class="si">}</span><span class="s2"> system configuration actions...&quot;</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">action</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chroot</span><span class="p">,</span> <span class="n">source_base_dir</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to execute configuration action: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+              <div class="related bottom">
+                &nbsp;
+  <nav id="rellinks">
+    <ul>
+    </ul>
+  </nav>
+              </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &#169;2026, Arch-Builder contributors.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

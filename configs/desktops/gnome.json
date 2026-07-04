@@ -1,0 +1,22 @@
+{
+  "platform_specific": {
+    "packages": [
+      { "name": "xorg-server" },
+      { "name": "gnome" },
+      { "name": "gnome-tweaks" },
+      { "name": "gdm" }
+    ]
+  },
+  "customizations": {
+    "services": ["gdm"]
+  },
+  "system_config": {
+    "files": [
+      {
+        "src": "configs/custom_files/etc/gdm/custom.conf",
+        "dest": "/etc/gdm/custom.conf",
+        "mode": "0644"
+      }
+    ]
+  }
+}

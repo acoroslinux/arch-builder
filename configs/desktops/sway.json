@@ -1,0 +1,26 @@
+{
+  "platform_specific": {
+    "packages": [
+      { "name": "sway" },
+      { "name": "swaybg" },
+      { "name": "swaylock" },
+      { "name": "waybar" },
+      { "name": "foot" },
+      { "name": "sddm" },
+      { "name": "xorg-xwayland" },
+      { "name": "wl-clipboard" }
+    ]
+  },
+  "customizations": {
+    "services": ["sddm"]
+  },
+  "system_config": {
+    "files": [
+      {
+        "src": "configs/custom_files/etc/sddm.conf.d/autologin.conf",
+        "dest": "/etc/sddm.conf.d/autologin.conf",
+        "mode": "0644"
+      }
+    ]
+  }
+}

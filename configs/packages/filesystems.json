@@ -1,0 +1,12 @@
+{
+  "name": "filesystems",
+  "description": "Filesystem tools for common Linux and removable media formats.",
+  "packages": [
+    "btrfs-progs",
+    "xfsprogs",
+    "exfatprogs",
+    "dosfstools",
+    "ntfs-3g"
+  ],
+  "dependencies": ["pacman"]
+}

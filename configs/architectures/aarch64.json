@@ -1,0 +1,59 @@
+{
+  "platform_specific": {
+    "architecture": "aarch64",
+    "base_kernel": "vmlinuz-linux",
+    "initramfs": "initramfs-linux.img",
+    "initramfs_config": {
+      "modules": ["squashfs", "overlay", "loop"],
+      "binaries": [],
+      "files": [],
+      "hooks": [
+        "base",
+        "udev",
+        "modconf",
+        "kms",
+        "memdisk",
+        "archiso",
+        "archiso_loop_mnt",
+        "block",
+        "filesystems",
+        "keyboard"
+      ]
+    },
+    "packages": [
+      { "name": "base" },
+      { "name": "linux" },
+      { "name": "archiso" },
+      { "name": "grub" },
+      { "name": "efibootmgr" },
+      { "name": "networkmanager" },
+      { "name": "sudo" },
+      { "name": "nano" },
+      { "name": "bash" }
+    ],
+    "mounts": [{ "source": "/", "target": "/", "type": "ext4" }]
+  },
+  "system_info": {
+    "root_device_id": "/dev/disk/by-uuid/ARCH_BUILDER_ISO",
+    "workdir_base": "arch-builder/workdir"
+  },
+  "customizations": {
+    "hostname": "arch-builder-arm64",
+    "timezone": "UTC",
+    "locale": "en_US.UTF-8",
+    "keymap": "us",
+    "users": [
+      {
+        "name": "live",
+        "groups": ["wheel", "audio", "networkmanager"],
+        "password": "live"
+      }
+    ],
+    "services": ["NetworkManager"]
+  },
+  "system_config": {
+    "overlay_dir": "configs/custom_files",
+    "commands": ["echo 'Build finished' > /var/log/build_status.txt"],
+    "files": []
+  }
+}

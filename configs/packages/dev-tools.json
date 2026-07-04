@@ -1,0 +1,15 @@
+{
+  "name": "dev-tools",
+  "description": "General development toolchain and CLI utilities.",
+  "packages": [
+    "base-devel",
+    "git",
+    "cmake",
+    "ninja",
+    "make",
+    "gcc",
+    "gdb",
+    "ripgrep"
+  ],
+  "dependencies": ["pacman"]
+}

@@ -1,0 +1,32 @@
+{
+  "platform_specific": {
+    "packages": [
+      { "name": "xorg-server" },
+      { "name": "i3-wm" },
+      { "name": "i3status" },
+      { "name": "dmenu" },
+      { "name": "lightdm" },
+      { "name": "lightdm-gtk-greeter" },
+      { "name": "alacritty" },
+      { "name": "thunar" },
+      { "name": "networkmanager" }
+    ]
+  },
+  "customizations": {
+    "services": ["lightdm"]
+  },
+  "system_config": {
+    "files": [
+      {
+        "src": "configs/custom_files/etc/lightdm/lightdm.conf",
+        "dest": "/etc/lightdm/lightdm.conf",
+        "mode": "0644"
+      },
+      {
+        "src": "configs/custom_files/etc/lightdm/lightdm-gtk-greeter.conf",
+        "dest": "/etc/lightdm/lightdm-gtk-greeter.conf",
+        "mode": "0644"
+      }
+    ]
+  }
+}

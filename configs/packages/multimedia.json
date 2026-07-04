@@ -1,0 +1,12 @@
+{
+  "name": "multimedia",
+  "description": "Codecs and multimedia playback tools.",
+  "packages": [
+    "ffmpeg",
+    "vlc",
+    "gst-plugins-base",
+    "gst-plugins-good",
+    "gst-plugins-bad"
+  ],
+  "dependencies": ["pacman"]
+}

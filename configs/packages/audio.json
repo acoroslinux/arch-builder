@@ -1,0 +1,13 @@
+{
+  "name": "audio",
+  "description": "Audio stack and utilities (PipeWire and ALSA/Pulse compatibility).",
+  "packages": [
+    "pipewire",
+    "pipewire-alsa",
+    "pipewire-pulse",
+    "wireplumber",
+    "alsa-utils",
+    "pavucontrol"
+  ],
+  "dependencies": ["pacman"]
+}

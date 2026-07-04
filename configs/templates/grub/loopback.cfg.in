@@ -1,0 +1,35 @@
+# Loopback GRUB configuration for ISO boot
+# Used for GRUB on USB/HDD installations
+
+# Search for the ISO volume
+search --no-floppy --set=archiso_img_dev --file "${iso_path}"
+probe --set archiso_img_dev_uuid --fs-uuid "${archiso_img_dev}"
+
+# Get a human readable platform identifier
+if [ "${grub_platform}" == 'efi' ]; then
+    archiso_platform='UEFI'
+elif [ "${grub_platform}" == 'pc' ]; then
+    archiso_platform='BIOS'
+else
+    archiso_platform="${grub_cpu}-${grub_platform}"
+fi
+
+# Set default menu entry
+default=arch-live
+timeout=15
+timeout_style=menu
+
+
+# Menu entries
+#
+menuentry "Arch-Builder Live OS (%ARCH%, ${archiso_platform})" --class arch --class gnu-linux --class gnu --class os --id 'arch-live' {
+    set gfxpayload=keep
+    linux /boot/vmlinuz-%KERNEL_NAME% archisobasedir=arch img_dev=UUID=${archiso_img_dev_uuid} img_loop="${iso_path}"
+    initrd /boot/initramfs-%KERNEL_NAME%.img
+}
+#
+menuentry "Arch-Builder Live OS (%ARCH%, ${archiso_platform}) - Accessibility" --hotkey s --class arch --class gnu-linux --class gnu --class os --id 'arch-accessibility' {
+    set gfxpayload=keep
+    linux /boot/vmlinuz-%KERNEL_NAME% archisobasedir=arch img_dev=UUID=${archiso_img_dev_uuid} img_loop="${iso_path}" accessibility=on
+    initrd /boot/initramfs-%KERNEL_NAME%.img
+}

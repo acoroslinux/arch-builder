@@ -1,0 +1,11 @@
+{
+  "customizations": {
+    "users": [
+      {
+        "name": "live32",
+        "groups": ["wheel", "audio", "networkmanager"],
+        "password": "live32"
+      }
+    ]
+  }
+}

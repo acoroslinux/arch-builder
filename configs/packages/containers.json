@@ -1,0 +1,11 @@
+{
+  "name": "containers",
+  "description": "Container runtime and compose tooling.",
+  "packages": [
+    "docker",
+    "docker-compose",
+    "podman",
+    "buildah"
+  ],
+  "dependencies": ["pacman"]
+}

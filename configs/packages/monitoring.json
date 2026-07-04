@@ -1,0 +1,12 @@
+{
+  "name": "monitoring",
+  "description": "System monitoring and troubleshooting tools.",
+  "packages": [
+    "htop",
+    "iotop",
+    "btop",
+    "sysstat",
+    "lsof"
+  ],
+  "dependencies": ["pacman"]
+}

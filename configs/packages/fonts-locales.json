@@ -1,0 +1,12 @@
+{
+  "name": "fonts-locales",
+  "description": "Fonts and locale support for a complete desktop experience.",
+  "packages": [
+    "noto-fonts",
+    "noto-fonts-cjk",
+    "noto-fonts-emoji",
+    "ttf-dejavu",
+    "glibc"
+  ],
+  "dependencies": ["pacman"]
+}

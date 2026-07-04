@@ -1,0 +1,12 @@
+{
+  "name": "wayland",
+  "description": "Wayland session tools and compositors support packages.",
+  "packages": [
+    "wayland",
+    "xorg-xwayland",
+    "wl-clipboard",
+    "grim",
+    "slurp"
+  ],
+  "dependencies": ["pacman"]
+}

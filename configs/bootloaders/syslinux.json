@@ -1,0 +1,11 @@
+{
+  "name": "syslinux",
+  "description": "SYSLINUX/ISOLINUX bootloader profile for BIOS-focused images.",
+  "platform_specific": {
+    "packages": [
+      { "name": "syslinux" },
+      { "name": "mtools" },
+      { "name": "dosfstools" }
+    ]
+  }
+}

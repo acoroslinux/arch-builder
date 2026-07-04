@@ -1,0 +1,8 @@
+{
+  "customizations": {
+    "services": [
+      "NetworkManager",
+      "systemd-timesyncd"
+    ]
+  }
+}

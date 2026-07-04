@@ -1,0 +1,35 @@
+{
+  "metadata": {
+    "name": "Arch-Builder Master Config",
+    "version": "1.0.0",
+    "description": "Global manifest for building modular ISOs."
+  },
+  "build_environment": {
+    "workdir_base": "arch-builder/workdir",
+    "iso_label": "ARCH-MODERN",
+    "binaries": {
+      "grub_mkrescue": "/usr/bin/grub-mkrescue",
+      "genisoimage": "/usr/bin/genisoimage"
+    }
+  },
+  "system": {
+    "workdir_base": "arch-builder/workdir",
+    "iso_label": "ARCH-MODERN",
+    "binaries": {
+      "grub-mkrescue": "/usr/bin/grub-mkrescue",
+      "grub_mkrescue": "/usr/bin/grub-mkrescue",
+      "genisomake": "/usr/bin/genisoimage",
+      "genisoimage": "/usr/bin/genisoimage"
+    }
+  },
+  "components": {
+    "bootloaders": [
+      { "name": "grub", "type": "module" },
+      { "name": "syslinux", "type": "module" }
+    ],
+    "kernels": [
+      { "name": "linux", "type": "module" },
+      { "name": "linux-lts", "type": "module" }
+    ]
+  }
+}

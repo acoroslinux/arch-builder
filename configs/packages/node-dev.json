@@ -1,0 +1,11 @@
+{
+  "name": "node-dev",
+  "description": "Node.js and frontend build tooling.",
+  "packages": [
+    "nodejs",
+    "npm",
+    "yarn",
+    "pnpm"
+  ],
+  "dependencies": ["pacman"]
+}

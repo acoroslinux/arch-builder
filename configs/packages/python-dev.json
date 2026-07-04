@@ -1,0 +1,12 @@
+{
+  "name": "python-dev",
+  "description": "Python development and packaging tooling.",
+  "packages": [
+    "python",
+    "python-pip",
+    "python-virtualenv",
+    "python-setuptools",
+    "ipython"
+  ],
+  "dependencies": ["pacman"]
+}

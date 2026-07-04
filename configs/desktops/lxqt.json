@@ -1,0 +1,24 @@
+{
+  "platform_specific": {
+    "packages": [
+      { "name": "xorg-server" },
+      { "name": "lxqt" },
+      { "name": "breeze-icons" },
+      { "name": "sddm" },
+      { "name": "firefox" },
+      { "name": "alacritty" }
+    ]
+  },
+  "customizations": {
+    "services": ["sddm"]
+  },
+  "system_config": {
+    "files": [
+      {
+        "src": "configs/custom_files/etc/sddm.conf.d/autologin.conf",
+        "dest": "/etc/sddm.conf.d/autologin.conf",
+        "mode": "0644"
+      }
+    ]
+  }
+}

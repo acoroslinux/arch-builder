@@ -1,0 +1,65 @@
+{
+  "platform_specific": {
+    "packages": [
+      "xfce4",
+      "xfce4-goodies",
+      "xfce4-power-manager",
+      "xfce4-session",
+      "xfdesktop",
+      "thunar",
+      "thunar-volman",
+      "lightdm",
+      "lightdm-gtk-greeter",
+      "firefox",
+      "network-manager-applet",
+      "networkmanager",
+      "pipewire",
+      "pipewire-pulse",
+      "pipewire-alsa",
+      "alsa-utils",
+      "bluez",
+      "blueman",
+      "cups",
+      "system-config-printer",
+      "gvfs",
+      "gvfs-smb",
+      "gvfs-mtp",
+      "ntfs-3g",
+      "exfat-utils",
+      "sudo",
+      "vim",
+      "terminus-font",
+      "base-devel"
+    ]
+  },
+  "customizations": {
+    "services": [
+      "lightdm",
+      "NetworkManager",
+      "bluetooth",
+      "cups",
+      "org.cups.cupsd"
+    ],
+    "users": [
+      {
+        "name": "live",
+        "groups": ["wheel", "video", "audio", "networkmanager"],
+        "password": "live"
+      }
+    ]
+  },
+  "system_config": {
+    "files": [
+      {
+        "src": "configs/custom_files/etc/lightdm/lightdm.conf",
+        "dest": "/etc/lightdm/lightdm.conf",
+        "mode": "0644"
+      },
+      {
+        "src": "configs/custom_files/etc/lightdm/lightdm-gtk-greeter.conf",
+        "dest": "/etc/lightdm/lightdm-gtk-greeter.conf",
+        "mode": "0644"
+      }
+    ]
+  }
+}

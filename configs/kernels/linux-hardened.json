@@ -1,0 +1,8 @@
+{
+  "name": "linux-hardened",
+  "description": "Security-hardened kernel profile.",
+  "platform_specific": {
+    "base_kernel": "vmlinuz-linux-hardened",
+    "initramfs": "initramfs-linux-hardened.img"
+  }
+}

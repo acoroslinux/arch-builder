@@ -1,0 +1,14 @@
+{
+  "name": "network-advanced",
+  "description": "Advanced networking, diagnostics, and firewall tooling.",
+  "packages": [
+    "networkmanager",
+    "nm-connection-editor",
+    "openssh",
+    "wireguard-tools",
+    "nmap",
+    "tcpdump",
+    "ufw"
+  ],
+  "dependencies": ["pacman"]
+}

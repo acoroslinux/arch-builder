@@ -1,0 +1,8 @@
+{
+  "customizations": {
+    "services": [
+      "libvirtd",
+      "virtlogd"
+    ]
+  }
+}

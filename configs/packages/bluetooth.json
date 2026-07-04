@@ -1,0 +1,10 @@
+{
+  "name": "bluetooth",
+  "description": "Bluetooth support and management tools.",
+  "packages": [
+    "bluez",
+    "bluez-utils",
+    "blueman"
+  ],
+  "dependencies": ["pacman"]
+}
