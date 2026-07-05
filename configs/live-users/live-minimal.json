@@ -3,9 +3,15 @@
     "users": [
       {
         "name": "live",
-        "groups": ["audio", "video"],
+        "groups": ["audio", "video", "wheel"],
         "password": "live"
+      },
+      {
+        "name": "root",
+        "groups": ["root"],
+        "password": "root"
       }
     ]
   }
 }
+

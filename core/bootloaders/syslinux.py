@@ -23,6 +23,30 @@ class SyslinuxBootloader:
     def __init__(self, config: Any):
         self.config = config
 
+    def _cfg_get(self, key: str, default: Any = None) -> Any:
+        """
+        Custom getter supporting dot-notation for nested dictionary lookups.
+        Fixes lookup failures for keys like 'system.iso_label'.
+        """
+        if not self.config:
+            return default
+            
+        try:
+            if "." in key:
+                parts = key.split(".")
+                current = self.config
+                for part in parts:
+                    if isinstance(current, dict) and part in current:
+                        current = current[part]
+                    else:
+                        return default
+                return current if current is not None else default
+            
+            value = self.config.get(key, default)
+            return default if value is None else value
+        except Exception:
+            return default
+
     def prepare_files(self, workdir: Path) -> bool:
         """Prepare BIOS boot files (ISOLINUX)."""
         logger.info("[SYSLINUX] Preparing legacy BIOS boot files...")
@@ -40,15 +64,17 @@ class SyslinuxBootloader:
 
         template_content = template_path.read_text()
 
-        # 2. Prepare placeholder mapping
-        kernel_file = self.config.get("platform_specific.base_kernel", "vmlinuz-linux")
-        initramfs_file = self.config.get(
+        # 2. Prepare placeholder mapping using the nested dict safe getter
+        kernel_file = self._cfg_get("platform_specific.base_kernel", "vmlinuz-linux")
+        initramfs_file = self._cfg_get(
             "platform_specific.initramfs", "initramfs-linux.img"
         )
-        iso_label = self.config.get("system.iso_label", "ARCH-MODERN")
-        arch = self.config.get("platform_specific.architecture", "x86_64")
-        cmdline = "loglevel=4 quiet"
-        archiso_uuid = self.config.get("system.iso_uuid", "ARCHISO_UUID_PLACEHOLDER")
+        iso_label = self._cfg_get("system.iso_label", "ARCH-MODERN")
+        arch = self._cfg_get("platform_specific.architecture", "x86_64")
+        
+        # FIX: Added 'rw' and 'systemd.setenv' parameter to bypass root locking on boot failure
+        cmdline = "loglevel=4 quiet rw systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
+        archiso_uuid = self._cfg_get("system.iso_uuid", "ARCHISO_UUID_PLACEHOLDER")
 
         replacements = {
             "@@BOOT_TITLE@@": "Arch-Builder Live OS",

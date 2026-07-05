@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 class Bootloader(ABC):
     """
@@ -17,8 +17,11 @@ class Bootloader(ABC):
         pass
 
     @abstractmethod
-    def generate_boot_image(self, workdir: Path) -> bool:
-        """Generate the final boot image (for example, via grub-mkrescue)."""
+    def generate_boot_image(self, workdir: Path, chroot_path: Optional[Path] = None) -> bool:
+        """
+        Generate the final boot image (for example, via grub-mkrescue).
+        Includes optional chroot_path to match child class implementations.
+        """
         pass
 
     @abstractmethod

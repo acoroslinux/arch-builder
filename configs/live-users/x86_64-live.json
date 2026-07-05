@@ -5,7 +5,13 @@
         "name": "live",
         "groups": ["wheel", "video", "audio", "networkmanager"],
         "password": "live"
+      },
+      {
+        "name": "root",
+        "groups": ["root"],
+        "password": "root"
       }
-    ]
+  ]
   }
 }
+

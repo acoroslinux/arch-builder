@@ -1,3 +1,7 @@
+#
+# WARNING: Update the ISO label below for correct boot entry identification
+# The label should be exactly "ARCH-MODERN" (uppercase) for boot loader recognition
+#
 # Load partition table and file system modules
 insmod part_gpt
 insmod part_msdos

@@ -13,6 +13,7 @@
         "hooks": [
             "base",
             "udev",
+            "modconf",
             "archiso",
             "block",
             "filesystems",
@@ -20,3 +21,4 @@
         ]
     }
 }
+

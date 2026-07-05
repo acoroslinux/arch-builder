@@ -24,12 +24,12 @@ timeout_style=menu
 #
 menuentry "Arch-Builder Live OS (%ARCH%, ${archiso_platform})" --class arch --class gnu-linux --class gnu --class os --id 'arch-live' {
     set gfxpayload=keep
-    linux /boot/vmlinuz-%KERNEL_NAME% archisobasedir=arch img_dev=UUID=${archiso_img_dev_uuid} img_loop="${iso_path}"
+    linux /boot/vmlinuz-%KERNEL_NAME% archisobasedir=arch archisolabel=ARCH-MODERN rw systemd.setenv=SYSTEMD_SULOGIN_FORCE=1
     initrd /boot/initramfs-%KERNEL_NAME%.img
 }
 #
 menuentry "Arch-Builder Live OS (%ARCH%, ${archiso_platform}) - Accessibility" --hotkey s --class arch --class gnu-linux --class gnu --class os --id 'arch-accessibility' {
     set gfxpayload=keep
-    linux /boot/vmlinuz-%KERNEL_NAME% archisobasedir=arch img_dev=UUID=${archiso_img_dev_uuid} img_loop="${iso_path}" accessibility=on
+    linux /boot/vmlinuz-%KERNEL_NAME% archisobasedir=arch archisolabel=ARCH-MODERN rw accessibility=on systemd.setenv=SYSTEMD_SULOGIN_FORCE=1
     initrd /boot/initramfs-%KERNEL_NAME%.img
 }

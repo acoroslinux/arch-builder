@@ -24,11 +24,28 @@ class Grub2Bootloader:
         self.root_device_id = root_device_id
 
     def _cfg_get(self, key: str, default: Any = None) -> Any:
+        """
+        Custom getter that supports dot-notation for nested dictionary lookups.
+        Example: 'system.iso_label' will look into config['system']['iso_label']
+        """
+        if not self.config:
+            return default
+            
         try:
+            if "." in key:
+                parts = key.split(".")
+                current = self.config
+                for part in parts:
+                    if isinstance(current, dict) and part in current:
+                        current = current[part]
+                    else:
+                        return default
+                return current if current is not None else default
+            
             value = self.config.get(key, default)
-        except TypeError:
-            value = self.config.get(key)
-        return default if value is None else value
+            return default if value is None else value
+        except Exception:
+            return default
 
     def prepare_files(self, workdir: Path) -> bool:
         """Prepare EFI boot files from templates."""
@@ -54,7 +71,9 @@ class Grub2Bootloader:
         )
         iso_label = self._cfg_get("system.iso_label", "ARCH-MODERN")
         arch = self._cfg_get("platform_specific.architecture", "x86_64")
-        cmdline = "loglevel=4 quiet"
+        
+        # FIX: Forced rw and systemd parameters to bypass locked root account on boot failure
+        cmdline = "loglevel=4 quiet rw systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
         archiso_uuid = self._cfg_get("system.iso_uuid", "ARCHISO_UUID_PLACEHOLDER")
 
         replacements = {
@@ -101,8 +120,11 @@ class Grub2Bootloader:
                 check=True,
                 capture_output=True,
             )
+            
+            # Using the same label parsed from the global config
+            iso_label = self._cfg_get("system.iso_label", "ARCHISO")
             subprocess.run(
-                ["mkfs.fat", "-n", "ARCHISO", str(efi_img_path)],
+                ["mkfs.fat", "-n", iso_label[:11], str(efi_img_path)],
                 check=True,
                 capture_output=True,
             )
