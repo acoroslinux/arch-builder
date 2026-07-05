@@ -1,0 +1,32 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+.tox/
+.eggs/
+*.egg-info/
+.bytecoder/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE and Editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project build output and local workspace directories
+# Holds workdir/, fallback/, and pacman package cache (cache/)
+arch-builder/
+
+# Built ISO images
+*.iso
+
+# Logs
+*.log

@@ -325,6 +325,14 @@ class ToolchainManager:
             target.mkdir(exist_ok=True)
             self._run_privileged(["mount", "--rbind", f"/{fs}", str(target)])
             self._run_privileged(["mount", "--make-rslave", str(target)])
+
+        # Mount the project root directory inside the build chroot.
+        from core.path_utils import project_root
+        proj_root = project_root().resolve()
+        chroot_proj_root = self.build_chroot / proj_root.relative_to("/")
+        chroot_proj_root.mkdir(parents=True, exist_ok=True)
+        self._run_privileged(["mount", "--bind", str(proj_root), str(chroot_proj_root)])
+
         self._mounted = True
 
     def _mount_pacman_cache(self) -> None:
@@ -352,6 +360,15 @@ class ToolchainManager:
             except Exception:
                 pass
             self._cache_mounted = False
+
+        # Unmount project root
+        from core.path_utils import project_root
+        proj_root = project_root().resolve()
+        chroot_proj_root = self.build_chroot / proj_root.relative_to("/")
+        try:
+            self._run_privileged(["umount", "-l", str(chroot_proj_root)], check=False)
+        except Exception:
+            pass
 
         for fs in ["dev", "sys", "proc"]:
             target = self.build_chroot / fs

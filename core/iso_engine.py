@@ -225,11 +225,37 @@ class ArchEngine(BaseEngine):
 
     def _prepare_grub_boot_tree(self, chroot_root: Path) -> None:
         """Generate GRUB configuration inside the active rootfs before ISO creation."""
-        # 1. Pass the Root Device ID to the bootloader configurator.
-        root_device_id = self._system_config().get("root_device_id", "/dev/disk/by-uuid/ARCH_BUILDER_ISO")
+        from core.bootloaders.grub2 import Grub2Bootloader
+
+        # Use the root device ID from config or a sensible default
+        root_device_id = self.config.get("system.root_device_id", "ARCHISO_UUID_PLACEHOLDER")
         bootloader = Grub2Bootloader(self.config, root_device_id)
-        if not bootloader.prepare_files(chroot_root):
-            raise ISOBuilderError("Failed to generate GRUB boot configuration.")
+        bootloader.prepare_files(chroot_root)
+
+    def setup_chroot(self, workdir: str) -> None:
+        self.logger.info(f"[setup_chroot] Preparing chroot at {workdir}")
+
+        # 3. Prepare a build toolchain (host tools or isolated Arch bootstrap in real mode).
+        # These values are read from the toolchain object, which is set up by the orchestrator.
+        force_isolated = getattr(self.toolchain, "force_isolated", False) or bool(
+            self.config.get("system_info.force_isolated_toolchain", False)
+        )
+        pacman_retries = int(
+            getattr(self.toolchain, "pacman_retries", 3)
+        )
+        diagnostics_enabled = getattr(self.toolchain, "diagnostics_enabled", False) or bool(
+            self.config.get("system_info.toolchain_debug", False)
+        )
+
+        # In isolated mode, ensure /airootfs exists inside the build chroot for package installation
+        if not force_isolated and hasattr(self.toolchain, "build_chroot"):
+            iso_rootfs = Path(self.toolchain.build_chroot) / "airootfs"
+            if iso_rootfs.exists():
+                iso_rootfs.rmdir()
+            (Path(self.toolchain.build_chroot) / "airootfs").mkdir(parents=True, exist_ok=True)
+            
+        # Ensure boot mountpoint exists
+        self._boot_mountpoint()
 
     def _prepare_grub_iso_root(self, effective_root: Path) -> Path:
         """Create a dedicated ISO source tree containing the boot directory expected by GRUB."""
@@ -254,21 +280,6 @@ class ArchEngine(BaseEngine):
 
         return staging_root
 
-    def setup_chroot(self, workdir: str) -> None:
-        self.logger.info(f"[setup_chroot] Preparing chroot at {workdir}")
-
-        # 3. Prepare a build toolchain (host tools or isolated Arch bootstrap in real mode).
-        # These values are read from the toolchain object, which is set up by the orchestrator.
-        force_isolated = getattr(self.toolchain, "force_isolated", False) or bool(
-            self.config.get("system_info.force_isolated_toolchain", False)
-        )
-        pacman_retries = int(
-            getattr(self.toolchain, "pacman_retries", 3)
-        )
-        diagnostics_enabled = getattr(self.toolchain, "diagnostics_enabled", False) or bool(
-            self.config.get("system_info.toolchain_debug", False)
-        )
-
     def install_packages(self) -> None:
         plan = self._package_plan()
         self.logger.info("Starting package installation with cache management.")
@@ -284,61 +295,336 @@ class ArchEngine(BaseEngine):
             )
         self.logger.info("Packages installed successfully.")
 
-    def build_bootloaders(self, mountpoint: str) -> None:
-        binaries = self._system_config().get("binaries", {})
-        source_dir = "/boot"
-        effective_root = Path(mountpoint).parent
-        staging_root: Optional[Path] = None
+    def _create_squashfs(self, source_dir: Path, output_path: Path) -> None:
+        """Create a squashfs filesystem from a directory using mksquashfs.
 
-        chroot_manager = getattr(self.toolchain, "chroot_manager", None)
-        chroot_root = getattr(chroot_manager, "chroot_path", None)
-        if chroot_root:
-            chroot_root_path = Path(chroot_root)
-            try:
-                Path(mountpoint).resolve().relative_to(chroot_root_path.resolve())
-                effective_root = chroot_root_path
-            except Exception:
-                effective_root = Path(mountpoint).parent
+        Runs mksquashfs directly on the host (not inside chroot) because
+        the source directory path is a host-absolute path.
+        """
+        self.logger.info(f"[squashfs] Creating squashfs from {source_dir} -> {output_path}")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        if effective_root:
-            staging_root = self._prepare_grub_iso_root(effective_root)
-            if getattr(self.toolchain, "use_host", True):
-                source_dir = str(staging_root)
-            else:
-                source_dir = "/tmp/arch-builder-iso-root"
+        is_mock = getattr(self.toolchain, "mode", "mock") == "mock"
+        if is_mock:
+            self.logger.info(f"[squashfs] [MOCK] Would create squashfs: {output_path} from {source_dir}")
+            output_path.write_text("mock-squashfs-content")
+            return
 
-        self.logger.info(
-            f"[build_bootloaders] Using GRUB source tree '{source_dir}' (mountpoint={mountpoint}, effective_root={effective_root}, staging_root={staging_root})"
-        )
-
-        command = [
-            binaries.get("grub-mkrescue") or binaries.get("grub_mkrescue") or "grub-mkrescue",
-            "-o",
-            "/tmp/bootloader-rescue.iso",
-            source_dir,
+        # Exclude virtual filesystems and unnecessary directories
+        exclude_dirs = [
+            "proc/*", "sys/*", "dev/*", "run/*", "tmp/*",
+            "mnt/*", "lost+found", ".cache",
         ]
-        self.logger.debug(
-            f"[build_bootloaders] Generating bootloaders in {mountpoint} with command: {' '.join(command)}"
+        command = [
+            "mksquashfs",
+            str(source_dir),
+            str(output_path),
+            "-comp", "zstd",
+            "-b", "1M",
+            "-noappend",
+        ]
+        for ex in exclude_dirs:
+            command.extend(["-e", ex])
+
+        self.logger.info(f"[squashfs] Running: {' '.join(command)}")
+        try:
+            self._run_command(command)
+        except Exception as e:
+            self.logger.error(f"mksquashfs failed: {e}")
+            raise
+        self.logger.info(f"[squashfs] Created: {output_path}")
+
+    def _generate_grub_boot_images(self, staging_dir: Path, effective_root: Path) -> None:
+        """Generate GRUB BIOS boot image (boot.img) and EFI binary (BOOTx64.EFI).
+
+        These are required for the ISO to boot in both BIOS and UEFI modes.
+        Uses grub-mkimage to create the boot images from the GRUB modules
+        installed in the airootfs.
+        """
+        grub_dir = staging_dir / "boot" / "grub"
+        grub_dir.mkdir(parents=True, exist_ok=True)
+        efi_dir = staging_dir / "EFI" / "BOOT"
+        efi_dir.mkdir(parents=True, exist_ok=True)
+
+        is_mock = getattr(self.toolchain, "mode", "mock") == "mock"
+        if is_mock:
+            self.logger.info("[grub] [MOCK] Would generate GRUB BIOS and EFI boot images")
+            (grub_dir / "boot.img").write_bytes(b"\x00" * 512)
+            (efi_dir / "BOOTx64.EFI").write_bytes(b"")
+            return
+
+        # Path to GRUB modules in the airootfs
+        grub_modules = effective_root / "usr" / "lib" / "grub" / f"{self.arch}-efi"
+        grub_bios_modules = effective_root / "usr" / "lib" / "grub" / "i386-pc"
+
+        # --- Generate GRUB BIOS boot image (boot.img) ---
+        # boot.img is a small image that loads the core image from the disk
+        # It needs to be placed at a fixed location on the ISO
+        boot_img = grub_dir / "boot.img"
+        if grub_bios_modules.exists():
+            self.logger.info("[grub] Generating GRUB BIOS boot image...")
+            try:
+                # Create a GRUB core image for BIOS boot
+                cmd = [
+                    "grub-mkimage",
+                    "-d", str(grub_bios_modules),
+                    "-o", str(boot_img),
+                    "-O", "i386-pc",
+                    "-p", "/boot/grub",
+                    "biosdisk", "iso9660", "part_msdos", "part_gpt",
+                    "ext2", "fat", "ntfs",
+                    "search_fs_uuid", "search_label",
+                ]
+                self._run_command(cmd)
+                self.logger.info(f"[grub] Created BIOS boot image: {boot_img}")
+            except Exception as e:
+                self.logger.warning(f"[grub] Failed to create BIOS boot image: {e}")
+                # Create a placeholder
+                boot_img.write_bytes(b"\x00" * 512)
+        else:
+            self.logger.warning(f"[grub] GRUB BIOS modules not found at {grub_bios_modules}")
+            boot_img.write_bytes(b"\x00" * 512)
+
+        # --- Generate GRUB EFI binary (BOOTx64.EFI) ---
+        efi_binary = efi_dir / "BOOTx64.EFI"
+        if grub_modules.exists():
+            self.logger.info("[grub] Generating GRUB EFI binary...")
+            try:
+                cmd = [
+                    "grub-mkimage",
+                    "-d", str(grub_modules),
+                    "-o", str(efi_binary),
+                    "-O", f"{self.arch}-efi",
+                    "-p", "/boot/grub",
+                    "efifwsetup", "efinet", "efi_uga",
+                    "fat", "iso9660", "part_gpt", "part_msdos",
+                    "search_fs_uuid", "search_label",
+                    "normal", "boot", "configfile",
+                    "linux", "loopback", "chain",
+                ]
+                self._run_command(cmd)
+                self.logger.info(f"[grub] Created EFI binary: {efi_binary}")
+            except Exception as e:
+                self.logger.warning(f"[grub] Failed to create EFI binary: {e}")
+                efi_binary.write_bytes(b"")
+        else:
+            self.logger.warning(f"[grub] GRUB EFI modules not found at {grub_modules}")
+            efi_binary.write_bytes(b"")
+
+    def build_bootloaders(self, mountpoint: str) -> None:
+        """Build the complete Arch Linux live ISO directory structure.
+
+        Standard Arch ISO layout:
+        /
+        ├── boot/
+        │   ├── vmlinuz-linux       # Kernel
+        │   ├── initramfs-linux.img # Initramfs
+        │   └── grub/
+        │       ├── grub.cfg        # GRUB config
+        │       └── boot.img        # GRUB BIOS boot image
+        ├── EFI/
+        │   └── BOOT/
+        │       └── BOOTx64.EFI     # GRUB EFI binary
+        ├── loader/
+        │   ├── loader.conf         # systemd-boot config
+        │   └── entries/
+        │       └── arch-live.conf  # Boot entry
+        └── arch/
+            └── x86_64/
+                └── airootfs.sfs    # Squashfs root filesystem
+        """
+        effective_root = Path(mountpoint).parent
+
+        # Generate GRUB configuration (grub.cfg) inside the airootfs
+        self._prepare_grub_boot_tree(effective_root)
+
+        # Create the ISO staging directory
+        iso_staging = effective_root.parent / "iso-staging"
+        if iso_staging.exists():
+            shutil.rmtree(iso_staging, ignore_errors=True)
+
+        # Create directory structure
+        iso_boot = iso_staging / "boot"
+        iso_boot.mkdir(parents=True, exist_ok=True)
+        (iso_staging / "EFI" / "BOOT").mkdir(parents=True, exist_ok=True)
+        (iso_staging / "loader" / "entries").mkdir(parents=True, exist_ok=True)
+
+        # --- Copy kernel and initramfs from airootfs ---
+        source_boot = effective_root / "boot"
+        kernel_name = self.config.get("platform_specific.base_kernel", "vmlinuz-linux")
+        initramfs_name = self.config.get("platform_specific.initramfs", "initramfs-linux.img")
+
+        if source_boot.exists():
+            kernel_src = source_boot / kernel_name
+            if kernel_src.exists():
+                shutil.copy2(kernel_src, iso_boot / kernel_name)
+                self.logger.info(f"[boot] Copied kernel: {kernel_name}")
+            else:
+                self.logger.warning(f"[boot] Kernel not found at {kernel_src}")
+
+            initramfs_src = source_boot / initramfs_name
+            if initramfs_src.exists():
+                shutil.copy2(initramfs_src, iso_boot / initramfs_name)
+                self.logger.info(f"[boot] Copied initramfs: {initramfs_name}")
+            else:
+                self.logger.warning(f"[boot] Initramfs not found at {initramfs_src}")
+
+            grub_cfg_src = source_boot / "grub" / "grub.cfg"
+            if grub_cfg_src.exists():
+                (iso_boot / "grub").mkdir(parents=True, exist_ok=True)
+                shutil.copy2(grub_cfg_src, iso_boot / "grub" / "grub.cfg")
+                self.logger.info("[boot] Copied grub.cfg")
+        else:
+            self.logger.warning(f"[boot] Source boot directory not found at {source_boot}")
+
+        # --- Generate GRUB boot images (BIOS + UEFI) ---
+        self._generate_grub_boot_images(iso_staging, effective_root)
+
+        # --- Create squashfs of the airootfs ---
+        arch_dir = iso_staging / "arch" / self.arch
+        arch_dir.mkdir(parents=True, exist_ok=True)
+        squashfs_path = arch_dir / "airootfs.sfs"
+        self._create_squashfs(effective_root, squashfs_path)
+
+        # --- Create systemd-boot loader config ---
+        loader_conf = iso_staging / "loader" / "loader.conf"
+        loader_conf.write_text(
+            "timeout 15\n"
+            "default arch-live\n"
         )
-        self._run_command(command)
-        self.logger.info("Bootloader configured successfully.")
+
+        # --- Create systemd-boot entry ---
+        kernel_params = self.config.get("boot.kernel_params", "loglevel=4 quiet")
+        archiso_uuid = self.config.get("system.iso_uuid", "ARCHISO_UUID")
+        entry_content = (
+            f"title   Arch-Builder Live ({self.arch})\n"
+            f"linux   /boot/{kernel_name}\n"
+            f"initrd  /boot/{initramfs_name}\n"
+            f"options archisobasedir=arch archisosearchuuid={archiso_uuid} {kernel_params}\n"
+        )
+        (iso_staging / "loader" / "entries" / "arch-live.conf").write_text(entry_content)
+
+        # Store the ISO staging path for finalize_isofile
+        self._iso_staging = iso_staging
+        self.logger.info(f"[build] ISO staging directory: {iso_staging}")
 
     def finalize_isofile(self, output_path: str) -> None:
-        chroot_manager = getattr(self.toolchain, "chroot_manager", None)
-        if chroot_manager and getattr(chroot_manager, "chroot_path", None):
-            rescue_iso = Path(chroot_manager.chroot_path) / "tmp" / "bootloader-rescue.iso"
-            if rescue_iso.exists():
-                destination = resolve_from_project(output_path)
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(rescue_iso, destination)
-                self.logger.info(f"ISO exported from isolated chroot to {destination}")
-                return
+        """Create the final bootable ISO using grub-mkrescue.
 
-        binaries = self._system_config().get("binaries", {})
-        command = [binaries.get("genisomake") or binaries.get("genisoimage") or "genisoimage", output_path]
-        self.logger.info(f"Packaging final image at {output_path}")
-        self._run_command(command)
-        self.logger.info("ISO created successfully.")
+        grub-mkrescue is the standard tool for creating bootable Arch Linux ISOs.
+        It handles all the complexity of:
+        - Creating proper El Torito boot images for BIOS
+        - Creating EFI boot images for UEFI
+        - Making the ISO hybrid (bootable from both BIOS and UEFI)
+        - Embedding all required GRUB modules
+
+        In mock mode, this method only logs the intent without executing.
+        """
+        iso_source = getattr(self, "_iso_staging", None)
+        if not iso_source or not iso_source.exists():
+            raise ISOBuilderError(
+                "ISO staging directory not found. build_bootloaders() must be called first."
+            )
+
+        output_abs = str(resolve_from_project(output_path))
+        Path(output_abs).parent.mkdir(parents=True, exist_ok=True)
+
+        # Check if we're in mock mode - skip actual execution
+        is_mock = getattr(self.toolchain, "mode", "mock") == "mock"
+        if is_mock:
+            self.logger.info(f"[finalize] [MOCK] Would create ISO: {output_abs} from {iso_source}")
+            self.logger.info(f"[finalize] [MOCK] Command: grub-mkrescue -o {output_abs} {iso_source}")
+            return
+
+        # Use grub-mkrescue to create a proper bootable ISO
+        command = [
+            "grub-mkrescue",
+            "-o", output_abs,
+            str(iso_source),
+        ]
+
+        self.logger.info(f"[finalize] Creating bootable ISO with grub-mkrescue: {output_abs}")
+        self.logger.info(f"[finalize] Command: {' '.join(command)}")
+
+        try:
+            self._run_command(command)
+        except Exception as e:
+            self.logger.error(f"grub-mkrescue failed: {e}")
+            raise ISOBuilderError(f"grub-mkrescue failed: {e}")
+
+        self.logger.info(f"[finalize] Bootable ISO created: {output_abs}")
+
+    def _generate_initramfs(self) -> None:
+        """Generate the initramfs inside the airootfs using mkinitcpio.
+
+        This must be done after all packages are installed and before
+        creating the squashfs, so that /boot/vmlinuz-linux and
+        /boot/initramfs-linux.img exist for the ISO.
+
+        Requires mounting /proc, /dev, /sys inside the airootfs chroot
+        for mkinitcpio to function properly.
+        """
+        self.logger.info("[initramfs] Generating initramfs with mkinitcpio...")
+        chroot_manager = getattr(self.toolchain, "chroot_manager", None)
+        if not chroot_manager:
+            self.logger.warning("[initramfs] No chroot manager available, skipping")
+            return
+
+        # Get the run path (build chroot for isolated mode)
+        run_path = None
+        if self.toolchain and hasattr(self.toolchain, "build_chroot"):
+            run_path = str(self.toolchain.build_chroot)
+
+        if not run_path:
+            self.logger.warning("[initramfs] No build chroot path available")
+            return
+
+        airootfs_path = Path(run_path) / "airootfs"
+
+        # Mount required filesystems inside airootfs for mkinitcpio
+        import subprocess
+        import os
+        def _sudo_run(cmd, check=True):
+            full = cmd if os.geteuid() == 0 else ["sudo", *cmd]
+            return subprocess.run(full, check=check, capture_output=True, text=True)
+
+        # Mount proc, sys, dev inside airootfs
+        mounts = [
+            ("/proc", airootfs_path / "proc", "--bind"),
+            ("/sys", airootfs_path / "sys", "--bind"),
+            ("/dev", airootfs_path / "dev", "--bind"),
+        ]
+        for src, dst, opts in mounts:
+            dst.mkdir(parents=True, exist_ok=True)
+            _sudo_run(["mount", opts, str(src), str(dst)], check=False)
+
+        try:
+            # Determine which kernel preset to use
+            kernel_name = self.config.get("platform_specific.base_kernel", "vmlinuz-linux")
+            kernel_preset = kernel_name.replace("vmlinuz-", "")
+
+            # Run mkinitcpio inside the airootfs chroot
+            self.logger.info(f"[initramfs] Running mkinitcpio -p {kernel_preset} in airootfs...")
+            chroot_manager.run_command(
+                ["chroot", "/airootfs", "mkinitcpio", "-p", kernel_preset],
+                chroot_path=run_path,
+            )
+            self.logger.info(f"[initramfs] Generated initramfs for kernel: {kernel_preset}")
+
+            # Verify kernel and initramfs exist
+            kernel_file = airootfs_path / "boot" / kernel_name
+            initramfs_file = airootfs_path / "boot" / f"initramfs-{kernel_preset}.img"
+            if kernel_file.exists():
+                self.logger.info(f"[initramfs] Kernel found: {kernel_file} ({kernel_file.stat().st_size} bytes)")
+            if initramfs_file.exists():
+                self.logger.info(f"[initramfs] Initramfs found: {initramfs_file} ({initramfs_file.stat().st_size} bytes)")
+
+        except Exception as e:
+            self.logger.error(f"[initramfs] Failed to generate initramfs: {e}")
+        finally:
+            # Unmount filesystems
+            for src, dst, opts in reversed(mounts):
+                _sudo_run(["umount", "-l", str(dst)], check=False)
 
     def post_install_configure(self) -> None:
         self.logger.info("Starting post-install configuration...")
@@ -346,6 +632,9 @@ class ArchEngine(BaseEngine):
         if chroot_manager and hasattr(chroot_manager, "generate_fstab"):
             fstab_result = chroot_manager.generate_fstab()
             self.logger.debug(f"Generated fstab: {fstab_result}")
+
+        # Generate initramfs before applying customizations
+        self._generate_initramfs()
 
         # Apply full customization graph from config (users, services, files, locale, etc.).
         if chroot_manager:

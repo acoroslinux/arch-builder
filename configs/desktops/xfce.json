@@ -34,11 +34,7 @@
   },
   "customizations": {
     "services": [
-      "lightdm",
-      "NetworkManager",
-      "bluetooth",
-      "cups",
-      "org.cups.cupsd"
+      "lightdm"
     ],
     "users": [
       {

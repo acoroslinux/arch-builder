@@ -6,7 +6,8 @@
     "xorg-xinit",
     "xorg-xrandr",
     "xorg-xset",
-    "xorg-xinput"
+    "xorg-xinput",
+    "xterm"
   ],
   "dependencies": ["pacman"]
 }

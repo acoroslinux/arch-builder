@@ -43,14 +43,16 @@ class TestGrubBootloaderGeneration(unittest.TestCase):
 
             engine.build_bootloaders(str(root / "boot"))
 
+            # grub.cfg should be generated in the active rootfs by Grub2Bootloader
             grub_cfg = root / "boot" / "grub" / "grub.cfg"
             self.assertTrue(grub_cfg.exists(), "grub.cfg should be generated in the active rootfs")
 
-            command, chroot_path = toolchain.commands[-1]
-            # Binary may be with or without full path
-            self.assertTrue(command[0].endswith("grub-mkrescue"))
-            self.assertEqual(command[-1], str(root / "tmp" / "arch-builder-iso-root"))
-            self.assertIsNone(chroot_path)
+            # The ISO staging directory should be created with boot/EFI/loader structure
+            iso_staging = root.parent / "iso-staging"
+            self.assertTrue(iso_staging.exists(), "ISO staging directory should exist")
+            self.assertTrue((iso_staging / "boot").exists(), "Staging /boot dir should exist")
+            self.assertTrue((iso_staging / "EFI" / "BOOT").exists(), "Staging /EFI/BOOT dir should exist")
+            self.assertTrue((iso_staging / "loader" / "entries").exists(), "Staging /loader/entries dir should exist")
 
     def test_grub_cfg_contains_archiso_uuid(self):
         with tempfile.TemporaryDirectory(prefix="arch_builder_grub_") as tmp:

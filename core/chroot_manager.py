@@ -227,6 +227,9 @@ class ChrootManager:
         staging_host_dir = Path(self._workdir) / "tmp" / "custom-packages"
         staging_host_dir.mkdir(parents=True, exist_ok=True)
 
+        iso_rootfs = getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
+        root_flag = ["--root", "/airootfs"] if iso_rootfs else []
+
         staged_targets: List[str] = []
         for path_str in local_paths:
             src = Path(path_str)
@@ -239,12 +242,8 @@ class ChrootManager:
             staged_targets.append(f"/tmp/custom-packages/{src.name}")
 
         if staged_targets:
-            # Use --root to install into the chroot rootfs for isolated mode
-            root_args = []
-            if self.toolchain and getattr(self.toolchain, "iso_rootfs_path", None):
-                root_args = ["--root", str(self.toolchain.iso_rootfs_path)]
-            command = ["pacman", "-U", "--noconfirm", *root_args, *staged_targets]
-            # Run pacman in the bootstrap (where it's installed), not in the target rootfs
+            # Install into airootfs when in isolated mode, otherwise into build chroot
+            command = ["pacman", "-U", "--noconfirm", *root_flag, *staged_targets]
             run_path = self.toolchain.build_chroot if self.toolchain and getattr(self.toolchain, "build_chroot", None) else self._workdir
             self.run_command(command, chroot_path=str(run_path))
 
@@ -254,6 +253,9 @@ class ChrootManager:
 
         # When in isolated mode, run in the bootstrap where pacman exists
         run_path = self.toolchain.build_chroot if self.toolchain and getattr(self.toolchain, "build_chroot", None) else self._workdir
+
+        iso_rootfs = getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
+        root_flag = ["--root", "/airootfs"] if iso_rootfs else []
 
         # Prepare build prerequisites and non-root builder account.
         self.run_command(
@@ -274,16 +276,47 @@ class ChrootManager:
             if not re.match(r"^[a-zA-Z0-9@._+-]+$", pkg):
                 raise ChrootManagerError(f"Invalid AUR package name: {pkg}")
 
+            # For AUR packages, we build in the build chroot but install into airootfs
             build_cmd = (
                 "set -e; "
                 f"cd /tmp; rm -rf {pkg}; "
                 f"git clone https://aur.archlinux.org/{pkg}.git; "
-                f"cd {pkg}; makepkg -si --noconfirm --needed"
+                f"cd {pkg}; makepkg -si --noconfirm --needed {' '.join(root_flag)}"
             )
             self.run_command(
                 ["runuser", "-u", "aurbuilder", "--", "bash", "-lc", build_cmd],
                 chroot_path=str(run_path),
             )
+
+    def _init_airootfs_pacman(self, run_path: str) -> None:
+        """Initialize pacman database and required directories inside airootfs."""
+        iso_rootfs = getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
+        if not iso_rootfs:
+            return
+
+        # Ensure the airootfs has the required pacman directories
+        airootfs_path = Path(run_path) / "airootfs"
+        for subdir in ["var/lib/pacman", "var/cache/pacman/pkg", "etc/pacman.d"]:
+            (airootfs_path / subdir).mkdir(parents=True, exist_ok=True)
+
+        # Copy pacman config and mirrorlist from the build chroot into airootfs
+        build_chroot = Path(run_path)
+        for conf_file in ["etc/pacman.conf", "etc/pacman.d/mirrorlist"]:
+            src = build_chroot / conf_file
+            dst = airootfs_path / conf_file
+            if src.exists():
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src, dst)
+
+        # Initialize the pacman keyring and database inside airootfs
+        self.logger.info("[airootfs] Initializing pacman database in airootfs...")
+        try:
+            self.run_command(
+                ["pacman", "--root", "/airootfs", "--config", "/airootfs/etc/pacman.conf", "-Sy"],
+                chroot_path=str(run_path),
+            )
+        except ChrootManagerError as e:
+            self.logger.warning(f"[airootfs] pacman -Sy in airootfs failed (may be ok): {e}")
 
     def _install_official_packages_real(self, official_packages: List[str], attempts: int = 3) -> None:
         if not official_packages:
@@ -293,19 +326,28 @@ class ChrootManager:
         # When in isolated mode, run pacman in the bootstrap (where it's installed)
         run_path = self.toolchain.build_chroot if self.toolchain and getattr(self.toolchain, "build_chroot", None) else self._workdir
 
+        # Determine if we need to target a separate ISO rootfs (airootfs) instead of
+        # the build chroot root. This prevents ISO packages from conflicting with
+        # the toolchain packages already installed in the build host.
+        iso_rootfs = getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
+        root_flag = ["--root", "/airootfs"] if iso_rootfs else []
+
+        # Initialize pacman database in airootfs before installing packages
+        if iso_rootfs:
+            self._init_airootfs_pacman(str(run_path))
+
         for attempt in range(1, max(1, attempts) + 1):
             try:
-                # Build command with --root flag for isolated mode to install to separate rootfs
-                root_args = []
-                if self.toolchain and getattr(self.toolchain, "iso_rootfs_path", None):
-                    root_args = ["--root", str(self.toolchain.iso_rootfs_path)]
+                # If iso_rootfs is set, use --root to install into airootfs
+                # instead of the build chroot root. This keeps ISO packages
+                # separate from the build toolchain.
                 command = [
                     "pacman",
                     "-S",
                     "--needed",
                     "--noconfirm",
                     "--disable-download-timeout",
-                    *root_args,
+                    *root_flag,
                     *official_packages,
                 ]
                 self.run_command(command, chroot_path=str(run_path))
@@ -332,6 +374,57 @@ class ChrootManager:
         if last_error:
             raise last_error
 
+    def _mount_essential_filesystems(self) -> None:
+        """Mount /proc, /sys, and /dev inside the chroot path."""
+        import subprocess
+        import os
+        
+        self.logger.info("[chroot] Mounting essential filesystems (/proc, /sys, /dev)...")
+        mounts = [
+            ("/proc", self.chroot_path / "proc", "--bind"),
+            ("/sys", self.chroot_path / "sys", "--bind"),
+            ("/dev", self.chroot_path / "dev", "--bind"),
+        ]
+        
+        def _sudo_run(cmd, check=True):
+            full = cmd if os.geteuid() == 0 else ["sudo", *cmd]
+            return subprocess.run(full, check=check, capture_output=True, text=True)
+
+        for src, dst, opts in mounts:
+            dst.mkdir(parents=True, exist_ok=True)
+            try:
+                # Check if already mounted
+                with open("/proc/mounts", "r") as f:
+                    mounted_paths = [line.split()[1] for line in f.readlines() if len(line.split()) > 1]
+                if os.path.abspath(str(dst)) in mounted_paths:
+                    self.logger.debug(f"{dst} is already mounted, skipping.")
+                    continue
+            except Exception:
+                pass
+                
+            _sudo_run(["mount", opts, str(src), str(dst)], check=False)
+
+    def _unmount_essential_filesystems(self) -> None:
+        """Unmount /proc, /sys, and /dev from the chroot path."""
+        import subprocess
+        import os
+        
+        self.logger.info("[chroot] Unmounting essential filesystems...")
+        mounts = [
+            self.chroot_path / "proc",
+            self.chroot_path / "sys",
+            self.chroot_path / "dev",
+        ]
+        
+        def _sudo_run(cmd, check=True):
+            full = cmd if os.geteuid() == 0 else ["sudo", *cmd]
+            return subprocess.run(full, check=check, capture_output=True, text=True)
+
+        # Unmount in reverse order
+        for dst in reversed(mounts):
+            if dst.exists():
+                _sudo_run(["umount", "-l", str(dst)], check=False)
+
     def install_packages(self, packages: Union[List[str], Dict[str, Any]]) -> None:
         """Install official, local and AUR packages inside the chroot (mock or real)."""
         self.logger.info("Starting package installation with cache management.")
@@ -348,6 +441,7 @@ class ChrootManager:
         else:
             # Real mode – install official packages from repos.
             try:
+                self._mount_essential_filesystems()
                 self._install_official_packages_real(plan["official"], attempts=3)
 
                 # Install local package files placed by the user.
@@ -360,6 +454,8 @@ class ChrootManager:
                 raise RuntimeError(
                     f"Fatal package installation failure in real chroot: {e}"
                 )
+            finally:
+                self._unmount_essential_filesystems()
 
         self.logger.info("Package installer finished. Status: OK")
 
@@ -376,16 +472,17 @@ class ChrootManager:
             )
             return f"[MOCK FS] /etc/fstab simulated successfully, content:\n{content}"
 
-        # Real mode – generate fstab based on detected hardware (stub for now)
+        # Real mode - create fstab file directly (no command execution needed)
         try:
-            command = [
-                "echo",
-                "REAL fstab content generated from detected hardware.",
-            ]
-            output = self.run_command(command, chroot_path=self._workdir)
-            self.logger.info("[REAL] /etc/fstab configured successfully.")
-            return f"[REAL] /etc/fstab configured successfully.\n{output}"
+            fstab_path = self.chroot_path / "etc" / "fstab"
+            fstab_dir = fstab_path.parent
+            if not fstab_dir.exists():
+                fstab_dir.mkdir(parents=True, exist_ok=True)
+
+            content = "/dev/sda1  /   ext4    defaults    0 1\n/dev/sda2  swap   swap    defaults    0 0\n"
+            fstab_path.write_text(content, encoding="utf-8")
+            self.logger.info("[REAL] /etc/fstab created successfully.")
+            return f"[REAL] /etc/fstab created at {fstab_path}"
         except Exception as e:
             raise ChrootManagerError(f"Failed to generate real fstab: {e}")
-        except Exception as e:
-            raise ChrootManagerError(f"Failed to generate real fstab: {e}")
+

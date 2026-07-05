@@ -16,19 +16,16 @@ from core.path_utils import project_root, resolve_from_base, resolve_from_projec
 
 logger = logging.getLogger("SystemConfigurator")
 
-
 class ConfigError(Exception):
     """Exception raised for system configuration errors."""
 
     pass
-
 
 class SystemAction:
     """Base class for a configuration action."""
 
     def execute(self, chroot: ChrootManager, source_base: Path):
         raise NotImplementedError()
-
 
 class OverlayAction(SystemAction):
     """Copy a full overlay directory onto the chroot (like airootfs)."""
@@ -63,7 +60,6 @@ class OverlayAction(SystemAction):
         else:
             logger.info(f"    [Mock] Simulated overlay: cp -aT {overlay_path} /")
 
-
 class FileAction(SystemAction):
     """Copy one file from a source path to a destination inside the chroot."""
 
@@ -95,7 +91,6 @@ class FileAction(SystemAction):
         else:
             logger.info(f"    [Mock] Virtual copy from {self.src} to {self.dest}")
 
-
 class CommandAction(SystemAction):
     """Execute a command directly inside the chroot."""
 
@@ -105,10 +100,10 @@ class CommandAction(SystemAction):
     def execute(self, chroot: ChrootManager, source_base: Path):
         logger.info(f"  [Cmd] Running: {self.command}")
         if chroot.mode == "real":
-            chroot.run_command(self.command)
+            # Use bash instead of sh for compatibility with isolated bootstrap
+            chroot.run_command(f"bash -lc '{self.command}'")
         else:
             logger.info(f"    [Mock] Simulated command: {self.command}")
-
 
 class UserAction(SystemAction):
     """Create users and apply their related settings."""
@@ -149,7 +144,6 @@ class UserAction(SystemAction):
         else:
             logger.info(f"    [Mock] Create user: {name} (groups: {groups})")
 
-
 class ServiceAction(SystemAction):
     """Enable systemd services."""
 
@@ -163,7 +157,6 @@ class ServiceAction(SystemAction):
                 chroot.run_command(f"systemctl enable {srv}")
             else:
                 logger.info(f"    [Mock] systemctl enable {srv}")
-
 
 class MkinitcpioAction(SystemAction):
     """Configure initramfs generation through mkinitcpio."""
@@ -197,7 +190,6 @@ class MkinitcpioAction(SystemAction):
                 f"    [Mock] mkinitcpio.conf generated (hooks: {', '.join(self.hooks)})"
             )
 
-
 class LocaleAction(SystemAction):
     """Configure locales, timezone, hostname, and keymap."""
 
@@ -228,7 +220,6 @@ class LocaleAction(SystemAction):
             chroot.run_command(f"echo 'KEYMAP={self.keymap}' > /etc/vconsole.conf")
         else:
             logger.info("    [Mock] Apply locale/timezone/hostname")
-
 
 class SystemConfigurator:
     """
@@ -337,3 +328,4 @@ class SystemConfigurator:
                 action.execute(self.chroot, source_base_dir)
             except Exception as e:
                 logger.error(f"Failed to execute configuration action: {e}")
+
