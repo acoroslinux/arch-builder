@@ -54,7 +54,7 @@ class TestGrubBootloaderGeneration(unittest.TestCase):
             self.assertTrue((iso_staging / "EFI" / "BOOT").exists(), "Staging /EFI/BOOT dir should exist")
             self.assertTrue((iso_staging / "loader" / "entries").exists(), "Staging /loader/entries dir should exist")
 
-    def test_grub_cfg_contains_archiso_uuid(self):
+    def test_grub_cfg_contains_archiso_label(self):
         with tempfile.TemporaryDirectory(prefix="arch_builder_grub_") as tmp:
             root = Path(tmp)
             (root / "boot").mkdir(parents=True, exist_ok=True)
@@ -66,7 +66,7 @@ class TestGrubBootloaderGeneration(unittest.TestCase):
 
             grub_cfg = root / "boot" / "grub" / "grub.cfg"
             content = grub_cfg.read_text()
-            self.assertIn("archisosearchuuid=12345678-1234-1234-1234-123456789abc", content)
+            self.assertIn("archisolabel=ARCH-MODERN", content)
             self.assertIn("/boot/vmlinuz-linux", content)
 
     def test_grub_cfg_has_correct_kernel_path(self):

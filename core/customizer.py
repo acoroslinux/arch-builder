@@ -127,10 +127,11 @@ class UserAction(SystemAction):
                 chroot.run_command(f"getent group {group} >/dev/null 2>&1 || groupadd {group}")
 
             groups_str = ",".join(groups)
-            group_cmd = f"-G {groups_str}" if groups_str else ""
 
-            # Create the user.
-            chroot.run_command(f"useradd -m {group_cmd} -s /bin/bash {name}")
+            # Create the user if not exists, otherwise update groups
+            chroot.run_command(f"id -u {name} >/dev/null 2>&1 || useradd -m -s /bin/bash {name}")
+            if groups_str:
+                chroot.run_command(f"usermod -G {groups_str} {name}")
 
             # Set the password.
             if password:
@@ -139,7 +140,7 @@ class UserAction(SystemAction):
             # Grant sudo privileges for users in the wheel group.
             if "wheel" in groups:
                 chroot.run_command(
-                    "sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers"
+                    "mkdir -p /etc/sudoers.d && echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel"
                 )
         else:
             logger.info(f"    [Mock] Create user: {name} (groups: {groups})")
@@ -287,8 +288,10 @@ class SystemConfigurator:
             self.actions.append(CommandAction(str(cmd)))
 
         # 6. Initramfs (mkinitcpio configuration)
-        initramfs = _safe_get(config, "initramfs") or _safe_get(
-            config, "platform_specific.initramfs_config"
+        initramfs = (
+            _safe_get(config, "initramfs_config")
+            or _safe_get(config, "initramfs")
+            or _safe_get(config, "platform_specific.initramfs_config")
         )
         if initramfs:
             if hasattr(initramfs, "_data"):

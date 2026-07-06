@@ -251,7 +251,7 @@ class ArchEngine(BaseEngine):
         if not force_isolated and hasattr(self.toolchain, "build_chroot"):
             iso_rootfs = Path(self.toolchain.build_chroot) / "airootfs"
             if iso_rootfs.exists():
-                iso_rootfs.rmdir()
+                shutil.rmtree(iso_rootfs, ignore_errors=True)
             (Path(self.toolchain.build_chroot) / "airootfs").mkdir(parents=True, exist_ok=True)
             
         # Ensure boot mountpoint exists
@@ -462,6 +462,13 @@ class ArchEngine(BaseEngine):
             else:
                 self.logger.warning(f"[boot] Kernel not found at {kernel_src}")
 
+            # Copy microcode if they exist
+            for ucode in ["intel-ucode.img", "amd-ucode.img"]:
+                ucode_src = source_boot / ucode
+                if ucode_src.exists():
+                    shutil.copy2(ucode_src, iso_boot / ucode)
+                    self.logger.info(f"[boot] Copied microcode: {ucode}")
+
             initramfs_src = source_boot / initramfs_name
             if initramfs_src.exists():
                 shutil.copy2(initramfs_src, iso_boot / initramfs_name)
@@ -494,13 +501,22 @@ class ArchEngine(BaseEngine):
         )
 
         # --- Create systemd-boot entry ---
+        iso_label = self.config.get("system.iso_label") or self.config.get("build_environment.iso_label") or "ARCH-MODERN"
         kernel_params = self.config.get("boot.kernel_params", "loglevel=4 quiet")
-        archiso_uuid = self.config.get("system.iso_uuid", "ARCHISO_UUID")
+        
+        # Build multiple initrd lines dynamically
+        initrd_lines = []
+        for ucode in ["intel-ucode.img", "amd-ucode.img"]:
+            if (iso_boot / ucode).exists():
+                initrd_lines.append(f"initrd  /boot/{ucode}")
+        initrd_lines.append(f"initrd  /boot/{initramfs_name}")
+        initrd_str = "\n".join(initrd_lines)
+
         entry_content = (
             f"title   Arch-Builder Live ({self.arch})\n"
             f"linux   /boot/{kernel_name}\n"
-            f"initrd  /boot/{initramfs_name}\n"
-            f"options archisobasedir=arch archisosearchuuid={archiso_uuid} {kernel_params}\n"
+            f"{initrd_str}\n"
+            f"options archisobasedir=arch archisolabel={iso_label} {kernel_params}\n"
         )
         (iso_staging / "loader" / "entries" / "arch-live.conf").write_text(entry_content)
 
@@ -536,11 +552,14 @@ class ArchEngine(BaseEngine):
             self.logger.info(f"[finalize] [MOCK] Command: grub-mkrescue -o {output_abs} {iso_source}")
             return
 
-        # Use grub-mkrescue to create a proper bootable ISO
+        # Use grub-mkrescue to create a proper bootable ISO with the correct volume label
+        iso_label = self.config.get("system.iso_label") or self.config.get("build_environment.iso_label") or "ARCH-MODERN"
         command = [
             "grub-mkrescue",
             "-o", output_abs,
             str(iso_source),
+            "--",
+            "-volid", iso_label,
         ]
 
         self.logger.info(f"[finalize] Creating bootable ISO with grub-mkrescue: {output_abs}")

@@ -260,8 +260,8 @@ class ChrootManager:
         # Prepare build prerequisites and non-root builder account.
         self.run_command(
             ["pacman", "-S", "--needed", "--noconfirm", "git", "base-devel"],
-                            chroot_path=str(run_path),
-                        )
+            chroot_path=str(run_path),
+        )
         self.run_command(
             [
                 "bash",

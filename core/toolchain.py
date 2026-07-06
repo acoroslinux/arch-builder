@@ -12,7 +12,7 @@ import os
 import re
 import shutil
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -50,7 +50,7 @@ class ToolchainManager:
             return
 
         log_path = self.diagnostics_log_path or (self.toolchain_dir / "toolchain-debug.log")
-        timestamp = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+        timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds") + "Z"
         line = f"[{timestamp}] {message}\n"
 
         try:

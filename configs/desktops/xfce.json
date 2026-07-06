@@ -29,7 +29,10 @@
       "sudo",
       "vim",
       "terminus-font",
-      "base-devel"
+      "base-devel",
+      "xclip",
+      "xsel",
+      "spice-vdagent"
     ]
   },
   "customizations": {

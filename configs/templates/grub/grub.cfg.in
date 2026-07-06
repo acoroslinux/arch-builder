@@ -35,14 +35,14 @@ timeout_style=menu
 #
 menuentry "@@BOOT_TITLE@@ (@@ARCH@@, ${archiso_platform})" --class arch --class gnu-linux --class gnu --class os --id 'arch-live' {
     set gfxpayload=keep
-    linux /boot/@@KERNEL_FILE@@ archisobasedir=arch archisosearchuuid=@@ARCHISO_UUID@@ @@BOOT_CMDLINE@@
-    initrd /boot/@@INITRAMFS_FILE@@
+    linux /boot/@@KERNEL_FILE@@ archisobasedir=arch archisolabel=@@ISO_LABEL@@ @@BOOT_CMDLINE@@
+    @@INITRD_LINE@@
 }
 #
 menuentry "@@BOOT_TITLE@@ (@@ARCH@@, ${archiso_platform}) - Rescue Mode" --hotkey r --class arch --class gnu-linux --class gnu --class os --id 'arch-rescue' {
     set gfxpayload=keep
-    linux /boot/@@KERNEL_FILE@@ archisobasedir=arch archisosearchuuid=@@ARCHISO_UUID@@ nomodeset vga=normal @@BOOT_CMDLINE@@
-    initrd /boot/@@INITRAMFS_FILE@@
+    linux /boot/@@KERNEL_FILE@@ archisobasedir=arch archisolabel=@@ISO_LABEL@@ nomodeset vga=normal @@BOOT_CMDLINE@@
+    @@INITRD_LINE@@
 }
 
 menuentry 'System shutdown' --class shutdown --class poweroff {

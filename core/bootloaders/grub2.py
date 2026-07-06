@@ -32,18 +32,27 @@ class Grub2Bootloader:
             return default
             
         try:
+            if hasattr(self.config, "get"):
+                val = self.config.get(key)
+                if val is not None:
+                    return val
+
             if "." in key:
                 parts = key.split(".")
                 current = self.config
                 for part in parts:
                     if isinstance(current, dict) and part in current:
                         current = current[part]
+                    elif hasattr(current, "get"):
+                        current = current.get(part)
                     else:
                         return default
                 return current if current is not None else default
             
-            value = self.config.get(key, default)
-            return default if value is None else value
+            if hasattr(self.config, "get"):
+                value = self.config.get(key, default)
+                return default if value is None else value
+            return default
         except Exception:
             return default
 
@@ -76,6 +85,14 @@ class Grub2Bootloader:
         cmdline = "loglevel=4 quiet rw systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
         archiso_uuid = self._cfg_get("system.iso_uuid", "ARCHISO_UUID_PLACEHOLDER")
 
+        # Dynamically build initrd line based on available microcode files
+        initrd_files = []
+        for ucode in ["intel-ucode.img", "amd-ucode.img"]:
+            if (workdir / "boot" / ucode).exists():
+                initrd_files.append(f"/boot/{ucode}")
+        initrd_files.append(f"/boot/{initramfs_file}")
+        initrd_line = f"initrd {' '.join(initrd_files)}"
+
         replacements = {
             "@@BOOT_TITLE@@": "Arch-Builder Live OS",
             "@@ARCH@@": arch,
@@ -85,6 +102,7 @@ class Grub2Bootloader:
             "@@INITRAMFS_FILE@@": initramfs_file,
             "@@ISO_LABEL@@": iso_label,
             "@@BOOT_CMDLINE@@": cmdline,
+            "@@INITRD_LINE@@": initrd_line,
         }
 
         # 3. Apply replacements
