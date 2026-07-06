@@ -133,6 +133,10 @@ class UserAction(SystemAction):
             if groups_str:
                 chroot.run_command(f"usermod -G {groups_str} {name}")
 
+            # Ensure home directory exists and has correct ownership
+            chroot.run_command(f"mkdir -p /home/{name}")
+            chroot.run_command(f"chown -R {name}:{name} /home/{name}")
+
             # Set the password.
             if password:
                 chroot.run_command(f"echo '{name}:{password}' | chpasswd")

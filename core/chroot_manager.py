@@ -175,15 +175,37 @@ class ChrootManager:
         try:
             effective_chroot = chroot_path or self._workdir
             if effective_chroot and os.path.isdir(effective_chroot):
-                # Execute directly through chroot with argument-safe process invocation.
-                full_command = ["sudo", "chroot", effective_chroot, *command_list]
-                result = subprocess.run(
-                    full_command, capture_output=True, check=True, text=True
-                )
-                logging.getLogger("chroot").info(
-                    "[run_command] Command executed successfully inside chroot."
-                )
-                return result.stdout
+                # Ensure networking/DNS resolution works inside the chroot
+                host_resolv = Path("/etc/resolv.conf")
+                target_resolv = Path(effective_chroot) / "etc" / "resolv.conf"
+                copied_resolv = False
+                
+                # Copy host resolv.conf if not already present in the chroot
+                if host_resolv.exists() and not target_resolv.exists():
+                    try:
+                        target_resolv.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(host_resolv, target_resolv)
+                        copied_resolv = True
+                    except Exception as e:
+                        logging.getLogger("chroot").warning(f"Could not copy resolv.conf to chroot: {e}")
+
+                try:
+                    # Execute directly through chroot with argument-safe process invocation.
+                    full_command = ["sudo", "chroot", effective_chroot, *command_list]
+                    result = subprocess.run(
+                        full_command, capture_output=True, check=True, text=True
+                    )
+                    logging.getLogger("chroot").info(
+                        "[run_command] Command executed successfully inside chroot."
+                    )
+                    return result.stdout
+                finally:
+                    # Clean up the copied resolv.conf to avoid baking host DNS into the ISO
+                    if copied_resolv:
+                        try:
+                            target_resolv.unlink(missing_ok=True)
+                        except Exception:
+                            pass
             else:
                 raise PermissionError(
                     "Chroot environment is unavailable or misconfigured on the host."
@@ -270,21 +292,41 @@ class ChrootManager:
             ],
             chroot_path=str(run_path),
         )
+        # Grant passwordless sudo to aurbuilder so makepkg can install build dependencies
+        self.run_command(
+            [
+                "bash",
+                "-lc",
+                "mkdir -p /etc/sudoers.d && echo 'aurbuilder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/aurbuilder",
+            ],
+            chroot_path=str(run_path),
+        )
 
         for pkg in aur_packages:
             # Basic sanitization to avoid command injection.
             if not re.match(r"^[a-zA-Z0-9@._+-]+$", pkg):
                 raise ChrootManagerError(f"Invalid AUR package name: {pkg}")
 
-            # For AUR packages, we build in the build chroot but install into airootfs
+            # Step 1: Build the package as aurbuilder
             build_cmd = (
                 "set -e; "
                 f"cd /tmp; rm -rf {pkg}; "
                 f"git clone https://aur.archlinux.org/{pkg}.git; "
-                f"cd {pkg}; makepkg -si --noconfirm --needed {' '.join(root_flag)}"
+                f"cd {pkg}; makepkg -s --noconfirm --needed"
             )
             self.run_command(
                 ["runuser", "-u", "aurbuilder", "--", "bash", "-lc", build_cmd],
+                chroot_path=str(run_path),
+            )
+
+            # Step 2: Install the built package file(s) into the target rootfs as root
+            install_cmd = (
+                "set -e; "
+                f"cd /tmp/{pkg}; "
+                f"pacman -U --noconfirm --needed {' '.join(root_flag)} *.pkg.tar.zst"
+            )
+            self.run_command(
+                ["bash", "-lc", install_cmd],
                 chroot_path=str(run_path),
             )
 

@@ -1,0 +1,11 @@
+{
+  "name": "aur-packages",
+  "description": "Custom AUR package sources compiled and installed during build.",
+  "package_sources": {
+    "aur": [
+      "yay-bin",
+      "pamac-aur"
+    ]
+  },
+  "dependencies": ["pacman"]
+}

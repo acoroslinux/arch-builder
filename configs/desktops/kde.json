@@ -1,15 +1,45 @@
 {
   "platform_specific": {
     "packages": [
-      { "name": "plasma-meta" },
-      { "name": "kde-applications-meta" },
-      { "name": "sddm" },
-      { "name": "wayland" },
-      { "name": "firefox" }
+      "plasma-meta",
+      "konsole",
+      "dolphin",
+      "kate",
+      "ark",
+      "sddm",
+      "wayland",
+      "firefox",
+      "networkmanager",
+      "pipewire",
+      "pipewire-pulse",
+      "pipewire-alsa",
+      "wireplumber",
+      "alsa-utils",
+      "bluez",
+      "bluez-utils",
+      "xclip",
+      "xsel",
+      "spice-vdagent"
     ]
   },
   "customizations": {
-    "services": ["sddm"]
+    "services": [
+      "sddm",
+      "NetworkManager"
+    ],
+    "users": [
+      {
+        "name": "live",
+        "groups": [
+          "wheel",
+          "video",
+          "audio",
+          "networkmanager",
+          "autologin"
+        ],
+        "password": "live"
+      }
+    ]
   },
   "system_config": {
     "files": [

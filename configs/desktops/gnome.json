@@ -1,14 +1,43 @@
 {
   "platform_specific": {
     "packages": [
-      { "name": "xorg-server" },
-      { "name": "gnome" },
-      { "name": "gnome-tweaks" },
-      { "name": "gdm" }
+      "gnome",
+      "gnome-tweaks",
+      "gdm",
+      "xorg-server",
+      "gnome-terminal",
+      "firefox",
+      "networkmanager",
+      "pipewire",
+      "pipewire-pulse",
+      "pipewire-alsa",
+      "wireplumber",
+      "alsa-utils",
+      "bluez",
+      "bluez-utils",
+      "xclip",
+      "xsel",
+      "spice-vdagent"
     ]
   },
   "customizations": {
-    "services": ["gdm"]
+    "services": [
+      "gdm",
+      "NetworkManager"
+    ],
+    "users": [
+      {
+        "name": "live",
+        "groups": [
+          "wheel",
+          "video",
+          "audio",
+          "networkmanager",
+          "autologin"
+        ],
+        "password": "live"
+      }
+    ]
   },
   "system_config": {
     "files": [

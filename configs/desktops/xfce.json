@@ -42,7 +42,13 @@
     "users": [
       {
         "name": "live",
-        "groups": ["wheel", "video", "audio", "networkmanager"],
+        "groups": [
+          "wheel",
+          "video",
+          "audio",
+          "networkmanager",
+          "autologin"
+        ],
         "password": "live"
       }
     ]

@@ -21,6 +21,7 @@
         "vim",
         "terminus-font",
         "base-devel",
+        "xdg-user-dirs",
         "bash-completion",
         "git",
         "openssh",

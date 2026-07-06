@@ -1,17 +1,45 @@
 {
   "platform_specific": {
     "packages": [
-      { "name": "xorg-server" },
-      { "name": "mate" },
-      { "name": "mate-extra" },
-      { "name": "lightdm" },
-      { "name": "lightdm-gtk-greeter" },
-      { "name": "firefox" },
-      { "name": "alacritty" }
+      "mate",
+      "mate-extra",
+      "xorg-server",
+      "lightdm",
+      "lightdm-gtk-greeter",
+      "firefox",
+      "networkmanager",
+      "network-manager-applet",
+      "pipewire",
+      "pipewire-pulse",
+      "pipewire-alsa",
+      "wireplumber",
+      "alsa-utils",
+      "bluez",
+      "bluez-utils",
+      "blueman",
+      "xclip",
+      "xsel",
+      "spice-vdagent"
     ]
   },
   "customizations": {
-    "services": ["lightdm"]
+    "services": [
+      "lightdm",
+      "NetworkManager"
+    ],
+    "users": [
+      {
+        "name": "live",
+        "groups": [
+          "wheel",
+          "video",
+          "audio",
+          "networkmanager",
+          "autologin"
+        ],
+        "password": "live"
+      }
+    ]
   },
   "system_config": {
     "files": [
@@ -25,6 +53,9 @@
         "dest": "/etc/lightdm/lightdm-gtk-greeter.conf",
         "mode": "0644"
       }
+    ],
+    "commands": [
+      "sed -i 's/user-session=xfce/user-session=mate/' /etc/lightdm/lightdm.conf"
     ]
   }
 }

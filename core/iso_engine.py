@@ -652,9 +652,6 @@ class ArchEngine(BaseEngine):
             fstab_result = chroot_manager.generate_fstab()
             self.logger.debug(f"Generated fstab: {fstab_result}")
 
-        # Generate initramfs before applying customizations
-        self._generate_initramfs()
-
         # Apply full customization graph from config (users, services, files, locale, etc.).
         if chroot_manager:
             configurator = SystemConfigurator(chroot=chroot_manager)
@@ -663,6 +660,8 @@ class ArchEngine(BaseEngine):
             self.logger.info(
                 "Live ISO customizations applied (users/services/files/autologin settings)."
             )
+            # Generate initramfs after applying customizations (so the generated /etc/mkinitcpio.conf is used)
+            self._generate_initramfs()
             return
 
         # Legacy fallback: keep service enabling if no chroot manager is present.

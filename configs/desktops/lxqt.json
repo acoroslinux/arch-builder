@@ -1,16 +1,44 @@
 {
   "platform_specific": {
     "packages": [
-      { "name": "xorg-server" },
-      { "name": "lxqt" },
-      { "name": "breeze-icons" },
-      { "name": "sddm" },
-      { "name": "firefox" },
-      { "name": "alacritty" }
+      "lxqt",
+      "lxqt-connman-applet",
+      "pcmanfm-qt",
+      "qterminal",
+      "xorg-server",
+      "sddm",
+      "firefox",
+      "networkmanager",
+      "pipewire",
+      "pipewire-pulse",
+      "pipewire-alsa",
+      "wireplumber",
+      "alsa-utils",
+      "bluez",
+      "bluez-utils",
+      "xclip",
+      "xsel",
+      "spice-vdagent"
     ]
   },
   "customizations": {
-    "services": ["sddm"]
+    "services": [
+      "sddm",
+      "NetworkManager"
+    ],
+    "users": [
+      {
+        "name": "live",
+        "groups": [
+          "wheel",
+          "video",
+          "audio",
+          "networkmanager",
+          "autologin"
+        ],
+        "password": "live"
+      }
+    ]
   },
   "system_config": {
     "files": [

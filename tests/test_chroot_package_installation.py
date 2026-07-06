@@ -72,8 +72,16 @@ class TestChrootPackageInstallation(unittest.TestCase):
             chroot_path="/tmp/real-chroot"
         )
         manager.run_command.assert_any_call(
+            ["bash", "-lc", "mkdir -p /etc/sudoers.d && echo 'aurbuilder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/aurbuilder"],
+            chroot_path="/tmp/real-chroot"
+        )
+        manager.run_command.assert_any_call(
             ["runuser", "-u", "aurbuilder", "--", "bash", "-lc", 
-             "set -e; cd /tmp; rm -rf yay-bin; git clone https://aur.archlinux.org/yay-bin.git; cd yay-bin; makepkg -si --noconfirm --needed "],
+             "set -e; cd /tmp; rm -rf yay-bin; git clone https://aur.archlinux.org/yay-bin.git; cd yay-bin; makepkg -s --noconfirm --needed"],
+            chroot_path="/tmp/real-chroot"
+        )
+        manager.run_command.assert_any_call(
+            ["bash", "-lc", "set -e; cd /tmp/yay-bin; pacman -U --noconfirm --needed  *.pkg.tar.zst"],
             chroot_path="/tmp/real-chroot"
         )
 

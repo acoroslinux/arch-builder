@@ -1,16 +1,46 @@
 {
   "platform_specific": {
     "packages": [
-      { "name": "xorg-server" },
-      { "name": "cinnamon" },
-      { "name": "lightdm" },
-      { "name": "lightdm-gtk-greeter" },
-      { "name": "firefox" },
-      { "name": "alacritty" }
+      "cinnamon",
+      "xorg-server",
+      "lightdm",
+      "lightdm-gtk-greeter",
+      "konsole",
+      "nemo",
+      "firefox",
+      "networkmanager",
+      "network-manager-applet",
+      "pipewire",
+      "pipewire-pulse",
+      "pipewire-alsa",
+      "wireplumber",
+      "alsa-utils",
+      "bluez",
+      "bluez-utils",
+      "blueman",
+      "xclip",
+      "xsel",
+      "spice-vdagent"
     ]
   },
   "customizations": {
-    "services": ["lightdm"]
+    "services": [
+      "lightdm",
+      "NetworkManager"
+    ],
+    "users": [
+      {
+        "name": "live",
+        "groups": [
+          "wheel",
+          "video",
+          "audio",
+          "networkmanager",
+          "autologin"
+        ],
+        "password": "live"
+      }
+    ]
   },
   "system_config": {
     "files": [
@@ -24,6 +54,9 @@
         "dest": "/etc/lightdm/lightdm-gtk-greeter.conf",
         "mode": "0644"
       }
+    ],
+    "commands": [
+      "sed -i 's/user-session=xfce/user-session=cinnamon/' /etc/lightdm/lightdm.conf"
     ]
   }
 }
