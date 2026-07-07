@@ -8,7 +8,7 @@
         ],
         "binaries": [
             "fsck",
-            "fatfsck"
+            "fsck.fat"
         ],
         "hooks": [
             "base",

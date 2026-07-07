@@ -248,11 +248,12 @@ class ArchEngine(BaseEngine):
         )
 
         # In isolated mode, ensure /airootfs exists inside the build chroot for package installation
-        if not force_isolated and hasattr(self.toolchain, "build_chroot"):
-            iso_rootfs = Path(self.toolchain.build_chroot) / "airootfs"
+        build_chroot = getattr(self.toolchain, "build_chroot", None)
+        if not force_isolated and build_chroot:
+            iso_rootfs = Path(build_chroot) / "airootfs"
             if iso_rootfs.exists():
                 shutil.rmtree(iso_rootfs, ignore_errors=True)
-            (Path(self.toolchain.build_chroot) / "airootfs").mkdir(parents=True, exist_ok=True)
+            (Path(build_chroot) / "airootfs").mkdir(parents=True, exist_ok=True)
             
         # Ensure boot mountpoint exists
         self._boot_mountpoint()
@@ -591,7 +592,7 @@ class ArchEngine(BaseEngine):
 
         # Get the run path (build chroot for isolated mode)
         run_path = None
-        if self.toolchain and hasattr(self.toolchain, "build_chroot"):
+        if self.toolchain and getattr(self.toolchain, "build_chroot", None):
             run_path = str(self.toolchain.build_chroot)
 
         if not run_path:

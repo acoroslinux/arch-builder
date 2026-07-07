@@ -246,6 +246,27 @@ class ChrootManager:
         if not local_paths:
             return
 
+        use_host = not self.toolchain or getattr(self.toolchain, "use_host", True)
+
+        if use_host:
+            # Host mode: run pacman -U directly on the host targeting the chroot
+            command = [
+                "sudo",
+                "pacman",
+                "-U",
+                "--noconfirm",
+                "--needed",
+                "--root",
+                str(self._workdir),
+                *local_paths,
+            ]
+            self.logger.info(f"[host] Installing local packages: {' '.join(command)}")
+            try:
+                subprocess.run(command, check=True, capture_output=True, text=True)
+            except subprocess.CalledProcessError as e:
+                raise ChrootManagerError(f"Host pacman -U failed: {e.stderr}")
+            return
+
         staging_host_dir = Path(self._workdir) / "tmp" / "custom-packages"
         staging_host_dir.mkdir(parents=True, exist_ok=True)
 
@@ -273,7 +294,81 @@ class ChrootManager:
         if not aur_packages:
             return
 
-        # When in isolated mode, run in the bootstrap where pacman exists
+        use_host = not self.toolchain or getattr(self.toolchain, "use_host", True)
+
+        if use_host:
+            # Prepare build prerequisites on host
+            subprocess.run(["sudo", "pacman", "-S", "--needed", "--noconfirm", "git", "base-devel"], check=True)
+            
+            build_user = os.environ.get("SUDO_USER")
+            if not build_user or build_user == "root":
+                if subprocess.run(["id", "-u", "aurbuilder"], capture_output=True).returncode != 0:
+                    subprocess.run(["sudo", "useradd", "-m", "aurbuilder"], check=True)
+                build_user = "aurbuilder"
+
+            # Grant passwordless sudo to aurbuilder on host
+            if build_user == "aurbuilder":
+                subprocess.run([
+                    "sudo", "sh", "-c",
+                    "mkdir -p /etc/sudoers.d && echo 'aurbuilder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/aurbuilder"
+                ], check=True)
+
+            for pkg in aur_packages:
+                if not re.match(r"^[a-zA-Z0-9@._+-]+$", pkg):
+                    raise ChrootManagerError(f"Invalid AUR package name: {pkg}")
+
+                # Step 1: Build on host as build_user
+                build_dir = Path("/tmp/aur-build") / pkg
+                if build_dir.exists():
+                    shutil.rmtree(build_dir, ignore_errors=True)
+                build_dir.mkdir(parents=True, exist_ok=True)
+                
+                subprocess.run(["sudo", "chown", "-R", f"{build_user}:{build_user}", "/tmp/aur-build"], check=True)
+
+                build_cmd = (
+                    "set -e; "
+                    f"cd /tmp/aur-build; "
+                    f"git clone https://aur.archlinux.org/{pkg}.git; "
+                    f"cd {pkg}; makepkg -s --noconfirm --needed"
+                )
+                
+                # Run the build command as the build_user
+                subprocess.run(
+                    ["runuser", "-u", build_user, "--", "bash", "-lc", build_cmd],
+                    check=True, capture_output=True, text=True
+                )
+
+                # Find the built packages
+                pkg_files = list(build_dir.glob("*.pkg.tar.zst"))
+                if not pkg_files:
+                    raise ChrootManagerError(f"No built package files found for {pkg}")
+
+                # Step 2: Install on host first (so subsequent AUR packages can find it as a dependency)
+                host_cmd = [
+                    "sudo",
+                    "pacman",
+                    "-U",
+                    "--noconfirm",
+                    "--needed",
+                ] + [str(pf) for pf in pkg_files]
+                self.logger.info(f"[host] Installing dependency on host: {' '.join(host_cmd)}")
+                subprocess.run(host_cmd, check=True, capture_output=True, text=True)
+
+                # Step 3: Install into the target rootfs using pacman -U on host as root
+                target_cmd = [
+                    "sudo",
+                    "pacman",
+                    "-U",
+                    "--noconfirm",
+                    "--needed",
+                    "--root",
+                    str(self._workdir),
+                ] + [str(pf) for pf in pkg_files]
+                self.logger.info(f"[host] Installing package in target rootfs: {' '.join(target_cmd)}")
+                subprocess.run(target_cmd, check=True, capture_output=True, text=True)
+            return
+
+        # Isolated mode
         run_path = self.toolchain.build_chroot if self.toolchain and getattr(self.toolchain, "build_chroot", None) else self._workdir
 
         iso_rootfs = getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
@@ -319,12 +414,22 @@ class ChrootManager:
                 chroot_path=str(run_path),
             )
 
-            # Step 2: Install the built package file(s) into the target rootfs as root
-            install_cmd = (
-                "set -e; "
-                f"cd /tmp/{pkg}; "
-                f"pacman -U --noconfirm --needed {' '.join(root_flag)} *.pkg.tar.zst"
-            )
+            # Step 2: Install the built package file(s) into the target rootfs as root.
+            # If we are installing into a separate rootfs (isolated mode), we must also
+            # install it in the build host so subsequent AUR packages can find it as a dependency.
+            if root_flag:
+                install_cmd = (
+                    "set -e; "
+                    f"cd /tmp/{pkg}; "
+                    "pacman -U --noconfirm --needed *.pkg.tar.zst; "
+                    f"pacman -U --noconfirm --needed {' '.join(root_flag)} *.pkg.tar.zst"
+                )
+            else:
+                install_cmd = (
+                    "set -e; "
+                    f"cd /tmp/{pkg}; "
+                    f"pacman -U --noconfirm --needed *.pkg.tar.zst"
+                )
             self.run_command(
                 ["bash", "-lc", install_cmd],
                 chroot_path=str(run_path),
@@ -365,7 +470,44 @@ class ChrootManager:
             return
 
         last_error: Optional[Exception] = None
-        # When in isolated mode, run pacman in the bootstrap (where it's installed)
+        use_host = not self.toolchain or getattr(self.toolchain, "use_host", True)
+
+        if use_host:
+            # Host mode: run pacman directly on the host targeting the chroot using --root
+            for attempt in range(1, max(1, attempts) + 1):
+                try:
+                    command = [
+                        "sudo",
+                        "pacman",
+                        "-S",
+                        "--needed",
+                        "--noconfirm",
+                        "--disable-download-timeout",
+                        "--root",
+                        str(self._workdir),
+                        *official_packages,
+                    ]
+                    self.logger.info(f"[host] Running: {' '.join(command)}")
+                    subprocess.run(command, check=True, capture_output=True, text=True)
+                    return
+                except subprocess.CalledProcessError as e:
+                    last_error = e
+                    self.logger.warning(
+                        f"Host package install attempt {attempt}/{attempts} failed: {e.stderr}"
+                    )
+                    if attempt < attempts:
+                        try:
+                            subprocess.run(
+                                ["sudo", "pacman", "-Syy", "--noconfirm", "--root", str(self._workdir)],
+                                check=True, capture_output=True
+                            )
+                        except Exception:
+                            pass
+            if last_error:
+                raise ChrootManagerError(f"Host pacman failed: {last_error.stderr}")
+            return
+
+        # Isolated mode
         run_path = self.toolchain.build_chroot if self.toolchain and getattr(self.toolchain, "build_chroot", None) else self._workdir
 
         # Determine if we need to target a separate ISO rootfs (airootfs) instead of

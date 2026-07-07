@@ -220,6 +220,8 @@ class BuildOrchestrator:
             diagnostics_log_path=diagnostics_log_path,
             pacman_cache_dir=pacman_cache_path,
         )
+        if self.chroot:
+            self.chroot.toolchain = self.toolchain
         try:
             self.toolchain.setup()
         except Exception as e:

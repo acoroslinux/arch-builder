@@ -33,8 +33,12 @@ class TestChrootPackageInstallation(unittest.TestCase):
         mock_is_file.return_value = True
         mock_isdir.return_value = True
         
-        # Initialize ChrootManager in real mode
-        manager = ChrootManager(workdir="/tmp/real-chroot", mode="real")
+        # Initialize ChrootManager in real mode with isolated toolchain simulation
+        mock_toolchain = MagicMock()
+        mock_toolchain.use_host = False
+        mock_toolchain.build_chroot = "/tmp/real-chroot"
+        mock_toolchain.iso_rootfs_path = None
+        manager = ChrootManager(workdir="/tmp/real-chroot", mode="real", toolchain=mock_toolchain)
         
         # Mock run_command and mounting to verify internal commands called
         manager.run_command = MagicMock(return_value="ok")
@@ -81,12 +85,16 @@ class TestChrootPackageInstallation(unittest.TestCase):
             chroot_path="/tmp/real-chroot"
         )
         manager.run_command.assert_any_call(
-            ["bash", "-lc", "set -e; cd /tmp/yay-bin; pacman -U --noconfirm --needed  *.pkg.tar.zst"],
+            ["bash", "-lc", "set -e; cd /tmp/yay-bin; pacman -U --noconfirm --needed *.pkg.tar.zst"],
             chroot_path="/tmp/real-chroot"
         )
 
     def test_aur_package_name_validation(self):
-        manager = ChrootManager(workdir="/tmp/real-chroot", mode="real")
+        mock_toolchain = MagicMock()
+        mock_toolchain.use_host = False
+        mock_toolchain.build_chroot = "/tmp/real-chroot"
+        mock_toolchain.iso_rootfs_path = None
+        manager = ChrootManager(workdir="/tmp/real-chroot", mode="real", toolchain=mock_toolchain)
         manager.run_command = MagicMock(return_value="ok")
         manager._mount_essential_filesystems = MagicMock()
         manager._unmount_essential_filesystems = MagicMock()

@@ -16,6 +16,7 @@ Package profiles usually provide either:
 | `configs/packages/bluetooth.json` | Bluetooth support bundle. | `bluez`, `bluez-utils`, `blueman`. |
 | `configs/packages/containers.json` | Container tooling profile. | `docker`, `docker-compose`, `podman`, `buildah`. |
 | `configs/packages/custom-user.json` | Mixed official/local/AUR package sourcing example. | Official `calamares`, local package dir `configs/custom-packages/local`, AUR `calamares-git`. |
+| `configs/packages/aur-packages.json` | Custom AUR packages profile. | `yay-bin`, `pamac-aur`. |
 | `configs/packages/dev-tools.json` | General development toolchain. | `base-devel`, `git`, `cmake`, `ninja`, `make`, `gcc`, `gdb`, `ripgrep`. |
 | `configs/packages/display-manager.json` | Display-manager helper bundle. | `sddm`, `xf86-video-intel`. |
 | `configs/packages/filesystems.json` | Filesystem tooling bundle. | `btrfs-progs`, `xfsprogs`, `exfatprogs`, `dosfstools`, `ntfs-3g`. |

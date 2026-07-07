@@ -4,6 +4,7 @@
   "package_sources": {
     "aur": [
       "yay-bin",
+      "libpamac-aur",
       "pamac-aur"
     ]
   },

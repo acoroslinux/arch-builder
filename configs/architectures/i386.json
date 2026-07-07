@@ -39,6 +39,7 @@
       { "name": "mtools" },
       { "name": "pv" },
       { "name": "grub" },
+      { "name": "xdg-user-dirs" },
       { "name": "networkmanager" },
       { "name": "sudo" },
       { "name": "nano" },

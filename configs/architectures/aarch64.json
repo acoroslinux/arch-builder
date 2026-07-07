@@ -40,6 +40,7 @@
       { "name": "pv" },
       { "name": "grub" },
       { "name": "efibootmgr" },
+      { "name": "xdg-user-dirs" },
       { "name": "networkmanager" },
       { "name": "sudo" },
       { "name": "nano" },

@@ -225,7 +225,7 @@ python3 -m sphinx -b html docs docs/_build/html
 
 ## Troubleshooting
 
-## Build falls back from configured workdir
+### Build falls back from configured workdir
 
 If the configured workdir is not writable, Arch-Builder automatically falls back to:
 
@@ -233,7 +233,7 @@ If the configured workdir is not writable, Arch-Builder automatically falls back
 arch-builder/fallback/<architecture>/
 ```
 
-## Real build fails on a non-Arch host
+### Real build fails on a non-Arch host
 
 Use:
 
@@ -241,13 +241,21 @@ Use:
 sudo python3 cli.py x86_64 --mode real --force-isolated-toolchain
 ```
 
-## pacman bootstrap is flaky or slow
+### pacman bootstrap is flaky or slow
 
 Use retries and diagnostics:
 
 ```bash
 sudo python3 cli.py x86_64 --mode real --toolchain-debug --toolchain-pacman-retries 4
 ```
+
+### LightDM loops or crashes back to login screen
+
+If the booted live ISO reaches the LightDM login screen but loops back or requests a password after typing `live`:
+1. **Verify Home Ownership:** Ensure the live user's home directory has correct ownership: `sudo chown -R live:live /home/live`. The `UserAction` customizer automatically ensures this in new builds.
+2. **Verify Session Wrapper:** Ensure `/etc/lightdm/lightdm.conf` has the session-wrapper defined: `session-wrapper=/etc/lightdm/Xsession` under the `[Seat:*]` section.
+3. **Verify Session desktop file:** Check that `/usr/share/xsessions/<session>.desktop` exists for the configured session name in `/etc/lightdm/lightdm.conf`.
+4. **Inspect Logs:** Switch to `TTY2` (`Ctrl + Alt + F2`), log in, and check `~/.xsession-errors` or `/var/log/lightdm/lightdm.log`.
 
 ## License and Status
 

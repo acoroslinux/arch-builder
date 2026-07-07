@@ -48,6 +48,7 @@
         "pipewire-alsa",
         "alsa-utils",
         "avahi",
+        "nss-mdns",
         "cups",
         "system-config-printer",
         "wayland"
