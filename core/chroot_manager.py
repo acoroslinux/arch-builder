@@ -192,11 +192,14 @@ class ChrootManager:
                 try:
                     # Execute directly through chroot with argument-safe process invocation.
                     full_command = ["sudo", "chroot", effective_chroot, *command_list]
+                    logging.getLogger("chroot").info(
+                        f"[run_command] Executing command inside chroot: {cmd_str}"
+                    )
                     result = subprocess.run(
                         full_command, capture_output=True, check=True, text=True
                     )
                     logging.getLogger("chroot").info(
-                        "[run_command] Command executed successfully inside chroot."
+                        f"[run_command] Command '{cmd_str}' executed successfully inside chroot."
                     )
                     return result.stdout
                 finally:
@@ -211,7 +214,13 @@ class ChrootManager:
                     "Chroot environment is unavailable or misconfigured on the host."
                 )
         except subprocess.CalledProcessError as e:
-            error_msg = f"Failed to execute command '{command_list[0]}'. Error status:\n{e.stderr}"
+            output_details = []
+            if e.stdout and e.stdout.strip():
+                output_details.append(f"STDOUT:\n{e.stdout.strip()}")
+            if e.stderr and e.stderr.strip():
+                output_details.append(f"STDERR:\n{e.stderr.strip()}")
+            details_str = "\n".join(output_details) if output_details else "No output details available."
+            error_msg = f"Failed to execute command '{command_list[0]}'. Error status:\n{details_str}"
             logging.getLogger("chroot").error(error_msg)
             raise ChrootManagerError(error_msg)
         except Exception as e:
@@ -421,14 +430,14 @@ class ChrootManager:
                 install_cmd = (
                     "set -e; "
                     f"cd /tmp/{pkg}; "
-                    "pacman -U --noconfirm --needed *.pkg.tar.zst; "
-                    f"pacman -U --noconfirm --needed {' '.join(root_flag)} *.pkg.tar.zst"
+                    "yes | pacman -U --needed *.pkg.tar.zst; "
+                    f"yes | pacman -U --needed {' '.join(root_flag)} *.pkg.tar.zst"
                 )
             else:
                 install_cmd = (
                     "set -e; "
                     f"cd /tmp/{pkg}; "
-                    f"pacman -U --noconfirm --needed *.pkg.tar.zst"
+                    f"yes | pacman -U --needed *.pkg.tar.zst"
                 )
             self.run_command(
                 ["bash", "-lc", install_cmd],

@@ -85,7 +85,7 @@ class TestChrootPackageInstallation(unittest.TestCase):
             chroot_path="/tmp/real-chroot"
         )
         manager.run_command.assert_any_call(
-            ["bash", "-lc", "set -e; cd /tmp/yay-bin; pacman -U --noconfirm --needed *.pkg.tar.zst"],
+            ["bash", "-lc", "set -e; cd /tmp/yay-bin; yes | pacman -U --needed *.pkg.tar.zst"],
             chroot_path="/tmp/real-chroot"
         )
 
