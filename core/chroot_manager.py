@@ -267,7 +267,8 @@ class ChrootManager:
                 raise ChrootManagerError(f"Host pacman -U failed: {e.stderr}")
             return
 
-        staging_host_dir = Path(self._workdir) / "tmp" / "custom-packages"
+        run_path = self.toolchain.build_chroot if self.toolchain and getattr(self.toolchain, "build_chroot", None) else self._workdir
+        staging_host_dir = Path(run_path) / "tmp" / "custom-packages"
         staging_host_dir.mkdir(parents=True, exist_ok=True)
 
         iso_rootfs = getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
@@ -287,7 +288,6 @@ class ChrootManager:
         if staged_targets:
             # Install into airootfs when in isolated mode, otherwise into build chroot
             command = ["pacman", "-U", "--noconfirm", *root_flag, *staged_targets]
-            run_path = self.toolchain.build_chroot if self.toolchain and getattr(self.toolchain, "build_chroot", None) else self._workdir
             self.run_command(command, chroot_path=str(run_path))
 
     def _install_aur_packages_real(self, aur_packages: List[str]) -> None:
