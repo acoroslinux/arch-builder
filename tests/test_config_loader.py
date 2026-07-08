@@ -30,6 +30,9 @@ class TestGlobalConfigLoader(unittest.TestCase):
         (self.test_dir / "kernels/linux-lts.json").write_text(
             '{"platform_specific": {"base_kernel": "linux-lts", "initramfs": "initramfs-linux-lts.img"}}'
         )
+        (self.test_dir / "packages/base.json").write_text(
+            '{"packages": ["git", "curl"]}'
+        )
         (self.test_dir / "packages/networking.json").write_text(
             '{"packages": ["networkmanager", "resolvconf"]}'
         )
@@ -50,6 +53,12 @@ class TestGlobalConfigLoader(unittest.TestCase):
         config = assembler.assemble("x86_64")
         self.assertIsInstance(config, Config)
         self.assertEqual(config.get("platform_specific.architecture"), "x86_64")
+
+    def test_assemble_always_loads_base_packages(self):
+        assembler = ConfigAssembler(str(self.test_dir))
+        config = assembler.assemble("x86_64")
+        self.assertIn("git", config.get("packages", []))
+        self.assertIn("curl", config.get("packages", []))
 
     def test_assemble_with_desktop_and_package_profile(self):
         assembler = ConfigAssembler(str(self.test_dir))

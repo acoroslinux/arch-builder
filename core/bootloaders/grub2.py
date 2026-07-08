@@ -82,7 +82,7 @@ class Grub2Bootloader:
         arch = self._cfg_get("platform_specific.architecture", "x86_64")
         
         # FIX: Forced rw and systemd parameters to bypass locked root account on boot failure
-        cmdline = "loglevel=4 quiet rw systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
+        cmdline = "loglevel=4 quiet splash rw systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
         archiso_uuid = self._cfg_get("system.iso_uuid", "ARCHISO_UUID_PLACEHOLDER")
 
         # Dynamically build initrd line based on available microcode files

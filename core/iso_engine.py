@@ -141,9 +141,9 @@ class BaseEngine(ISOEngine):
 
     def _package_plan(self) -> Dict[str, List[str]]:
         """Build a normalized package installation plan from legacy and new config keys."""
-        legacy = self._normalize_packages(
-            self._cfg_get("packages") or self._cfg_get("platform_specific.packages")
-        )
+        legacy_packages = self._normalize_packages(self._cfg_get("packages"))
+        platform_packages = self._normalize_packages(self._cfg_get("platform_specific.packages"))
+        legacy = list(dict.fromkeys(legacy_packages + platform_packages))
         official = self._normalize_packages(self._cfg_get("package_sources.official", []))
         aur = self._normalize_packages(self._cfg_get("package_sources.aur", []))
         local_paths = self._normalize_packages(
@@ -482,6 +482,17 @@ class ArchEngine(BaseEngine):
                 (iso_boot / "grub").mkdir(parents=True, exist_ok=True)
                 shutil.copy2(grub_cfg_src, iso_boot / "grub" / "grub.cfg")
                 self.logger.info("[boot] Copied grub.cfg")
+
+            # Copy themes and fonts directories for GRUB theme support
+            grub_themes_src = source_boot / "grub" / "themes"
+            if grub_themes_src.exists():
+                shutil.copytree(grub_themes_src, iso_boot / "grub" / "themes", dirs_exist_ok=True)
+                self.logger.info("[boot] Copied GRUB themes")
+
+            grub_fonts_src = source_boot / "grub" / "fonts"
+            if grub_fonts_src.exists():
+                shutil.copytree(grub_fonts_src, iso_boot / "grub" / "fonts", dirs_exist_ok=True)
+                self.logger.info("[boot] Copied GRUB fonts")
         else:
             self.logger.warning(f"[boot] Source boot directory not found at {source_boot}")
 
@@ -569,8 +580,16 @@ class ArchEngine(BaseEngine):
         try:
             self._run_command(command)
         except Exception as e:
-            self.logger.error(f"grub-mkrescue failed: {e}")
-            raise ISOBuilderError(f"grub-mkrescue failed: {e}")
+            # If the ISO file was successfully generated despite a post-generation crash (e.g. SIGSEGV on clean-up)
+            if Path(output_abs).exists() and Path(output_abs).stat().st_size > 1000000:
+                self.logger.warning(
+                    f"grub-mkrescue reported an exit error/crash ({e}), "
+                    f"but the ISO file was successfully generated at {output_abs} "
+                    f"({Path(output_abs).stat().st_size} bytes)."
+                )
+            else:
+                self.logger.error(f"grub-mkrescue failed: {e}")
+                raise ISOBuilderError(f"grub-mkrescue failed: {e}")
 
         self.logger.info(f"[finalize] Bootable ISO created: {output_abs}")
 

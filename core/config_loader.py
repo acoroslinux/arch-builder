@@ -125,23 +125,32 @@ class ConfigAssembler:
         platform["initramfs"] = f"initramfs-{kernel_name}.img"
 
         kernel_candidates = {"linux", "linux-lts", "linux-zen", "linux-hardened"}
-        packages = platform.get("packages")
-        if not isinstance(packages, list):
-            return
 
-        replaced = False
-        for idx, item in enumerate(packages):
-            if isinstance(item, dict):
-                name = item.get("name")
-                if name in kernel_candidates:
-                    packages[idx] = {"name": kernel_name}
+        def replace_kernel_in_list(pkg_list):
+            replaced = False
+            for idx, item in enumerate(pkg_list):
+                if isinstance(item, dict):
+                    name = item.get("name")
+                    if name in kernel_candidates:
+                        pkg_list[idx] = {"name": kernel_name}
+                        replaced = True
+                elif isinstance(item, str) and item in kernel_candidates:
+                    pkg_list[idx] = kernel_name
                     replaced = True
-            elif isinstance(item, str) and item in kernel_candidates:
-                packages[idx] = kernel_name
-                replaced = True
+            if not replaced:
+                if pkg_list and isinstance(pkg_list[0], dict):
+                    pkg_list.append({"name": kernel_name})
+                else:
+                    pkg_list.append(kernel_name)
+            return replaced
 
-        if not replaced:
-            packages.append({"name": kernel_name})
+        platform_pkgs = platform.get("packages")
+        if isinstance(platform_pkgs, list):
+            replace_kernel_in_list(platform_pkgs)
+
+        root_pkgs = self.master_config.get("packages")
+        if isinstance(root_pkgs, list):
+            replace_kernel_in_list(root_pkgs)
 
     def _apply_live_user_override(
         self, live_user: str, live_groups: Optional[List[str]] = None
@@ -281,7 +290,14 @@ class ConfigAssembler:
             if bootloader_data:
                 self._deep_merge(self.master_config, bootloader_data)
 
+        # Always load the base package profile as it is common to all builds.
+        base_package_data = self._load_optional_profile("packages", "base")
+        if base_package_data:
+            self._deep_merge(self.master_config, base_package_data)
+
         for profile_name in package_profiles or []:
+            if profile_name == "base":
+                continue
             package_data = self._load_optional_profile("packages", profile_name)
             if package_data:
                 self._deep_merge(self.master_config, package_data)

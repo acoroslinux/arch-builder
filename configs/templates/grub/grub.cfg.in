@@ -9,11 +9,20 @@ insmod fat
 insmod iso9660
 
 # Use graphics-mode output
+insmod png
+insmod jpeg
+insmod gfxmenu
+
 if loadfont "${prefix}/fonts/unicode.pf2" ; then
     insmod all_video
     set gfxmode="auto"
     terminal_input console
     terminal_output gfxterm
+
+    # Load modern theme if available
+    if [ -f "${prefix}/themes/modern/theme.txt" ]; then
+        set theme="${prefix}/themes/modern/theme.txt"
+    fi
 fi
 
 # Get a human readable platform identifier

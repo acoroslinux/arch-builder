@@ -2,9 +2,7 @@
   "name": "custom-user",
   "description": "User custom package sources (official repo + local package files + AUR).",
   "package_sources": {
-    "official": [
-      "calamares"
-    ],
+    "official": [],
     "local_dir": "configs/custom-packages/local",
     "local_glob": "*.pkg.tar*",
     "aur": [

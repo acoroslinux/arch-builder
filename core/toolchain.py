@@ -132,6 +132,9 @@ class ToolchainManager:
         bootstrap_url = "https://mirror.rackspace.com/archlinux/iso/latest/archlinux-bootstrap-x86_64.tar.zst"
         tarball = self.toolchain_dir.parent / "archlinux-bootstrap.tar.zst"
 
+        if tarball.exists() and tarball.stat().st_size == 0:
+            tarball.unlink()
+
         if not tarball.exists():
             logger.info(f"[TOOLCHAIN] Downloading Arch Linux bootstrap: {bootstrap_url}")
             self._diag(f"download bootstrap {bootstrap_url} -> {tarball}")
@@ -141,8 +144,16 @@ class ToolchainManager:
 
         rootfs_dir = self.toolchain_dir / "root.x86_64"
         if rootfs_dir.exists():
-            # Ensure every new build starts from a clean bootstrap rootfs.
-            # Reusable cache lives outside this directory.
+            # Unmount project root and other mounts first to prevent recursive deletion of host project files!
+            from core.path_utils import project_root
+            proj_root = project_root().resolve()
+            chroot_proj_root = rootfs_dir / proj_root.relative_to("/")
+            if chroot_proj_root.exists():
+                try:
+                    self._run_privileged(["umount", "-l", str(chroot_proj_root)], check=False)
+                except Exception:
+                    pass
+
             for mount_name in ["var/cache/pacman/pkg", "dev", "sys", "proc"]:
                 target = rootfs_dir / mount_name
                 if target.exists():

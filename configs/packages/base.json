@@ -49,10 +49,11 @@
         "alsa-utils",
         "avahi",
         "nss-mdns",
+        
         "cups",
         "system-config-printer",
-        "wayland"
-
+        "wayland",
+        "plymouth"
     ],
     "dependencies": ["pacman"]
 }
