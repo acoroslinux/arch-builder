@@ -5,7 +5,8 @@
     "official": [],
     "local_dir": "configs/custom-packages/local",
     "local_glob": "*.pkg.tar*",
-    "aur": [
+    "aur": [],
+    "disabled_aur": [
       "calamares-git"
     ]
   },

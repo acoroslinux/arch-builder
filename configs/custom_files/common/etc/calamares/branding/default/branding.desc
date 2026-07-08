@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: no
+# SPDX-License-Identifier: CC0-1.0
+---
+componentName:   default
+
+strings:
+    productName:         "Arch Modern"
+    shortProductName:    "ArchModern"
+    version:             "2026.07"
+    shortVersion:        "2026.07"
+    versionedName:       "Arch Modern 2026.07"
+    shortVersionedName:  "ArchModern 2026.07"
+    installLabel:        "Install Arch Modern"
+    productUrl:          "https://github.com/acoroslinux/arch-builder"
+    supportUrl:          "https://github.com/acoroslinux/arch-builder/issues"
+    knownIssuesUrl:      "https://github.com/acoroslinux/arch-builder/issues"
+    releaseNotesUrl:     "https://github.com/acoroslinux/arch-builder/releases"
+
+images:
+    productLogo:         "logo.png"
+    productIcon:         "logo.png"
+    welcomeImage:        "logo.png"
+
+slideshow:               []
+
+style:
+    sidebarBackground:    "#1A1C1E"
+    sidebarText:          "#F0F0F0"
+    sidebarTextSelect:    "#47A7F5"
+    sidebarTextHighlight: "#9E00FF"

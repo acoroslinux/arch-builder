@@ -1,31 +1,58 @@
 {
   "platform_specific": {
     "packages": [
-      { "name": "xorg-server" },
-      { "name": "xfce4" },
-      { "name": "xfce4-goodies" },
-      { "name": "lightdm" },
-      { "name": "lightdm-gtk-greeter" },
-      { "name": "firefox" },
-      { "name": "libreoffice-fresh" },
-      { "name": "thunderbird" },
-      { "name": "evince" },
-      { "name": "file-roller" }
+      {
+        "name": "xorg-server"
+      },
+      {
+        "name": "xfce4"
+      },
+      {
+        "name": "xfce4-goodies"
+      },
+      {
+        "name": "lightdm"
+      },
+      {
+        "name": "lightdm-gtk-greeter"
+      },
+      {
+        "name": "firefox"
+      },
+      {
+        "name": "libreoffice-fresh"
+      },
+      {
+        "name": "thunderbird"
+      },
+      {
+        "name": "evince"
+      },
+      {
+        "name": "file-roller"
+      }
     ]
   },
   "customizations": {
-    "services": ["lightdm"]
+    "services": [
+      "lightdm"
+    ]
   },
   "system_config": {
     "files": [
       {
-        "src": "configs/custom_files/etc/lightdm/lightdm.conf",
+        "src": "configs/custom_files/desktops/xfce/etc/lightdm/lightdm.conf",
         "dest": "/etc/lightdm/lightdm.conf",
         "mode": "0644"
       },
       {
-        "src": "configs/custom_files/etc/lightdm/lightdm-gtk-greeter.conf",
+        "src": "configs/custom_files/desktops/xfce/etc/lightdm/lightdm-gtk-greeter.conf",
         "dest": "/etc/lightdm/lightdm-gtk-greeter.conf",
+        "mode": "0644"
+      },
+      {
+        "src": "configs/custom_files/desktops/workstation-office/etc/skel/.bashrc",
+        "dest": "/etc/skel/.bashrc",
         "mode": "0644"
       }
     ]

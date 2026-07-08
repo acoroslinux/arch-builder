@@ -55,6 +55,12 @@ class OverlayAction(SystemAction):
                 subprocess.run(
                     ["cp", "-aT", str(overlay_path), str(chroot_path)], check=True
                 )
+                
+                # Fix ownership of copied system directories to be owned by root (0:0)
+                chroot.run_command("chown -R 0:0 /etc 2>/dev/null || true")
+                chroot.run_command("chown -R 0:0 /usr/local 2>/dev/null || true")
+                chroot.run_command("chown -R 0:0 /boot 2>/dev/null || true")
+                chroot.run_command("chmod 4755 /usr/bin/sudo 2>/dev/null || true")
             except Exception as e:
                 logger.error(f"[Overlay] Failed to copy overlay: {e}")
         else:
@@ -86,8 +92,29 @@ class FileAction(SystemAction):
             host_dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src_full, host_dest)
 
+            # Ensure the copied file is owned by root if inside system paths
+            if self.dest.startswith(("/etc/", "/usr/", "/boot/")):
+                chroot.run_command(f"chown 0:0 {self.dest}")
+
             if self.mode:
                 chroot.run_command(f"chmod {self.mode} {self.dest}")
+
+            # Mirror to existing users home directories if destination is in /etc/skel/
+            if self.dest.startswith("/etc/skel/"):
+                relative_path = self.dest[len("/etc/skel/"):]
+                chroot_home = chroot.chroot_path / "home"
+                if chroot_home.exists():
+                    for user_dir in chroot_home.iterdir():
+                        if user_dir.is_dir() and user_dir.name not in ["lost+found", "aurbuilder"]:
+                            user_dest = user_dir / relative_path
+                            user_dest.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(src_full, user_dest)
+                            
+                            # Set correct ownership for the user home subdirectory
+                            first_subpart = relative_path.split("/")[0]
+                            chroot.run_command(f"chown -R {user_dir.name}:{user_dir.name} /home/{user_dir.name}/{first_subpart}")
+                            if self.mode:
+                                chroot.run_command(f"chmod {self.mode} /home/{user_dir.name}/{relative_path}")
         else:
             logger.info(f"    [Mock] Virtual copy from {self.src} to {self.dest}")
 
@@ -264,11 +291,21 @@ class SystemConfigurator:
         if overlay_dir:
             self.actions.append(OverlayAction(overlay_dir))
 
-        # 2. Locale / hostname
+        # 2. Standalone files (less common when overlay is used; moved earlier to populate skel before useradd)
+        files = cust_config.get("files", []) or sys_config.get("files", [])
+        for f in files:
+            if hasattr(f, "get"):
+                src = f.get("src")
+                dest = f.get("dest")
+                mode = f.get("mode")
+                if src and dest:
+                    self.actions.append(FileAction(src, dest, mode))
+
+        # 3. Locale / hostname
         if cust_config:
             self.actions.append(LocaleAction(cust_config))
 
-        # 3. Users
+        # 4. Users
         users = cust_config.get("users", [])
         for u in users:
             # Unwrap Config dict instances.
@@ -276,7 +313,7 @@ class SystemConfigurator:
                 u = u._data
             self.actions.append(UserAction(u))
 
-        # 4. Services
+        # 5. Services
         services = cust_config.get("services", [])
         if not services:
             # Backward compatibility.
@@ -286,12 +323,12 @@ class SystemConfigurator:
             srv_list = [str(s) for s in services]
             self.actions.append(ServiceAction(srv_list))
 
-        # 5. Commands (generic post-install scripts)
+        # 6. Commands (generic post-install scripts)
         commands = cust_config.get("commands", []) or sys_config.get("commands", [])
         for cmd in commands:
             self.actions.append(CommandAction(str(cmd)))
 
-        # 6. Initramfs (mkinitcpio configuration)
+        # 7. Initramfs (mkinitcpio configuration)
         initramfs = (
             _safe_get(config, "initramfs_config")
             or _safe_get(config, "initramfs")
@@ -302,16 +339,6 @@ class SystemConfigurator:
                 initramfs = initramfs._data
             if isinstance(initramfs, dict):
                 self.actions.append(MkinitcpioAction(initramfs))
-
-        # 7. Standalone files (less common when overlay is used)
-        files = cust_config.get("files", []) or sys_config.get("files", [])
-        for f in files:
-            if hasattr(f, "get"):
-                src = f.get("src")
-                dest = f.get("dest")
-                mode = f.get("mode")
-                if src and dest:
-                    self.actions.append(FileAction(src, dest, mode))
 
     def apply(self, source_base_dir: Optional[Path] = None):
         """Apply all registered actions to the chroot."""

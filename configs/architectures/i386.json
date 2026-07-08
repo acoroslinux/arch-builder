@@ -14,9 +14,9 @@
       "hooks": [
         "base",
         "udev",
+        "kms",
         "plymouth",
         "modconf",
-        "kms",
         "memdisk",
         "archiso",
         "archiso_loop_mnt",
@@ -129,18 +129,13 @@
     ]
   },
   "system_config": {
-    "overlay_dir": "configs/custom_files",
+    "overlay_dir": "configs/custom_files/common",
     "commands": [
       "echo 'Build finished' > /var/log/build_status.txt"
     ],
     "files": [
       {
-        "src": "configs/custom_files/etc/skel/Desktop/install.desktop",
-        "dest": "/etc/skel/Desktop/install.desktop",
-        "mode": "0755"
-      },
-      {
-        "src": "configs/custom_files/etc/sudoers.d/99-live-user",
+        "src": "configs/custom_files/common/etc/sudoers.d/99-live-user",
         "dest": "/etc/sudoers.d/99-live-user",
         "mode": "0440"
       }

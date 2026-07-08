@@ -42,8 +42,13 @@
   "system_config": {
     "files": [
       {
-        "src": "configs/custom_files/etc/gdm/custom.conf",
+        "src": "configs/custom_files/desktops/gnome/etc/gdm/custom.conf",
         "dest": "/etc/gdm/custom.conf",
+        "mode": "0644"
+      },
+      {
+        "src": "configs/custom_files/desktops/gnome/etc/skel/.bashrc",
+        "dest": "/etc/skel/.bashrc",
         "mode": "0644"
       }
     ]

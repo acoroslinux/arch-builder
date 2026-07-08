@@ -44,8 +44,13 @@
   "system_config": {
     "files": [
       {
-        "src": "configs/custom_files/etc/sddm.conf.d/autologin.conf",
+        "src": "configs/custom_files/desktops/kde/etc/sddm.conf.d/autologin.conf",
         "dest": "/etc/sddm.conf.d/autologin.conf",
+        "mode": "0644"
+      },
+      {
+        "src": "configs/custom_files/desktops/kde/etc/skel/.bashrc",
+        "dest": "/etc/skel/.bashrc",
         "mode": "0644"
       }
     ]

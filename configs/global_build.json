@@ -22,6 +22,9 @@
       "genisoimage": "/usr/bin/genisoimage"
     }
   },
+  "boot": {
+    "kernel_params": "loglevel=7"
+  },
   "components": {
     "bootloaders": [
       { "name": "grub", "type": "module" },

@@ -45,8 +45,13 @@
   "system_config": {
     "files": [
       {
-        "src": "configs/custom_files/etc/lightdm/lightdm.conf",
+        "src": "configs/custom_files/desktops/xfce/etc/lightdm/lightdm.conf",
         "dest": "/etc/lightdm/lightdm.conf",
+        "mode": "0644"
+      },
+      {
+        "src": "configs/custom_files/desktops/pantheon/etc/skel/.bashrc",
+        "dest": "/etc/skel/.bashrc",
         "mode": "0644"
       }
     ],
