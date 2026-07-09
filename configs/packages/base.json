@@ -53,7 +53,9 @@
         "cups",
         "system-config-printer",
         "wayland",
-        "plymouth"
+        "plymouth",
+        "qt6-svg",
+        "qt6-declarative"
     ],
     "dependencies": ["pacman"]
 }

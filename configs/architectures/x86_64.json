@@ -103,6 +103,12 @@
       },
       {
         "name": "bash"
+      },
+      {
+        "name": "qt6-svg"
+      },
+      {
+        "name": "qt6-declarative"
       }
     ],
     "mounts": [
