@@ -192,7 +192,13 @@ class Grub2Bootloader:
                 f"mkfs.fat -n {iso_label[:11]} /tmp/efiboot.img && "
                 f"mmd -i /tmp/efiboot.img ::/EFI && "
                 f"mmd -i /tmp/efiboot.img ::/EFI/BOOT && "
-                f"mcopy -i /tmp/efiboot.img /tmp/BOOTx64.EFI ::/EFI/BOOT/BOOTx64.EFI"
+                f"mcopy -i /tmp/efiboot.img /tmp/BOOTx64.EFI ::/EFI/BOOT/BOOTx64.EFI && "
+                # Also copy kernel and initramfs into the FAT image so systemd-boot can load them
+                f"mmd -i /tmp/efiboot.img ::/arch && "
+                f"mmd -i /tmp/efiboot.img ::/arch/boot && "
+                f"mmd -i /tmp/efiboot.img ::/arch/boot/{self._cfg_get('platform_specific.architecture','x86_64')} && "
+                f"mcopy -i /tmp/efiboot.img /boot/{self._cfg_get('platform_specific.base_kernel','vmlinuz-linux')} ::/arch/boot/{self._cfg_get('platform_specific.architecture','x86_64')}/{self._cfg_get('platform_specific.base_kernel','vmlinuz-linux')} && "
+                f"mcopy -i /tmp/efiboot.img /boot/{self._cfg_get('platform_specific.initramfs','initramfs-linux.img')} ::/arch/boot/{self._cfg_get('platform_specific.architecture','x86_64')}/{self._cfg_get('platform_specific.initramfs','initramfs-linux.img')}"
             ]
             subprocess.run(cmd_img, check=True, capture_output=True)
             shutil.copy2(chroot_tmp_img, efi_img_path)
