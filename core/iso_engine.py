@@ -336,7 +336,7 @@ class ArchEngine(BaseEngine):
             raise
         self.logger.info(f"[squashfs] Created: {output_path}")
 
-    def _generate_grub_boot_images(self, staging_dir: Path, effective_root: Path) -> None:
+    def _generate_grub_boot_images(self, staging_dir: Path, effective_root: Path, iso_uuid: str = "") -> None:
         """Generate GRUB BIOS boot image (boot.img) and EFI binary (BOOTx64.EFI) using the chroot."""
         grub_dir = staging_dir / "boot" / "grub"
         grub_dir.mkdir(parents=True, exist_ok=True)
@@ -380,13 +380,22 @@ class ArchEngine(BaseEngine):
         if chroot_efi_modules.exists():
             self.logger.info("[grub] Generating GRUB EFI binary in chroot...")
             try:
-                # Write the embedded config file inside the chroot
+                # Build the grub-embed.cfg using the same logic as mkarchiso:
+                # search by the UUID file /boot/<iso_uuid>.uuid, then configfile grub.cfg
                 iso_label = self.config.get("system.iso_label") or self.config.get("build_environment.iso_label") or "ARCH-MODERN"
-                embed_cfg = (
-                    f"search --no-floppy --set=root --label {iso_label}\n"
-                    f"set prefix=($root)/boot/grub\n"
-                    f"configfile ($root)/boot/grub/grub.cfg\n"
-                )
+                search_filename = f"/boot/{iso_uuid}.uuid" if iso_uuid else ""
+                if search_filename:
+                    embed_cfg = (
+                        f"search --no-floppy --set=root --file {search_filename}\n"
+                        f"set prefix=($root)/boot/grub\n"
+                        f"configfile ($root)/boot/grub/grub.cfg\n"
+                    )
+                else:
+                    embed_cfg = (
+                        f"search --no-floppy --set=root --label {iso_label}\n"
+                        f"set prefix=($root)/boot/grub\n"
+                        f"configfile ($root)/boot/grub/grub.cfg\n"
+                    )
                 (effective_root / "tmp" / "grub-embed.cfg").write_text(embed_cfg)
 
                 # Compile the standalone EFI image inside the chroot
@@ -451,6 +460,16 @@ class ArchEngine(BaseEngine):
         iso_boot.mkdir(parents=True, exist_ok=True)
         (iso_staging / "EFI" / "BOOT").mkdir(parents=True, exist_ok=True)
         (iso_staging / "loader" / "entries").mkdir(parents=True, exist_ok=True)
+
+        # --- Generate ISO UUID (matches mkarchiso: TZ=UTC date +%F-%H-%M-%S-00) ---
+        # mkarchiso creates /boot/<iso_uuid>.uuid on the ISO so the archiso hook
+        # can find the ISO device by scanning all block devices for that file.
+        import datetime
+        iso_uuid = datetime.datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-00")
+        search_filename = f"/boot/{iso_uuid}.uuid"
+        # Create the empty UUID marker file (critical for archiso hook to find the device)
+        (iso_boot / f"{iso_uuid}.uuid").touch()
+        self.logger.info(f"[boot] Created ISO UUID marker: boot/{iso_uuid}.uuid")
 
         # --- Copy kernel and initramfs from airootfs into the archiso standard path ---
         # mkarchiso places kernel at: /${install_dir}/boot/${arch}/vmlinuz-linux
@@ -525,14 +544,14 @@ class ArchEngine(BaseEngine):
 
         # --- Generate Syslinux boot files for legacy BIOS ---
         syslinux_loader = SyslinuxBootloader(self.config)
-        syslinux_loader.prepare_files(iso_staging)
+        syslinux_loader.prepare_files(iso_staging, iso_uuid=iso_uuid)
         syslinux_loader.generate_boot_image(iso_staging, effective_root)
 
         # --- Generate GRUB boot images (BIOS + UEFI) ---
-        self._generate_grub_boot_images(iso_staging, effective_root)
+        self._generate_grub_boot_images(iso_staging, effective_root, iso_uuid=iso_uuid)
 
         # --- Generate UEFI FAT boot image (efiboot.img) ---
-        grub_loader = Grub2Bootloader(self.config, root_device_id="")
+        grub_loader = Grub2Bootloader(self.config, root_device_id="", iso_uuid=iso_uuid)
         grub_loader.generate_boot_image(iso_staging, effective_root)
 
         # --- Create squashfs of the airootfs ---
@@ -553,6 +572,8 @@ class ArchEngine(BaseEngine):
             (iso_staging / "loader" / "loader.conf").write_text("timeout 15\ndefault arch-live.conf\n")
 
         # --- Create systemd-boot entry from template ---
+        # Use archisosearchuuid (matching mkarchiso) so the hook finds the ISO by the
+        # UUID marker file /boot/<iso_uuid>.uuid rather than by volume label alone.
         _entry_tmpl = resolve_from_project("configs/templates/efiboot/loader/entries/arch-live.conf")
         if _entry_tmpl.exists():
             _entry_content = _entry_tmpl.read_text()
@@ -562,6 +583,7 @@ class ArchEngine(BaseEngine):
                 "@@KERNEL_FILE@@": kernel_name,
                 "@@INITRAMFS_FILE@@": initramfs_name,
                 "@@ISO_LABEL@@": iso_label,
+                "@@ARCHISO_UUID@@": iso_uuid,
                 "@@BOOT_CMDLINE@@": cmdline,
                 "@@INSTALL_DIR@@": install_dir,
             }
@@ -574,7 +596,7 @@ class ArchEngine(BaseEngine):
                 f"sort-key 01\n"
                 f"linux    /{install_dir}/boot/{self.arch}/{kernel_name}\n"
                 f"initrd   /{install_dir}/boot/{self.arch}/{initramfs_name}\n"
-                f"options  archisobasedir={install_dir} archisolabel={iso_label} {cmdline}\n"
+                f"options  archisobasedir={install_dir} archisosearchuuid={iso_uuid} {cmdline}\n"
             )
             (iso_staging / "loader" / "entries" / "arch-live.conf").write_text(entry_content)
 

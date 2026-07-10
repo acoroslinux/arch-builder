@@ -47,7 +47,7 @@ class SyslinuxBootloader:
         except Exception:
             return default
 
-    def _build_replacements(self) -> dict:
+    def _build_replacements(self, iso_uuid: str = "") -> dict:
         """Build the placeholder replacement mapping from config."""
         kernel_file = self._cfg_get("platform_specific.base_kernel", "vmlinuz-linux")
         initramfs_file = self._cfg_get(
@@ -70,11 +70,12 @@ class SyslinuxBootloader:
             "@@KERNEL_FILE@@": kernel_file,
             "@@INITRAMFS_FILE@@": initramfs_file,
             "@@ISO_LABEL@@": iso_label,
+            "@@ARCHISO_UUID@@": iso_uuid or iso_label,
             "@@BOOT_CMDLINE@@": cmdline,
             "@@INSTALL_DIR@@": "arch",
         }
 
-    def prepare_files(self, workdir: Path) -> bool:
+    def prepare_files(self, workdir: Path, iso_uuid: str = "") -> bool:
         """Prepare BIOS boot files in /boot/syslinux/ (archiso official layout)."""
         logger.info("[SYSLINUX] Preparing legacy BIOS boot files...")
 
@@ -86,7 +87,7 @@ class SyslinuxBootloader:
             logger.error(f"[SYSLINUX] Templates directory not found: {templates_dir}")
             return False
 
-        replacements = self._build_replacements()
+        replacements = self._build_replacements(iso_uuid=iso_uuid)
 
         # Process all syslinux template files
         for tmpl_file in sorted(templates_dir.iterdir()):

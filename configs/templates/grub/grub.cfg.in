@@ -39,13 +39,13 @@ timeout_style=menu
 #
 menuentry "@@BOOT_TITLE@@ (@@ARCH@@, ${archiso_platform})" --class arch --class gnu-linux --class gnu --class os --id 'arch-live' {
     set gfxpayload=keep
-    linux /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisolabel=@@ISO_LABEL@@ @@BOOT_CMDLINE@@
+    linux /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisosearchuuid=@@ARCHISO_UUID@@ @@BOOT_CMDLINE@@
     initrd /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
 }
 #
 menuentry "@@BOOT_TITLE@@ (@@ARCH@@, ${archiso_platform}) - Rescue Mode" --hotkey r --class arch --class gnu-linux --class gnu --class os --id 'arch-rescue' {
     set gfxpayload=keep
-    linux /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisolabel=@@ISO_LABEL@@ nomodeset vga=normal @@BOOT_CMDLINE@@
+    linux /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisosearchuuid=@@ARCHISO_UUID@@ nomodeset vga=normal @@BOOT_CMDLINE@@
     initrd /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
 }
 

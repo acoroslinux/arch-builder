@@ -9,7 +9,7 @@ if [ -z "${ARCHISO_HINT}" ]; then
     regexp --set=1:ARCHISO_HINT '^\(([^)]+)\)' "${cmdpath}"
 fi
 
-if search --no-floppy --set=archiso_device --label @@ISO_LABEL@@ --hint "${ARCHISO_HINT}"; then
+if search --no-floppy --set=archiso_device --file /boot/@@ARCHISO_UUID@@.uuid --hint "${ARCHISO_HINT}"; then
     set ARCHISO_HINT="${archiso_device}"
 fi
 

@@ -5,7 +5,8 @@ Generates the GRUB2 configuration and EFI image (efiboot.img)
 required for the ISO to boot in UEFI mode.
 
 Uses grub-mkstandalone with an embedded grub-embed.cfg to produce
-BOOTx64.EFI that correctly locates the ISO volume by label.
+BOOTx64.EFI that correctly locates the ISO volume by searching for
+the UUID marker file /boot/<iso_uuid>.uuid on all block devices.
 """
 
 import logging
@@ -24,9 +25,10 @@ class Grub2BootloaderError(Exception):
 
 
 class Grub2Bootloader:
-    def __init__(self, config: Any, root_device_id: str) -> None:
+    def __init__(self, config: Any, root_device_id: str, iso_uuid: str = "") -> None:
         self.config = config
         self.root_device_id = root_device_id
+        self.iso_uuid = iso_uuid
 
     def _cfg_get(self, key: str, default: Any = None) -> Any:
         """
@@ -79,6 +81,7 @@ class Grub2Bootloader:
             "@@KERNEL_FILE@@": kernel_file,
             "@@INITRAMFS_FILE@@": initramfs_file,
             "@@ISO_LABEL@@": iso_label,
+            "@@ARCHISO_UUID@@": self.iso_uuid or iso_label,
             "@@BOOT_CMDLINE@@": cmdline,
             "@@INSTALL_DIR@@": install_dir,
         }
@@ -127,216 +130,184 @@ class Grub2Bootloader:
         logger.info(f"[GRUB2] grub-embed.cfg generated at {dest_path}")
         return True
 
-    def generate_boot_image(self, workdir: Path, chroot_path: Path) -> bool:
+    def generate_boot_image(self, workdir: Path, chroot_path: Path = None) -> bool:
         """
-        Generate efiboot.img, the UEFI FAT boot image.
-        In real mode, uses grub-mkstandalone inside the chroot to create
-        a BOOTx64.EFI with the embedded grub-embed.cfg.
+        Generate efiboot.img — the FAT EFI System Partition image appended to the ISO.
+
+        All tools (grub-mkstandalone, mkfs.fat, mmd, mcopy) run inside the isolated
+        Arch chroot where dosfstools, mtools and grub are installed.
+
+        Required packages inside the chroot (filesystems.json):
+          dosfstools  → mkfs.fat
+          mtools      → mmd, mcopy
+          grub        → grub-mkstandalone
+
+        The resulting efiboot.img contains:
+          /EFI/BOOT/BOOTx64.EFI             — GRUB EFI binary with embedded search cfg
+          /arch/boot/<arch>/vmlinuz-linux    — kernel (for systemd-boot in the ESP)
+          /arch/boot/<arch>/initramfs-*.img  — initramfs
+          /loader/loader.conf               — systemd-boot config
+          /loader/entries/arch-live.conf    — boot entry
         """
         logger.info("[GRUB2] Generating UEFI boot image (efiboot.img)...")
 
         efi_img_path = workdir / "EFI" / "efiboot.img"
         efi_img_path.parent.mkdir(parents=True, exist_ok=True)
         efi_binary = workdir / "EFI" / "BOOT" / "BOOTx64.EFI"
+        efi_binary.parent.mkdir(parents=True, exist_ok=True)
 
-        # ISO label used for FAT volume naming inside efiboot.img
         iso_label = self._cfg_get("system.iso_label", "ARCH-MODERN")
+        arch = self._cfg_get("platform_specific.architecture", "x86_64")
+        kernel_name = self._cfg_get("platform_specific.base_kernel", "vmlinuz-linux")
+        initramfs_name = self._cfg_get("platform_specific.initramfs", "initramfs-linux.img")
 
-        is_mock = (
-            getattr(self.config, "mode", "mock") == "mock"
-            or not chroot_path
-            or not chroot_path.exists()
+        has_real_chroot = bool(chroot_path and Path(chroot_path).exists())
+
+        if not has_real_chroot:
+            # Mock mode: no isolated system available — write a zeroed placeholder FAT image
+            # (32 MiB of zeros is enough for xorriso to embed it, even though it won't boot)
+            logger.info("[GRUB2] [MOCK] No real chroot — writing placeholder efiboot.img")
+            efi_binary.write_bytes(b"\x00" * 512)
+            efi_img_path.write_bytes(b"\x00" * (32 * 1024 * 1024))
+            logger.warning("[GRUB2] [MOCK] efiboot.img is a placeholder — build a real ISO with a live chroot")
+            return True
+
+        chroot = Path(chroot_path)
+
+        # ── Stage area inside chroot /tmp ──────────────────────────────────────
+        stage = chroot / "tmp" / "efiboot_stage"
+        shutil.rmtree(stage, ignore_errors=True)
+
+        # Subdirectories that mirror what will go into the FAT image
+        (stage / "EFI" / "BOOT").mkdir(parents=True, exist_ok=True)
+        (stage / f"arch" / "boot" / arch).mkdir(parents=True, exist_ok=True)
+        (stage / "loader" / "entries").mkdir(parents=True, exist_ok=True)
+
+        # ── Step 1: Generate grub-embed.cfg and create BOOTx64.EFI ─────────────
+        embed_cfg_chroot = stage / "grub-embed.cfg"
+        self.generate_embed_cfg(workdir, embed_cfg_chroot)
+
+        grub_modules = (
+            "all_video at_keyboard boot btrfs cat chain configfile echo "
+            "efifwsetup efinet exfat ext2 fat font gfxmenu gfxterm gzio "
+            "halt hfsplus iso9660 jpeg keylayouts linux loadenv loopback "
+            "lsefi lsefimmap minicmd normal ntfs part_apple part_gpt "
+            "part_msdos png read reboot regexp search search_fs_file "
+            "search_fs_uuid search_label serial sleep udf usb video xfs zstd"
         )
 
-        if is_mock:
-            logger.info("[GRUB2] [MOCK] Creating efiboot.img on host (best-effort)")
-            efi_binary.parent.mkdir(parents=True, exist_ok=True)
-            # Create a placeholder BOOTx64.EFI so we can include it in the FAT image
-            efi_binary.write_bytes(b"mock_bootx64_efi")
-
-            # Prefer using the Python pyfatfs library (available in .venv) to create
-            # the FAT image without requiring system tools. Fall back to host tools
-            # if pyfatfs is not available.
-            try:
-                from pyfatfs.PyFat import PyFat
-                from pyfatfs.PyFatFS import PyFatFS
-
-                tmp_img = workdir / "EFI" / "efiboot.img.tmp"
-                # create or truncate file to desired size (32MiB)
-                size = 32 * 1024 * 1024
-                with open(tmp_img, "wb") as f:
-                    f.truncate(size)
-
-                # Make FAT32 filesystem inside file
-                pf = PyFat()
-                pf.mkfs(str(tmp_img), PyFat.FAT_TYPE_FAT32, size=size, label=iso_label[:11])
-
-                # Open PyFatFS to write files
-                fs = PyFatFS(str(tmp_img))
-                try:
-                    # Ensure directories
-                    try:
-                        fs.makedir("/EFI")
-                    except Exception:
-                        pass
-                    try:
-                        fs.makedir("/EFI/BOOT")
-                    except Exception:
-                        pass
-
-                    # copy BOOTx64.EFI
-                    if efi_binary.exists():
-                        with fs.open("/EFI/BOOT/BOOTx64.EFI", "wb") as dst, open(efi_binary, "rb") as src:
-                            dst.write(src.read())
-
-                    # copy kernel/initramfs if present in staging tree
-                    arch_dir = workdir / "arch" / self._cfg_get("platform_specific.architecture", "x86_64")
-                    kernel_name = self._cfg_get("platform_specific.base_kernel", "vmlinuz-linux")
-                    initramfs_name = self._cfg_get("platform_specific.initramfs", "initramfs-linux.img")
-                    candidate_kernel = workdir / "arch" / self._cfg_get('platform_specific.architecture','x86_64') / kernel_name
-                    candidate_initrd = workdir / "arch" / self._cfg_get('platform_specific.architecture','x86_64') / initramfs_name
-                    if candidate_kernel.exists():
-                        try:
-                            fs.makedirs(f"/arch/boot/{arch_dir.name}")
-                        except Exception:
-                            pass
-                        with fs.open(f"/arch/boot/{arch_dir.name}/{kernel_name}", "wb") as dst, open(candidate_kernel, "rb") as src:
-                            dst.write(src.read())
-                    if candidate_initrd.exists():
-                        with fs.open(f"/arch/boot/{arch_dir.name}/{initramfs_name}", "wb") as dst, open(candidate_initrd, "rb") as src:
-                            dst.write(src.read())
-
-                    # copy loader files
-                    loader_dir = workdir / "loader"
-                    if loader_dir.exists():
-                        try:
-                            fs.makedirs("/loader/entries")
-                        except Exception:
-                            pass
-                        if (loader_dir / "loader.conf").exists():
-                            with fs.open("/loader/loader.conf", "wb") as dst, open(loader_dir / "loader.conf", "rb") as src:
-                                dst.write(src.read())
-                        entries_dir = loader_dir / "entries"
-                        if entries_dir.exists():
-                            for entry in entries_dir.glob("*"):
-                                if entry.is_file():
-                                    with fs.open(f"/loader/entries/{entry.name}", "wb") as dst, open(entry, "rb") as src:
-                                        dst.write(src.read())
-
-                finally:
-                    try:
-                        fs.close()
-                    except Exception:
-                        pass
-
-                shutil.copy2(tmp_img, efi_img_path)
-                tmp_img.unlink(missing_ok=True)
-                logger.info(f"[GRUB2] efiboot.img created (pyfatfs): {efi_img_path}")
-                return True
-            except Exception as e:
-                logger.warning(f"[GRUB2] pyfatfs-based efiboot.img creation failed: {e}; falling back to host tools")
-                # fall through to host-tool based attempts below
-
-        # --- Real mode: use grub-mkstandalone inside the chroot ---
-        chroot_embed_cfg = chroot_path / "tmp" / "grub-embed.cfg"
-        chroot_efi_out = chroot_path / "tmp" / "BOOTx64.EFI"
-        chroot_tmp_img = chroot_path / "tmp" / "efiboot.img"
-
+        # Paths are relative to chroot root  (/tmp/efiboot_stage/...)
+        stage_rel = "/tmp/efiboot_stage"
         try:
-            # Generate the embedded GRUB config
-            self.generate_embed_cfg(workdir, chroot_embed_cfg)
-
-            iso_label = self._cfg_get("system.iso_label", "ARCH-MODERN")
-
-            # Build BOOTx64.EFI using grub-mkstandalone
-            grub_modules = (
-                "all_video at_keyboard boot btrfs cat chain configfile echo "
-                "efifwsetup efinet exfat ext2 fat font gfxmenu gfxterm gzio "
-                "halt hfsplus iso9660 jpeg keylayouts linux loadenv loopback "
-                "lsefi lsefimmap minicmd normal ntfs part_apple part_gpt "
-                "part_msdos png read reboot regexp search search_fs_file "
-                "search_fs_uuid search_label serial sleep udf usb video xfs zstd"
-            )
-            cmd_standalone = [
-                "chroot", str(chroot_path), "bash", "-c",
+            cmd_grub = [
+                "chroot", str(chroot), "bash", "-c",
                 f"grub-mkstandalone -O x86_64-efi "
                 f"--modules=\"{grub_modules}\" "
                 f"--locales=\"en@quot\" "
                 f"--themes=\"\" "
-                f"-o /tmp/BOOTx64.EFI "
-                f"boot/grub/grub.cfg=/tmp/grub-embed.cfg"
+                f"-o {stage_rel}/EFI/BOOT/BOOTx64.EFI "
+                f"boot/grub/grub.cfg={stage_rel}/grub-embed.cfg"
             ]
-            subprocess.run(cmd_standalone, check=True, capture_output=True)
-            shutil.copy2(chroot_efi_out, efi_binary)
-            logger.info(f"[GRUB2] BOOTx64.EFI created via grub-mkstandalone: {efi_binary}")
+            result = subprocess.run(cmd_grub, capture_output=True, timeout=180)
+            if result.returncode != 0:
+                raise subprocess.CalledProcessError(result.returncode, cmd_grub,
+                                                    result.stdout, result.stderr)
+            logger.info("[GRUB2] BOOTx64.EFI created via grub-mkstandalone in chroot")
+        except Exception as e:
+            # Captures errors of execution (ex: command inexistente, permissão negada em tempo real)
+            error_output = f"Failed to execute the command '{cmd_grub[0]}'. Error:\n{e}"
+            logger.error(error_output)
+            raise Grub2BootloaderError(error_output)
 
-            # Build the efiboot.img FAT image containing BOOTx64.EFI
-            # Prepare loader files (loader.conf + entries) inside chroot tmp for inclusion
-            try:
-                chroot_loader_tmp = chroot_path / "tmp" / "efiboot_loader"
-                if chroot_loader_tmp.exists():
-                    shutil.rmtree(chroot_loader_tmp, ignore_errors=True)
-                (chroot_loader_tmp).mkdir(parents=True, exist_ok=True)
-                # Copy loader files from workdir into chroot tmp
-                if (workdir / "loader").exists():
-                    loader_conf_src = workdir / "loader" / "loader.conf"
-                    if loader_conf_src.exists():
-                        shutil.copy2(loader_conf_src, chroot_loader_tmp / "loader.conf")
-                    entries_src = workdir / "loader" / "entries"
-                    if entries_src.exists():
-                        (chroot_loader_tmp / "entries").mkdir(parents=True, exist_ok=True)
-                        for entry in entries_src.glob("*"):
-                            if entry.is_file():
-                                shutil.copy2(entry, chroot_loader_tmp / "entries" / entry.name)
-            except Exception:
-                logger.warning("[GRUB2] Failed to stage loader files into chroot tmp; continuing without them")
+        # Copy BOOTx64.EFI out to workdir/EFI/BOOT/ as well
+        efi_in_stage = stage / "EFI" / "BOOT" / "BOOTx64.EFI"
+        if efi_in_stage.exists():
+            shutil.copy2(efi_in_stage, efi_binary)
 
-            # Construct command to create FAT image and copy files into it
-            cmd_parts = [
-                "dd if=/dev/zero of=/tmp/efiboot.img bs=1M count=32",
-                f"mkfs.fat -n {iso_label[:11]} /tmp/efiboot.img",
-                "mmd -i /tmp/efiboot.img ::/EFI",
-                "mmd -i /tmp/efiboot.img ::/EFI/BOOT",
-                "mcopy -i /tmp/efiboot.img /tmp/BOOTx64.EFI ::/EFI/BOOT/BOOTx64.EFI",
-                # Also copy kernel and initramfs into the FAT image so systemd-boot can load them
-                "mmd -i /tmp/efiboot.img ::/arch",
-                "mmd -i /tmp/efiboot.img ::/arch/boot",
-                f"mmd -i /tmp/efiboot.img ::/arch/boot/{self._cfg_get('platform_specific.architecture','x86_64')}",
-                f"mcopy -i /tmp/efiboot.img /boot/{self._cfg_get('platform_specific.base_kernel','vmlinuz-linux')} ::/arch/boot/{self._cfg_get('platform_specific.architecture','x86_64')}/{self._cfg_get('platform_specific.base_kernel','vmlinuz-linux')}",
-                f"mcopy -i /tmp/efiboot.img /boot/{self._cfg_get('platform_specific.initramfs','initramfs-linux.img')} ::/arch/boot/{self._cfg_get('platform_specific.architecture','x86_64')}/{self._cfg_get('platform_specific.initramfs','initramfs-linux.img')}",
-            ]
+        # ── Step 2: Copy kernel, initramfs and loader files into staging area ──
+        for fname, dst_dir in [
+            (kernel_name,    stage / "arch" / "boot" / arch),
+            (initramfs_name, stage / "arch" / "boot" / arch),
+        ]:
+            src = workdir / "arch" / arch / fname
+            if src.exists():
+                shutil.copy2(src, dst_dir / fname)
+            else:
+                logger.warning(f"[GRUB2] efiboot staging: {fname} not found at {src}")
 
-            # If loader files were staged into chroot tmp, add them to the image
-            chroot_loader_tmp = chroot_path / "tmp" / "efiboot_loader"
-            if chroot_loader_tmp.exists():
-                cmd_parts.extend([
-                    "mmd -i /tmp/efiboot.img ::/loader",
-                    "mmd -i /tmp/efiboot.img ::/loader/entries",
-                ])
-                if (chroot_loader_tmp / "loader.conf").exists():
-                    cmd_parts.append(f"mcopy -i /tmp/efiboot.img /tmp/efiboot_loader/loader.conf ::/loader/loader.conf")
-                entries_dir = chroot_loader_tmp / "entries"
-                if entries_dir.exists():
-                    for entry in entries_dir.glob("*"):
-                        if entry.is_file():
-                            cmd_parts.append(f"mcopy -i /tmp/efiboot.img /tmp/efiboot_loader/entries/{entry.name} ::/loader/entries/{entry.name}")
+        # Loader config
+        loader_src = workdir / "loader"
+        if loader_src.exists():
+            if (loader_src / "loader.conf").exists():
+                shutil.copy2(loader_src / "loader.conf", stage / "loader" / "loader.conf")
+            entries_src = loader_src / "entries"
+            if entries_src.exists():
+                for entry in entries_src.glob("*"):
+                    if entry.is_file():
+                        shutil.copy2(entry, stage / "loader" / "entries" / entry.name)
 
-            cmd_img = ["chroot", str(chroot_path), "bash", "-c", " && ".join(cmd_parts)]
-            subprocess.run(cmd_img, check=True, capture_output=True)
-            shutil.copy2(chroot_tmp_img, efi_img_path)
-            logger.info(f"[GRUB2] efiboot.img created: {efi_img_path}")
+        # ── Step 3: Calculate FAT image size and build it inside the chroot ────
+        total_bytes = sum(
+            f.stat().st_size for f in stage.rglob("*") if f.is_file()
+        )
+        size_mib = max(64, (total_bytes // (1024 * 1024)) + 16)
+
+        efi_img_chroot = "/tmp/efiboot.img"  # path inside the chroot
+        efi_img_host = chroot / "tmp" / "efiboot.img"
+
+        fat_cmds = [
+            f"dd if=/dev/zero of={efi_img_chroot} bs=1M count={size_mib}",
+            f"mkfs.fat -n ARCHISO_EFI {efi_img_chroot}",
+            # EFI binary
+            f"mmd -i {efi_img_chroot} ::/EFI ::/EFI/BOOT",
+            f"mcopy -i {efi_img_chroot} {stage_rel}/EFI/BOOT/BOOTx64.EFI ::/EFI/BOOT/BOOTx64.EFI",
+            # Kernel + initramfs
+            f"mmd -i {efi_img_chroot} ::/arch ::/arch/boot ::/arch/boot/{arch}",
+            f"mcopy -i {efi_img_chroot} {stage_rel}/arch/boot/{arch}/{kernel_name} ::/arch/boot/{arch}/{kernel_name}",
+            f"mcopy -i {efi_img_chroot} {stage_rel}/arch/boot/{arch}/{initramfs_name} ::/arch/boot/{arch}/{initramfs_name}",
+            # loader
+            f"mmd -i {efi_img_chroot} ::/loader ::/loader/entries",
+        ]
+
+        loader_conf_stage = stage / "loader" / "loader.conf"
+        if loader_conf_stage.exists():
+            fat_cmds.append(
+                f"mcopy -i {efi_img_chroot} {stage_rel}/loader/loader.conf ::/loader/loader.conf"
+            )
+        entries_stage = stage / "loader" / "entries"
+        if entries_stage.exists():
+            for entry in entries_stage.glob("*"):
+                if entry.is_file():
+                    fat_cmds.append(
+                        f"mcopy -i {efi_img_chroot} "
+                        f"{stage_rel}/loader/entries/{entry.name} "
+                        f"::/loader/entries/{entry.name}"
+                    )
+
+        try:
+            cmd_fat = ["chroot", str(chroot), "bash", "-c", " && ".join(fat_cmds)]
+            result = subprocess.run(cmd_fat, capture_output=True, timeout=300)
+            if result.returncode != 0:
+                stderr_text = result.stderr.decode(errors="replace")
+                raise subprocess.CalledProcessError(
+                    result.returncode, cmd_fat, result.stdout, result.stderr
+                )
+            shutil.copy2(efi_img_host, efi_img_path)
+            logger.info(f"[GRUB2] efiboot.img created ({size_mib} MiB) via chroot mtools: {efi_img_path}")
             return True
 
-        except (subprocess.CalledProcessError, FileNotFoundError, shutil.Error) as e:
-            logger.error(f"[GRUB2] Failed to create EFI boot image via chroot: {e}")
-            # Fallback to mock files so the build doesn't hard-fail
-            efi_binary.write_bytes(b"mock_bootx64_efi")
-            efi_img_path.write_bytes(b"mock_efi_image_content")
-            return True
+        except subprocess.CalledProcessError as e:
+            # Captures erros de execução (ex: comando inexistente, permissão negada em tempo real)
+            error_output = f"Falha ao executar o comando '{cmd_fat[0]}'. Status de Erro:\n{e.stderr}"
+            logger.error(error_output)
+            raise Grub2BootloaderError(error_output)
+        except Exception as e:
+            raise Grub2BootloaderError(f"Unexpected error during efiboot.img creation: {type(e).__name__}: {str(e)}")
         finally:
-            for tmp_file in [chroot_embed_cfg, chroot_efi_out, chroot_tmp_img]:
-                if tmp_file.exists():
-                    tmp_file.unlink(missing_ok=True)
+            # Clean up staging area and tmp img inside chroot
+            shutil.rmtree(stage, ignore_errors=True)
+            efi_img_host.unlink(missing_ok=True)
 
     def validate(self, workdir: Path) -> bool:
+        """Validate that the required bootloader files exist."""
         return (workdir / "boot" / "grub" / "grub.cfg").exists()
