@@ -139,6 +139,9 @@ class Grub2Bootloader:
         efi_img_path.parent.mkdir(parents=True, exist_ok=True)
         efi_binary = workdir / "EFI" / "BOOT" / "BOOTx64.EFI"
 
+        # ISO label used for FAT volume naming inside efiboot.img
+        iso_label = self._cfg_get("system.iso_label", "ARCH-MODERN")
+
         is_mock = (
             getattr(self.config, "mode", "mock") == "mock"
             or not chroot_path
@@ -146,11 +149,93 @@ class Grub2Bootloader:
         )
 
         if is_mock:
-            logger.info("[GRUB2] [MOCK] Creating simulated BOOTx64.EFI and efiboot.img")
+            logger.info("[GRUB2] [MOCK] Creating efiboot.img on host (best-effort)")
             efi_binary.parent.mkdir(parents=True, exist_ok=True)
+            # Create a placeholder BOOTx64.EFI so we can include it in the FAT image
             efi_binary.write_bytes(b"mock_bootx64_efi")
-            efi_img_path.write_bytes(b"mock_efi_image_content")
-            return True
+
+            # Prefer using the Python pyfatfs library (available in .venv) to create
+            # the FAT image without requiring system tools. Fall back to host tools
+            # if pyfatfs is not available.
+            try:
+                from pyfatfs.PyFat import PyFat
+                from pyfatfs.PyFatFS import PyFatFS
+
+                tmp_img = workdir / "EFI" / "efiboot.img.tmp"
+                # create or truncate file to desired size (32MiB)
+                size = 32 * 1024 * 1024
+                with open(tmp_img, "wb") as f:
+                    f.truncate(size)
+
+                # Make FAT32 filesystem inside file
+                pf = PyFat()
+                pf.mkfs(str(tmp_img), PyFat.FAT_TYPE_FAT32, size=size, label=iso_label[:11])
+
+                # Open PyFatFS to write files
+                fs = PyFatFS(str(tmp_img))
+                try:
+                    # Ensure directories
+                    try:
+                        fs.makedir("/EFI")
+                    except Exception:
+                        pass
+                    try:
+                        fs.makedir("/EFI/BOOT")
+                    except Exception:
+                        pass
+
+                    # copy BOOTx64.EFI
+                    if efi_binary.exists():
+                        with fs.open("/EFI/BOOT/BOOTx64.EFI", "wb") as dst, open(efi_binary, "rb") as src:
+                            dst.write(src.read())
+
+                    # copy kernel/initramfs if present in staging tree
+                    arch_dir = workdir / "arch" / self._cfg_get("platform_specific.architecture", "x86_64")
+                    kernel_name = self._cfg_get("platform_specific.base_kernel", "vmlinuz-linux")
+                    initramfs_name = self._cfg_get("platform_specific.initramfs", "initramfs-linux.img")
+                    candidate_kernel = workdir / "arch" / self._cfg_get('platform_specific.architecture','x86_64') / kernel_name
+                    candidate_initrd = workdir / "arch" / self._cfg_get('platform_specific.architecture','x86_64') / initramfs_name
+                    if candidate_kernel.exists():
+                        try:
+                            fs.makedirs(f"/arch/boot/{arch_dir.name}")
+                        except Exception:
+                            pass
+                        with fs.open(f"/arch/boot/{arch_dir.name}/{kernel_name}", "wb") as dst, open(candidate_kernel, "rb") as src:
+                            dst.write(src.read())
+                    if candidate_initrd.exists():
+                        with fs.open(f"/arch/boot/{arch_dir.name}/{initramfs_name}", "wb") as dst, open(candidate_initrd, "rb") as src:
+                            dst.write(src.read())
+
+                    # copy loader files
+                    loader_dir = workdir / "loader"
+                    if loader_dir.exists():
+                        try:
+                            fs.makedirs("/loader/entries")
+                        except Exception:
+                            pass
+                        if (loader_dir / "loader.conf").exists():
+                            with fs.open("/loader/loader.conf", "wb") as dst, open(loader_dir / "loader.conf", "rb") as src:
+                                dst.write(src.read())
+                        entries_dir = loader_dir / "entries"
+                        if entries_dir.exists():
+                            for entry in entries_dir.glob("*"):
+                                if entry.is_file():
+                                    with fs.open(f"/loader/entries/{entry.name}", "wb") as dst, open(entry, "rb") as src:
+                                        dst.write(src.read())
+
+                finally:
+                    try:
+                        fs.close()
+                    except Exception:
+                        pass
+
+                shutil.copy2(tmp_img, efi_img_path)
+                tmp_img.unlink(missing_ok=True)
+                logger.info(f"[GRUB2] efiboot.img created (pyfatfs): {efi_img_path}")
+                return True
+            except Exception as e:
+                logger.warning(f"[GRUB2] pyfatfs-based efiboot.img creation failed: {e}; falling back to host tools")
+                # fall through to host-tool based attempts below
 
         # --- Real mode: use grub-mkstandalone inside the chroot ---
         chroot_embed_cfg = chroot_path / "tmp" / "grub-embed.cfg"
