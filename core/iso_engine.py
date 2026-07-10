@@ -16,6 +16,7 @@ from typing import Any, Dict, Iterable, List, Optional, Type, Union
 
 from core.config_loader import Config
 from core.bootloaders.grub2 import Grub2Bootloader
+from core.bootloaders.syslinux import SyslinuxBootloader
 from core.chroot_manager import ChrootManager
 from core.customizer import SystemConfigurator
 from core.path_utils import resolve_from_project
@@ -336,12 +337,7 @@ class ArchEngine(BaseEngine):
         self.logger.info(f"[squashfs] Created: {output_path}")
 
     def _generate_grub_boot_images(self, staging_dir: Path, effective_root: Path) -> None:
-        """Generate GRUB BIOS boot image (boot.img) and EFI binary (BOOTx64.EFI).
-
-        These are required for the ISO to boot in both BIOS and UEFI modes.
-        Uses grub-mkimage to create the boot images from the GRUB modules
-        installed in the airootfs.
-        """
+        """Generate GRUB BIOS boot image (boot.img) and EFI binary (BOOTx64.EFI) using the chroot."""
         grub_dir = staging_dir / "boot" / "grub"
         grub_dir.mkdir(parents=True, exist_ok=True)
         efi_dir = staging_dir / "EFI" / "BOOT"
@@ -354,63 +350,69 @@ class ArchEngine(BaseEngine):
             (efi_dir / "BOOTx64.EFI").write_bytes(b"")
             return
 
-        # Path to GRUB modules in the airootfs
-        grub_modules = effective_root / "usr" / "lib" / "grub" / f"{self.arch}-efi"
-        grub_bios_modules = effective_root / "usr" / "lib" / "grub" / "i386-pc"
+        # Paths inside the chroot where the grub packages install modules
+        chroot_efi_modules = effective_root / "usr" / "lib" / "grub" / f"{self.arch}-efi"
+        chroot_bios_modules = effective_root / "usr" / "lib" / "grub" / "i386-pc"
 
-        # --- Generate GRUB BIOS boot image (boot.img) ---
-        # boot.img is a small image that loads the core image from the disk
-        # It needs to be placed at a fixed location on the ISO
-        boot_img = grub_dir / "boot.img"
-        if grub_bios_modules.exists():
-            self.logger.info("[grub] Generating GRUB BIOS boot image...")
+        # 1. --- Generate GRUB BIOS boot image (boot.img) ---
+        boot_img_dest = grub_dir / "boot.img"
+        if chroot_bios_modules.exists():
+            self.logger.info("[grub] Generating GRUB BIOS boot image in chroot...")
             try:
-                # Create a GRUB core image for BIOS boot
                 cmd = [
-                    "grub-mkimage",
-                    "-d", str(grub_bios_modules),
-                    "-o", str(boot_img),
-                    "-O", "i386-pc",
-                    "-p", "/boot/grub",
-                    "biosdisk", "iso9660", "part_msdos", "part_gpt",
-                    "ext2", "fat", "ntfs",
-                    "search_fs_uuid", "search_label",
+                    "chroot", str(effective_root), "bash", "-c",
+                    "grub-mkimage -d /usr/lib/grub/i386-pc -o /tmp/boot.img -O i386-pc -p /boot/grub "
+                    "biosdisk iso9660 part_msdos part_gpt ext2 fat ntfs search_fs_uuid search_label"
                 ]
                 self._run_command(cmd)
-                self.logger.info(f"[grub] Created BIOS boot image: {boot_img}")
+                shutil.copy2(effective_root / "tmp" / "boot.img", boot_img_dest)
+                (effective_root / "tmp" / "boot.img").unlink(missing_ok=True)
+                self.logger.info(f"[grub] Created BIOS boot image: {boot_img_dest}")
             except Exception as e:
                 self.logger.warning(f"[grub] Failed to create BIOS boot image: {e}")
-                # Create a placeholder
-                boot_img.write_bytes(b"\x00" * 512)
+                boot_img_dest.write_bytes(b"\x00" * 512)
         else:
-            self.logger.warning(f"[grub] GRUB BIOS modules not found at {grub_bios_modules}")
-            boot_img.write_bytes(b"\x00" * 512)
+            self.logger.warning(f"[grub] GRUB BIOS modules not found at {chroot_bios_modules}")
+            boot_img_dest.write_bytes(b"\x00" * 512)
 
-        # --- Generate GRUB EFI binary (BOOTx64.EFI) ---
-        efi_binary = efi_dir / "BOOTx64.EFI"
-        if grub_modules.exists():
-            self.logger.info("[grub] Generating GRUB EFI binary...")
+        # 2. --- Generate GRUB EFI binary (BOOTx64.EFI) ---
+        efi_binary_dest = efi_dir / "BOOTx64.EFI"
+        if chroot_efi_modules.exists():
+            self.logger.info("[grub] Generating GRUB EFI binary in chroot...")
             try:
+                # Write the embedded config file inside the chroot
+                iso_label = self.config.get("system.iso_label") or self.config.get("build_environment.iso_label") or "ARCH-MODERN"
+                embed_cfg = (
+                    f"search --no-floppy --set=root --label {iso_label}\n"
+                    f"set prefix=($root)/boot/grub\n"
+                    f"configfile ($root)/boot/grub/grub.cfg\n"
+                )
+                (effective_root / "tmp" / "grub-embed.cfg").write_text(embed_cfg)
+
+                # Compile the standalone EFI image inside the chroot
                 cmd = [
-                    "grub-mkimage",
-                    "-d", str(grub_modules),
-                    "-o", str(efi_binary),
-                    "-O", f"{self.arch}-efi",
-                    "-p", "/boot/grub",
-                    "efifwsetup", "efinet", "efi_uga",
-                    "fat", "iso9660", "part_gpt", "part_msdos",
-                    "search_fs_uuid", "search_label",
-                    "normal", "boot", "configfile",
-                    "linux", "loopback", "chain",
+                    "chroot", str(effective_root), "bash", "-c",
+                    f"grub-mkimage -d /usr/lib/grub/{self.arch}-efi -o /tmp/BOOTx64.EFI -O {self.arch}-efi "
+                    "-c /tmp/grub-embed.cfg -p /boot/grub "
+                    "efifwsetup efinet efi_uga fat iso9660 part_gpt part_msdos search_fs_uuid search_label "
+                    "normal boot configfile linux loopback chain"
                 ]
                 self._run_command(cmd)
-                self.logger.info(f"[grub] Created EFI binary: {efi_binary}")
+                shutil.copy2(effective_root / "tmp" / "BOOTx64.EFI", efi_binary_dest)
+                
+                # Cleanup
+                (effective_root / "tmp" / "BOOTx64.EFI").unlink(missing_ok=True)
+                (effective_root / "tmp" / "grub-embed.cfg").unlink(missing_ok=True)
+                self.logger.info(f"[grub] Created EFI binary: {efi_binary_dest}")
             except Exception as e:
-                self.logger.warning(f"[grub] Failed to create EFI binary: {e}")
-                efi_binary.write_bytes(b"")
+                self.logger.warning(f"[grub] Failed to create EFI binary in chroot: {e}")
+                # Clean up any leftover temp files
+                (effective_root / "tmp" / "BOOTx64.EFI").unlink(missing_ok=True)
+                (effective_root / "tmp" / "grub-embed.cfg").unlink(missing_ok=True)
+                efi_binary_dest.write_bytes(b"")
         else:
-            self.logger.warning(f"[grub] GRUB EFI modules not found at {grub_modules}")
-            efi_binary.write_bytes(b"")
+            self.logger.warning(f"[grub] GRUB EFI modules not found at {chroot_efi_modules}")
+            efi_binary_dest.write_bytes(b"")
 
     def build_bootloaders(self, mountpoint: str) -> None:
         """Build the complete Arch Linux live ISO directory structure.
@@ -450,30 +452,37 @@ class ArchEngine(BaseEngine):
         (iso_staging / "EFI" / "BOOT").mkdir(parents=True, exist_ok=True)
         (iso_staging / "loader" / "entries").mkdir(parents=True, exist_ok=True)
 
-        # --- Copy kernel and initramfs from airootfs ---
+        # --- Copy kernel and initramfs from airootfs into the archiso standard path ---
+        # mkarchiso places kernel at: /${install_dir}/boot/${arch}/vmlinuz-linux
+        # i.e.: arch/boot/x86_64/vmlinuz-linux
         source_boot = effective_root / "boot"
         kernel_name = self.config.get("platform_specific.base_kernel", "vmlinuz-linux")
         initramfs_name = self.config.get("platform_specific.initramfs", "initramfs-linux.img")
+        install_dir = "arch"
+        
+        # Create target directory: arch/boot/x86_64/
+        iso_kernel_dir = iso_staging / install_dir / "boot" / self.arch
+        iso_kernel_dir.mkdir(parents=True, exist_ok=True)
 
         if source_boot.exists():
             kernel_src = source_boot / kernel_name
             if kernel_src.exists():
-                shutil.copy2(kernel_src, iso_boot / kernel_name)
-                self.logger.info(f"[boot] Copied kernel: {kernel_name}")
+                shutil.copy2(kernel_src, iso_kernel_dir / kernel_name)
+                self.logger.info(f"[boot] Copied kernel to {install_dir}/boot/{self.arch}/{kernel_name}")
             else:
                 self.logger.warning(f"[boot] Kernel not found at {kernel_src}")
 
-            # Copy microcode if they exist
+            # Copy microcode images to /arch/boot/ (not arch-specific subfolder, matching mkarchiso)
             for ucode in ["intel-ucode.img", "amd-ucode.img"]:
                 ucode_src = source_boot / ucode
                 if ucode_src.exists():
-                    shutil.copy2(ucode_src, iso_boot / ucode)
+                    shutil.copy2(ucode_src, iso_kernel_dir / ucode)
                     self.logger.info(f"[boot] Copied microcode: {ucode}")
 
             initramfs_src = source_boot / initramfs_name
             if initramfs_src.exists():
-                shutil.copy2(initramfs_src, iso_boot / initramfs_name)
-                self.logger.info(f"[boot] Copied initramfs: {initramfs_name}")
+                shutil.copy2(initramfs_src, iso_kernel_dir / initramfs_name)
+                self.logger.info(f"[boot] Copied initramfs to {install_dir}/boot/{self.arch}/{initramfs_name}")
             else:
                 self.logger.warning(f"[boot] Initramfs not found at {initramfs_src}")
 
@@ -514,8 +523,17 @@ class ArchEngine(BaseEngine):
         else:
             self.logger.warning(f"[boot] Source boot directory not found at {source_boot}")
 
+        # --- Generate Syslinux boot files for legacy BIOS ---
+        syslinux_loader = SyslinuxBootloader(self.config)
+        syslinux_loader.prepare_files(iso_staging)
+        syslinux_loader.generate_boot_image(iso_staging, effective_root)
+
         # --- Generate GRUB boot images (BIOS + UEFI) ---
         self._generate_grub_boot_images(iso_staging, effective_root)
+
+        # --- Generate UEFI FAT boot image (efiboot.img) ---
+        grub_loader = Grub2Bootloader(self.config, root_device_id="")
+        grub_loader.generate_boot_image(iso_staging, effective_root)
 
         # --- Create squashfs of the airootfs ---
         arch_dir = iso_staging / "arch" / self.arch
@@ -523,32 +541,42 @@ class ArchEngine(BaseEngine):
         squashfs_path = arch_dir / "airootfs.sfs"
         self._create_squashfs(effective_root, squashfs_path)
 
-        # --- Create systemd-boot loader config ---
-        loader_conf = iso_staging / "loader" / "loader.conf"
-        loader_conf.write_text(
-            "timeout 15\n"
-            "default arch-live\n"
-        )
-
-        # --- Create systemd-boot entry ---
+        # --- Create systemd-boot loader config from template ---
         iso_label = self.config.get("system.iso_label") or self.config.get("build_environment.iso_label") or "ARCH-MODERN"
         kernel_params = self.config.get("boot.kernel_params", "loglevel=4 quiet")
-        
-        # Build multiple initrd lines dynamically
-        initrd_lines = []
-        for ucode in ["intel-ucode.img", "amd-ucode.img"]:
-            if (iso_boot / ucode).exists():
-                initrd_lines.append(f"initrd  /boot/{ucode}")
-        initrd_lines.append(f"initrd  /boot/{initramfs_name}")
-        initrd_str = "\n".join(initrd_lines)
+        cmdline = f"{kernel_params} rw systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
 
-        entry_content = (
-            f"title   Arch-Builder Live ({self.arch})\n"
-            f"linux   /boot/{kernel_name}\n"
-            f"{initrd_str}\n"
-            f"options archisobasedir=arch archisolabel={iso_label} {kernel_params}\n"
-        )
-        (iso_staging / "loader" / "entries" / "arch-live.conf").write_text(entry_content)
+        _loader_conf_tmpl = resolve_from_project("configs/templates/efiboot/loader/loader.conf")
+        if _loader_conf_tmpl.exists():
+            shutil.copy2(_loader_conf_tmpl, iso_staging / "loader" / "loader.conf")
+        else:
+            (iso_staging / "loader" / "loader.conf").write_text("timeout 15\ndefault arch-live.conf\n")
+
+        # --- Create systemd-boot entry from template ---
+        _entry_tmpl = resolve_from_project("configs/templates/efiboot/loader/entries/arch-live.conf")
+        if _entry_tmpl.exists():
+            _entry_content = _entry_tmpl.read_text()
+            _replacements = {
+                "@@BOOT_TITLE@@": "Arch Modern",
+                "@@ARCH@@": self.arch,
+                "@@KERNEL_FILE@@": kernel_name,
+                "@@INITRAMFS_FILE@@": initramfs_name,
+                "@@ISO_LABEL@@": iso_label,
+                "@@BOOT_CMDLINE@@": cmdline,
+                "@@INSTALL_DIR@@": install_dir,
+            }
+            for _k, _v in _replacements.items():
+                _entry_content = _entry_content.replace(_k, _v)
+            (iso_staging / "loader" / "entries" / "arch-live.conf").write_text(_entry_content)
+        else:
+            entry_content = (
+                f"title    Arch Modern ({self.arch}, UEFI)\n"
+                f"sort-key 01\n"
+                f"linux    /{install_dir}/boot/{self.arch}/{kernel_name}\n"
+                f"initrd   /{install_dir}/boot/{self.arch}/{initramfs_name}\n"
+                f"options  archisobasedir={install_dir} archisolabel={iso_label} {cmdline}\n"
+            )
+            (iso_staging / "loader" / "entries" / "arch-live.conf").write_text(entry_content)
 
         # Store the ISO staging path for finalize_isofile
         self._iso_staging = iso_staging
@@ -577,22 +605,45 @@ class ArchEngine(BaseEngine):
 
         # Check if we're in mock mode - skip actual execution
         is_mock = getattr(self.toolchain, "mode", "mock") == "mock"
-        if is_mock:
-            self.logger.info(f"[finalize] [MOCK] Would create ISO: {output_abs} from {iso_source}")
-            self.logger.info(f"[finalize] [MOCK] Command: grub-mkrescue -o {output_abs} {iso_source}")
-            return
-
-        # Use grub-mkrescue to create a proper bootable ISO with the correct volume label
+        
         iso_label = self.config.get("system.iso_label") or self.config.get("build_environment.iso_label") or "ARCH-MODERN"
         command = [
-            "grub-mkrescue",
-            "-o", output_abs,
-            str(iso_source),
-            "--",
+            "xorriso",
+            "-as", "mkisofs",
+            "-iso-level", "3",
+            "-full-iso9660-filenames",
+            "-joliet",
+            "-joliet-long",
+            "-rational-rock",
             "-volid", iso_label,
+            "-appid", "Arch Modern Live",
+            "-publisher", "acoroslinux",
+            "-preparer", "arch-builder",
+            # BIOS syslinux parameters (archiso official layout: boot/syslinux/)
+            "-eltorito-boot", "boot/syslinux/isolinux.bin",
+            "-eltorito-catalog", "boot/syslinux/boot.cat",
+            "-no-emul-boot",
+            "-boot-load-size", "4",
+            "-boot-info-table",
+            "-isohybrid-mbr", str(iso_source / "boot" / "syslinux" / "isohdpfx.bin"),
+            "--mbr-force-bootable",
+            "-partition_offset", "16",
+            # UEFI parameters
+            "-append_partition", "2", "C12A7328-F81F-11D2-BA4B-00A0C93EC93B", str(iso_source / "EFI" / "efiboot.img"),
+            "-isohybrid-gpt-basdat",
+            "-eltorito-alt-boot",
+            "-e", "--interval:appended_partition_2:all::",
+            "-no-emul-boot",
+            "-output", output_abs,
+            str(iso_source)
         ]
 
-        self.logger.info(f"[finalize] Creating bootable ISO with grub-mkrescue: {output_abs}")
+        if is_mock:
+            self.logger.info(f"[finalize] [MOCK] Would create ISO: {output_abs} from {iso_source}")
+            self.logger.info(f"[finalize] [MOCK] Command: {' '.join(command)}")
+            return
+
+        self.logger.info(f"[finalize] Creating bootable hybrid ISO with xorriso: {output_abs}")
         self.logger.info(f"[finalize] Command: {' '.join(command)}")
 
         try:
@@ -601,13 +652,13 @@ class ArchEngine(BaseEngine):
             # If the ISO file was successfully generated despite a post-generation crash (e.g. SIGSEGV on clean-up)
             if Path(output_abs).exists() and Path(output_abs).stat().st_size > 1000000:
                 self.logger.warning(
-                    f"grub-mkrescue reported an exit error/crash ({e}), "
+                    f"xorriso reported an exit error/crash ({e}), "
                     f"but the ISO file was successfully generated at {output_abs} "
                     f"({Path(output_abs).stat().st_size} bytes)."
                 )
             else:
-                self.logger.error(f"grub-mkrescue failed: {e}")
-                raise ISOBuilderError(f"grub-mkrescue failed: {e}")
+                self.logger.error(f"xorriso failed: {e}")
+                raise ISOBuilderError(f"xorriso failed: {e}")
 
         self.logger.info(f"[finalize] Bootable ISO created: {output_abs}")
 

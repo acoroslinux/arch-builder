@@ -23,7 +23,7 @@
     }
   },
   "boot": {
-    "kernel_params": "loglevel=7"
+    "kernel_params": "loglevel=3 quiet splash rd.udev.log_level=3 vt.global_cursor_default=0 nouveau.modeset=1 radeon.modeset=1 i915.modeset=1 nvme_load=yes"
   },
   "components": {
     "bootloaders": [

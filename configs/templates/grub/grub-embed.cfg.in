@@ -1,0 +1,24 @@
+if ! [ -d "$cmdpath" ]; then
+    if regexp --set=1:archiso_bootdevice '^\(([^)]+)\)\/?[Ee][Ff][Ii]\/[Bb][Oo][Oo][Tt]\/?$' "${cmdpath}"; then
+        set cmdpath="(${archiso_bootdevice})/EFI/BOOT"
+        set ARCHISO_HINT="${archiso_bootdevice}"
+    fi
+fi
+
+if [ -z "${ARCHISO_HINT}" ]; then
+    regexp --set=1:ARCHISO_HINT '^\(([^)]+)\)' "${cmdpath}"
+fi
+
+if search --no-floppy --set=archiso_device --label @@ISO_LABEL@@ --hint "${ARCHISO_HINT}"; then
+    set ARCHISO_HINT="${archiso_device}"
+fi
+
+if [ "${ARCHISO_HINT}" == 'memdisk' -o -z "${ARCHISO_HINT}" ]; then
+    echo 'Could not find the ISO volume!'
+elif [ -e "(${ARCHISO_HINT})/boot/grub/grub.cfg" ]; then
+    export ARCHISO_HINT
+    set root="${ARCHISO_HINT}"
+    configfile "(${ARCHISO_HINT})/boot/grub/grub.cfg"
+else
+    echo 'ERROR: Could not find grub.cfg on the ISO!'
+fi

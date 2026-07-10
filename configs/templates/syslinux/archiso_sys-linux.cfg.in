@@ -1,0 +1,18 @@
+LABEL arch
+TEXT HELP
+Boot the Arch Modern install medium on BIOS.
+It allows you to install Arch Modern or perform system maintenance.
+ENDTEXT
+MENU LABEL Arch Modern install medium (@@ARCH@@, BIOS)
+LINUX /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@
+INITRD /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
+APPEND archisobasedir=@@INSTALL_DIR@@ archisolabel=@@ISO_LABEL@@ @@BOOT_CMDLINE@@
+
+LABEL archrescue
+TEXT HELP
+Boot in rescue/maintenance mode (nomodeset).
+ENDTEXT
+MENU LABEL Arch Modern Rescue Mode (nomodeset)
+LINUX /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@
+INITRD /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
+APPEND archisobasedir=@@INSTALL_DIR@@ archisolabel=@@ISO_LABEL@@ nomodeset vga=normal @@BOOT_CMDLINE@@

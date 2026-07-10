@@ -1,18 +1,13 @@
-#
-# WARNING: Update the ISO label below for correct boot entry identification
-# The label should be exactly "ARCH-MODERN" (uppercase) for boot loader recognition
-#
 # Load partition table and file system modules
 insmod part_gpt
 insmod part_msdos
 insmod fat
 insmod iso9660
+insmod ntfs
+insmod exfat
+insmod udf
 
 # Use graphics-mode output
-insmod png
-insmod jpeg
-insmod gfxmenu
-
 if loadfont "${prefix}/fonts/unicode.pf2" ; then
     insmod all_video
     set gfxmode="auto"
@@ -44,17 +39,21 @@ timeout_style=menu
 #
 menuentry "@@BOOT_TITLE@@ (@@ARCH@@, ${archiso_platform})" --class arch --class gnu-linux --class gnu --class os --id 'arch-live' {
     set gfxpayload=keep
-    search --no-floppy --set=root --label @@ISO_LABEL@@
-    linux /boot/@@KERNEL_FILE@@ archisobasedir=arch archisolabel=@@ISO_LABEL@@ @@BOOT_CMDLINE@@
-    @@INITRD_LINE@@
+    linux /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisolabel=@@ISO_LABEL@@ @@BOOT_CMDLINE@@
+    initrd /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
 }
 #
 menuentry "@@BOOT_TITLE@@ (@@ARCH@@, ${archiso_platform}) - Rescue Mode" --hotkey r --class arch --class gnu-linux --class gnu --class os --id 'arch-rescue' {
     set gfxpayload=keep
-    search --no-floppy --set=root --label @@ISO_LABEL@@
-    linux /boot/@@KERNEL_FILE@@ archisobasedir=arch archisolabel=@@ISO_LABEL@@ nomodeset vga=normal @@BOOT_CMDLINE@@
-    @@INITRD_LINE@@
+    linux /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisolabel=@@ISO_LABEL@@ nomodeset vga=normal @@BOOT_CMDLINE@@
+    initrd /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
 }
+
+if [ "${grub_platform}" == 'efi' ]; then
+    menuentry 'UEFI Firmware Settings' --id 'uefi-firmware' {
+        fwsetup
+    }
+fi
 
 menuentry 'System shutdown' --class shutdown --class poweroff {
     echo 'System shutting down...'

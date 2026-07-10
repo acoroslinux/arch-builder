@@ -67,7 +67,7 @@ class TestGrubBootloaderGeneration(unittest.TestCase):
             grub_cfg = root / "boot" / "grub" / "grub.cfg"
             content = grub_cfg.read_text()
             self.assertIn("archisolabel=ARCH-MODERN", content)
-            self.assertIn("/boot/vmlinuz-linux", content)
+            self.assertIn("/arch/boot/x86_64/vmlinuz-linux", content)
 
     def test_grub_cfg_has_correct_kernel_path(self):
         with tempfile.TemporaryDirectory(prefix="arch_builder_grub_") as tmp:

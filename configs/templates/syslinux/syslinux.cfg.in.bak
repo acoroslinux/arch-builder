@@ -22,13 +22,15 @@ MENU COLOR sel           * #ffffffff #FF5255FF *
 
 LABEL arch-live
 MENU LABEL @@BOOT_TITLE@@ (@@ARCH@@) BIOS
-LINUX /boot/@@KERNEL_FILE@@
-APPEND initrd=/boot/@@INITRAMFS_FILE@@ archisobasedir=arch archisosearchuuid=@@ARCHISO_UUID@@ @@BOOT_CMDLINE@@
+LINUX /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@
+INITRD /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
+APPEND archisobasedir=@@INSTALL_DIR@@ archisolabel=@@ISO_LABEL@@ arch=@@ARCH@@ @@BOOT_CMDLINE@@
 
 LABEL arch-rescue
 MENU LABEL Rescue Mode (Command Line)
-LINUX /boot/@@KERNEL_FILE@@
-APPEND initrd=/boot/@@INITRAMFS_FILE@@ archisobasedir=arch archisosearchuuid=@@ARCHISO_UUID@@ nomodeset vga=normal @@BOOT_CMDLINE@@
+LINUX /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@
+INITRD /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
+APPEND archisobasedir=@@INSTALL_DIR@@ archisolabel=@@ISO_LABEL@@ arch=@@ARCH@@ nomodeset vga=normal @@BOOT_CMDLINE@@
 
 LABEL reboot
 MENU LABEL ^Reboot

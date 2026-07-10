@@ -103,6 +103,9 @@
       },
       {
         "name": "qt6-declarative"
+      },
+      {
+        "name": "os-prober"
       }
     ],
     "mounts": [
@@ -134,13 +137,22 @@
       }
     ],
     "services": [
-      "NetworkManager"
+      "NetworkManager",
+      "systemd-timesyncd",
+      "bluetooth",
+      "avahi-daemon",
+      "cups",
+      "smb",
+      "nmb"
     ]
   },
   "system_config": {
     "overlay_dir": "configs/custom_files/common",
     "commands": [
-      "echo 'Build finished' > /var/log/build_status.txt"
+      "echo 'Build finished' > /var/log/build_status.txt",
+      "mkdir -p /srv/samba/public",
+      "chown nobody:nobody /srv/samba/public",
+      "chmod 1777 /srv/samba/public"
     ],
     "files": [
       {

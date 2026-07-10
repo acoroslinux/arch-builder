@@ -49,13 +49,23 @@
         "alsa-utils",
         "avahi",
         "nss-mdns",
-        
         "cups",
         "system-config-printer",
+        "cups-pdf",
+        "ghostscript",
+        "cups-filters",
+        "foomatic-db-engine",
+        "foomatic-db",
+        "gutenprint",
+        "hplip",
+        "samba",
+        "smbclient",
         "wayland",
         "plymouth",
         "qt6-svg",
-        "qt6-declarative"
+        "qt6-declarative",
+        "os-prober",
+        "syslinux"
     ],
     "dependencies": ["pacman"]
 }
