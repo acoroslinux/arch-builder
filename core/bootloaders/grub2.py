@@ -10,6 +10,7 @@ the UUID marker file /boot/<iso_uuid>.uuid on all block devices.
 """
 
 import logging
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -161,7 +162,11 @@ class Grub2Bootloader:
         kernel_name = self._cfg_get("platform_specific.base_kernel", "vmlinuz-linux")
         initramfs_name = self._cfg_get("platform_specific.initramfs", "initramfs-linux.img")
 
-        has_real_chroot = bool(chroot_path and Path(chroot_path).exists())
+        has_real_chroot = bool(
+            chroot_path
+            and Path(chroot_path).exists()
+            and (Path(chroot_path) / "usr" / "bin" / "grub-mkstandalone").exists()
+        )
 
         if not has_real_chroot:
             # Mock mode: no isolated system available — write a zeroed placeholder FAT image
@@ -198,9 +203,13 @@ class Grub2Bootloader:
 
         # Paths are relative to chroot root  (/tmp/efiboot_stage/...)
         stage_rel = "/tmp/efiboot_stage"
+        chroot_cmd = ["chroot"]
+        if os.geteuid() != 0:
+            chroot_cmd = ["sudo", "chroot"]
+
         try:
             cmd_grub = [
-                "chroot", str(chroot), "bash", "-c",
+                *chroot_cmd, str(chroot), "bash", "-c",
                 f"grub-mkstandalone -O x86_64-efi "
                 f"--modules=\"{grub_modules}\" "
                 f"--locales=\"en@quot\" "
@@ -229,7 +238,7 @@ class Grub2Bootloader:
             (kernel_name,    stage / "arch" / "boot" / arch),
             (initramfs_name, stage / "arch" / "boot" / arch),
         ]:
-            src = workdir / "arch" / arch / fname
+            src = workdir / "arch" / "boot" / arch / fname
             if src.exists():
                 shutil.copy2(src, dst_dir / fname)
             else:
@@ -255,8 +264,11 @@ class Grub2Bootloader:
         efi_img_chroot = "/tmp/efiboot.img"  # path inside the chroot
         efi_img_host = chroot / "tmp" / "efiboot.img"
 
+        # Create the zero-filled file on the host first to avoid needing /dev/zero inside the chroot
+        with open(efi_img_host, "wb") as f:
+            f.write(b"\x00" * (size_mib * 1024 * 1024))
+
         fat_cmds = [
-            f"dd if=/dev/zero of={efi_img_chroot} bs=1M count={size_mib}",
             f"mkfs.fat -n ARCHISO_EFI {efi_img_chroot}",
             # EFI binary
             f"mmd -i {efi_img_chroot} ::/EFI ::/EFI/BOOT",
@@ -285,7 +297,10 @@ class Grub2Bootloader:
                     )
 
         try:
-            cmd_fat = ["chroot", str(chroot), "bash", "-c", " && ".join(fat_cmds)]
+            chroot_cmd = ["chroot"]
+            if os.geteuid() != 0:
+                chroot_cmd = ["sudo", "chroot"]
+            cmd_fat = [*chroot_cmd, str(chroot), "bash", "-c", " && ".join(fat_cmds)]
             result = subprocess.run(cmd_fat, capture_output=True, timeout=300)
             if result.returncode != 0:
                 stderr_text = result.stderr.decode(errors="replace")
