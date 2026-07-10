@@ -186,20 +186,57 @@ class Grub2Bootloader:
             logger.info(f"[GRUB2] BOOTx64.EFI created via grub-mkstandalone: {efi_binary}")
 
             # Build the efiboot.img FAT image containing BOOTx64.EFI
-            cmd_img = [
-                "chroot", str(chroot_path), "bash", "-c",
-                f"dd if=/dev/zero of=/tmp/efiboot.img bs=1M count=32 && "
-                f"mkfs.fat -n {iso_label[:11]} /tmp/efiboot.img && "
-                f"mmd -i /tmp/efiboot.img ::/EFI && "
-                f"mmd -i /tmp/efiboot.img ::/EFI/BOOT && "
-                f"mcopy -i /tmp/efiboot.img /tmp/BOOTx64.EFI ::/EFI/BOOT/BOOTx64.EFI && "
+            # Prepare loader files (loader.conf + entries) inside chroot tmp for inclusion
+            try:
+                chroot_loader_tmp = chroot_path / "tmp" / "efiboot_loader"
+                if chroot_loader_tmp.exists():
+                    shutil.rmtree(chroot_loader_tmp, ignore_errors=True)
+                (chroot_loader_tmp).mkdir(parents=True, exist_ok=True)
+                # Copy loader files from workdir into chroot tmp
+                if (workdir / "loader").exists():
+                    loader_conf_src = workdir / "loader" / "loader.conf"
+                    if loader_conf_src.exists():
+                        shutil.copy2(loader_conf_src, chroot_loader_tmp / "loader.conf")
+                    entries_src = workdir / "loader" / "entries"
+                    if entries_src.exists():
+                        (chroot_loader_tmp / "entries").mkdir(parents=True, exist_ok=True)
+                        for entry in entries_src.glob("*"):
+                            if entry.is_file():
+                                shutil.copy2(entry, chroot_loader_tmp / "entries" / entry.name)
+            except Exception:
+                logger.warning("[GRUB2] Failed to stage loader files into chroot tmp; continuing without them")
+
+            # Construct command to create FAT image and copy files into it
+            cmd_parts = [
+                "dd if=/dev/zero of=/tmp/efiboot.img bs=1M count=32",
+                f"mkfs.fat -n {iso_label[:11]} /tmp/efiboot.img",
+                "mmd -i /tmp/efiboot.img ::/EFI",
+                "mmd -i /tmp/efiboot.img ::/EFI/BOOT",
+                "mcopy -i /tmp/efiboot.img /tmp/BOOTx64.EFI ::/EFI/BOOT/BOOTx64.EFI",
                 # Also copy kernel and initramfs into the FAT image so systemd-boot can load them
-                f"mmd -i /tmp/efiboot.img ::/arch && "
-                f"mmd -i /tmp/efiboot.img ::/arch/boot && "
-                f"mmd -i /tmp/efiboot.img ::/arch/boot/{self._cfg_get('platform_specific.architecture','x86_64')} && "
-                f"mcopy -i /tmp/efiboot.img /boot/{self._cfg_get('platform_specific.base_kernel','vmlinuz-linux')} ::/arch/boot/{self._cfg_get('platform_specific.architecture','x86_64')}/{self._cfg_get('platform_specific.base_kernel','vmlinuz-linux')} && "
-                f"mcopy -i /tmp/efiboot.img /boot/{self._cfg_get('platform_specific.initramfs','initramfs-linux.img')} ::/arch/boot/{self._cfg_get('platform_specific.architecture','x86_64')}/{self._cfg_get('platform_specific.initramfs','initramfs-linux.img')}"
+                "mmd -i /tmp/efiboot.img ::/arch",
+                "mmd -i /tmp/efiboot.img ::/arch/boot",
+                f"mmd -i /tmp/efiboot.img ::/arch/boot/{self._cfg_get('platform_specific.architecture','x86_64')}",
+                f"mcopy -i /tmp/efiboot.img /boot/{self._cfg_get('platform_specific.base_kernel','vmlinuz-linux')} ::/arch/boot/{self._cfg_get('platform_specific.architecture','x86_64')}/{self._cfg_get('platform_specific.base_kernel','vmlinuz-linux')}",
+                f"mcopy -i /tmp/efiboot.img /boot/{self._cfg_get('platform_specific.initramfs','initramfs-linux.img')} ::/arch/boot/{self._cfg_get('platform_specific.architecture','x86_64')}/{self._cfg_get('platform_specific.initramfs','initramfs-linux.img')}",
             ]
+
+            # If loader files were staged into chroot tmp, add them to the image
+            chroot_loader_tmp = chroot_path / "tmp" / "efiboot_loader"
+            if chroot_loader_tmp.exists():
+                cmd_parts.extend([
+                    "mmd -i /tmp/efiboot.img ::/loader",
+                    "mmd -i /tmp/efiboot.img ::/loader/entries",
+                ])
+                if (chroot_loader_tmp / "loader.conf").exists():
+                    cmd_parts.append(f"mcopy -i /tmp/efiboot.img /tmp/efiboot_loader/loader.conf ::/loader/loader.conf")
+                entries_dir = chroot_loader_tmp / "entries"
+                if entries_dir.exists():
+                    for entry in entries_dir.glob("*"):
+                        if entry.is_file():
+                            cmd_parts.append(f"mcopy -i /tmp/efiboot.img /tmp/efiboot_loader/entries/{entry.name} ::/loader/entries/{entry.name}")
+
+            cmd_img = ["chroot", str(chroot_path), "bash", "-c", " && ".join(cmd_parts)]
             subprocess.run(cmd_img, check=True, capture_output=True)
             shutil.copy2(chroot_tmp_img, efi_img_path)
             logger.info(f"[GRUB2] efiboot.img created: {efi_img_path}")
