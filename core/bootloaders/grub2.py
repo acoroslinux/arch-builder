@@ -248,6 +248,28 @@ class Grub2Bootloader:
                     if entry.is_file():
                         shutil.copy2(entry, stage / "loader" / "entries" / entry.name)
 
+        # Copy GRUB themes and fonts into the efiboot staging area so the EFI
+        # image can show the theme before loading the full ISO filesystem.
+        # Themes are expected to be present in the ISO staging tree at:
+        #   <workdir>/boot/grub/themes
+        # and fonts at:
+        #   <workdir>/boot/grub/fonts
+        grub_themes_src = workdir / "boot" / "grub" / "themes"
+        if grub_themes_src.exists():
+            try:
+                shutil.copytree(grub_themes_src, stage / "boot" / "grub" / "themes", dirs_exist_ok=True)
+                logger.info(f"[GRUB2] Copied GRUB themes into efiboot stage: {grub_themes_src}")
+            except Exception as e:
+                logger.warning(f"[GRUB2] Failed to copy GRUB themes into efiboot stage: {e}")
+
+        grub_fonts_src = workdir / "boot" / "grub" / "fonts"
+        if grub_fonts_src.exists():
+            try:
+                shutil.copytree(grub_fonts_src, stage / "boot" / "grub" / "fonts", dirs_exist_ok=True)
+                logger.info(f"[GRUB2] Copied GRUB fonts into efiboot stage: {grub_fonts_src}")
+            except Exception as e:
+                logger.warning(f"[GRUB2] Failed to copy GRUB fonts into efiboot stage: {e}")
+
         # ── Step 3: Calculate FAT image size and build it inside the chroot ────
         total_bytes = sum(
             f.stat().st_size for f in stage.rglob("*") if f.is_file()
@@ -283,6 +305,21 @@ class Grub2Bootloader:
                         f"mcopy -i {efi_img_chroot} "
                         f"{stage_rel}/loader/entries/{entry.name} "
                         f"::/loader/entries/{entry.name}"
+                    )
+
+        # Ensure /boot and /boot/grub directories exist in the FAT image and
+        # copy any staged GRUB themes and fonts into the EFI image so the
+        # embedded GRUB binary can load them directly.
+        boot_theme_dir = stage / "boot" / "grub"
+        if boot_theme_dir.exists():
+            # Create directories
+            fat_cmds.append(f"mmd -i {efi_img_chroot} ::/boot ::/boot/grub ::/boot/grub/themes ::/boot/grub/fonts")
+            # Copy all files under stage/boot into the FAT image preserving relative paths
+            for f in (stage / "boot").rglob("*"):
+                if f.is_file():
+                    rel_path = f.relative_to(stage)
+                    fat_cmds.append(
+                        f"mcopy -i {efi_img_chroot} {stage_rel}/{rel_path} ::/{rel_path}"
                     )
 
         try:
