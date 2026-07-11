@@ -51,10 +51,13 @@ class OverlayAction(SystemAction):
                 # Ideally this would use shutil.copytree locally when possible,
                 # or defer to the chroot manager / toolchain.
                 import subprocess
+                import os
 
-                subprocess.run(
-                    ["cp", "-aT", str(overlay_path), str(chroot_path)], check=True
-                )
+                cmd = ["cp", "-aT", str(overlay_path), str(chroot_path)]
+                if os.geteuid() != 0:
+                    cmd = ["sudo"] + cmd
+
+                subprocess.run(cmd, check=True)
                 
                 # Fix ownership of copied system directories to be owned by root (0:0)
                 chroot.run_command("chown -R 0:0 /etc 2>/dev/null || true")
@@ -89,8 +92,15 @@ class FileAction(SystemAction):
             # For scripts, avoid routing through the toolchain because files may live outside it.
             # Copy them into place and then adjust permissions.
             host_dest = chroot.chroot_path / self.dest.lstrip("/")
-            host_dest.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src_full, host_dest)
+            
+            import os
+            import subprocess
+            if os.geteuid() != 0:
+                subprocess.run(["sudo", "mkdir", "-p", str(host_dest.parent)], check=True)
+                subprocess.run(["sudo", "cp", "-a", str(src_full), str(host_dest)], check=True)
+            else:
+                host_dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src_full, host_dest)
 
             # Ensure the copied file is owned by root if inside system paths
             if self.dest.startswith(("/etc/", "/usr/", "/boot/")):
@@ -107,8 +117,12 @@ class FileAction(SystemAction):
                     for user_dir in chroot_home.iterdir():
                         if user_dir.is_dir() and user_dir.name not in ["lost+found", "aurbuilder"]:
                             user_dest = user_dir / relative_path
-                            user_dest.parent.mkdir(parents=True, exist_ok=True)
-                            shutil.copy2(src_full, user_dest)
+                            if os.geteuid() != 0:
+                                subprocess.run(["sudo", "mkdir", "-p", str(user_dest.parent)], check=True)
+                                subprocess.run(["sudo", "cp", "-a", str(src_full), str(user_dest)], check=True)
+                            else:
+                                user_dest.parent.mkdir(parents=True, exist_ok=True)
+                                shutil.copy2(src_full, user_dest)
                             
                             # Set correct ownership for the user home subdirectory
                             first_subpart = relative_path.split("/")[0]

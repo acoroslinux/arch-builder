@@ -330,19 +330,30 @@ class ToolchainManager:
         if not self.build_chroot:
             raise RuntimeError("Build chroot path not initialized.")
 
+        # Helper to check if a path is already mounted
+        def is_mounted(path: Path) -> bool:
+            try:
+                with open("/proc/mounts", "r") as f:
+                    mounted_paths = [line.split()[1] for line in f.readlines() if len(line.split()) > 1]
+                return os.path.abspath(str(path)) in mounted_paths
+            except Exception:
+                return False
+
         # Mount proc, sys, and dev inside the build chroot.
         for fs in ["proc", "sys", "dev"]:
             target = self.build_chroot / fs
             target.mkdir(exist_ok=True)
-            self._run_privileged(["mount", "--rbind", f"/{fs}", str(target)])
-            self._run_privileged(["mount", "--make-rslave", str(target)])
+            if not is_mounted(target):
+                self._run_privileged(["mount", "--rbind", f"/{fs}", str(target)])
+                self._run_privileged(["mount", "--make-rslave", str(target)])
 
         # Mount the project root directory inside the build chroot.
         from core.path_utils import project_root
         proj_root = project_root().resolve()
         chroot_proj_root = self.build_chroot / proj_root.relative_to("/")
         chroot_proj_root.mkdir(parents=True, exist_ok=True)
-        self._run_privileged(["mount", "--bind", str(proj_root), str(chroot_proj_root)])
+        if not is_mounted(chroot_proj_root):
+            self._run_privileged(["mount", "--bind", str(proj_root), str(chroot_proj_root)])
 
         self._mounted = True
 
@@ -356,7 +367,17 @@ class ToolchainManager:
         host_cache.mkdir(parents=True, exist_ok=True)
         chroot_cache.mkdir(parents=True, exist_ok=True)
 
-        self._run_privileged(["mount", "--bind", str(host_cache), str(chroot_cache)])
+        # Helper to check if a path is already mounted
+        def is_mounted(path: Path) -> bool:
+            try:
+                with open("/proc/mounts", "r") as f:
+                    mounted_paths = [line.split()[1] for line in f.readlines() if len(line.split()) > 1]
+                return os.path.abspath(str(path)) in mounted_paths
+            except Exception:
+                return False
+
+        if not is_mounted(chroot_cache):
+            self._run_privileged(["mount", "--bind", str(host_cache), str(chroot_cache)])
         self._cache_mounted = True
         self._diag(f"pacman cache bind-mounted host={host_cache} chroot={chroot_cache}")
 

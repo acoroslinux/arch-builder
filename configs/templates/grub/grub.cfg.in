@@ -39,13 +39,17 @@ timeout_style=menu
 #
 menuentry "@@BOOT_TITLE@@ (@@ARCH@@, ${archiso_platform})" --class arch --class gnu-linux --class gnu --class os --id 'arch-live' {
     set gfxpayload=keep
+    echo "Loading Kernel..."
     linux /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisosearchuuid=@@ARCHISO_UUID@@ @@BOOT_CMDLINE@@
+    echo "Loading Initramfs... Please wait..."
     initrd /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
 }
 #
 menuentry "@@BOOT_TITLE@@ (@@ARCH@@, ${archiso_platform}) - Rescue Mode" --hotkey r --class arch --class gnu-linux --class gnu --class os --id 'arch-rescue' {
     set gfxpayload=keep
+    echo "Loading Kernel (Rescue Mode)..."
     linux /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisosearchuuid=@@ARCHISO_UUID@@ nomodeset vga=normal @@BOOT_CMDLINE@@
+    echo "Loading Initramfs... Please wait..."
     initrd /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
 }
 

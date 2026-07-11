@@ -224,13 +224,13 @@ class BaseEngine(ISOEngine):
 class ArchEngine(BaseEngine):
     """Engine in charge of x86_64 builds."""
 
-    def _prepare_grub_boot_tree(self, chroot_root: Path) -> None:
+    def _prepare_grub_boot_tree(self, chroot_root: Path, iso_uuid: str = "") -> None:
         """Generate GRUB configuration inside the active rootfs before ISO creation."""
         from core.bootloaders.grub2 import Grub2Bootloader
 
         # Use the root device ID from config or a sensible default
         root_device_id = self.config.get("system.root_device_id", "ARCHISO_UUID_PLACEHOLDER")
-        bootloader = Grub2Bootloader(self.config, root_device_id)
+        bootloader = Grub2Bootloader(self.config, root_device_id, iso_uuid=iso_uuid)
         bootloader.prepare_files(chroot_root)
 
     def setup_chroot(self, workdir: str) -> None:
@@ -447,8 +447,14 @@ class ArchEngine(BaseEngine):
         """
         effective_root = Path(mountpoint).parent
 
+        # --- Generate ISO UUID (matches mkarchiso: TZ=UTC date +%F-%H-%M-%S-00) ---
+        # mkarchiso creates /boot/<iso_uuid>.uuid on the ISO so the archiso hook
+        # can find the ISO device by scanning all block devices for that file.
+        import datetime
+        iso_uuid = datetime.datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-00")
+
         # Generate GRUB configuration (grub.cfg) inside the airootfs
-        self._prepare_grub_boot_tree(effective_root)
+        self._prepare_grub_boot_tree(effective_root, iso_uuid=iso_uuid)
 
         # Create the ISO staging directory
         iso_staging = effective_root.parent / "iso-staging"
@@ -461,11 +467,6 @@ class ArchEngine(BaseEngine):
         (iso_staging / "EFI" / "BOOT").mkdir(parents=True, exist_ok=True)
         (iso_staging / "loader" / "entries").mkdir(parents=True, exist_ok=True)
 
-        # --- Generate ISO UUID (matches mkarchiso: TZ=UTC date +%F-%H-%M-%S-00) ---
-        # mkarchiso creates /boot/<iso_uuid>.uuid on the ISO so the archiso hook
-        # can find the ISO device by scanning all block devices for that file.
-        import datetime
-        iso_uuid = datetime.datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-00")
         search_filename = f"/boot/{iso_uuid}.uuid"
         # Create the empty UUID marker file (critical for archiso hook to find the device)
         (iso_boot / f"{iso_uuid}.uuid").touch()
@@ -726,6 +727,14 @@ class ArchEngine(BaseEngine):
         ]
         for src, dst, opts in mounts:
             dst.mkdir(parents=True, exist_ok=True)
+            try:
+                with open("/proc/mounts", "r") as f:
+                    mounted_paths = [line.split()[1] for line in f.readlines() if len(line.split()) > 1]
+                if os.path.abspath(str(dst)) in mounted_paths:
+                    self.logger.debug(f"{dst} is already mounted, skipping.")
+                    continue
+            except Exception:
+                pass
             _sudo_run(["mount", opts, str(src), str(dst)], check=False)
 
         try:

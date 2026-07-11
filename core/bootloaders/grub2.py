@@ -233,16 +233,9 @@ class Grub2Bootloader:
         if efi_in_stage.exists():
             shutil.copy2(efi_in_stage, efi_binary)
 
-        # ── Step 2: Copy kernel, initramfs and loader files into staging area ──
-        for fname, dst_dir in [
-            (kernel_name,    stage / "arch" / "boot" / arch),
-            (initramfs_name, stage / "arch" / "boot" / arch),
-        ]:
-            src = workdir / "arch" / "boot" / arch / fname
-            if src.exists():
-                shutil.copy2(src, dst_dir / fname)
-            else:
-                logger.warning(f"[GRUB2] efiboot staging: {fname} not found at {src}")
+        # ── Step 2: Copy loader files into staging area ──
+        # Note: We do not copy the kernel and initramfs into efiboot.img because GRUB
+        # can read them directly from the ISO9660 partition. This saves ~60-80MB of space.
 
         # Loader config
         loader_src = workdir / "loader"
@@ -273,10 +266,6 @@ class Grub2Bootloader:
             # EFI binary
             f"mmd -i {efi_img_chroot} ::/EFI ::/EFI/BOOT",
             f"mcopy -i {efi_img_chroot} {stage_rel}/EFI/BOOT/BOOTx64.EFI ::/EFI/BOOT/BOOTx64.EFI",
-            # Kernel + initramfs
-            f"mmd -i {efi_img_chroot} ::/arch ::/arch/boot ::/arch/boot/{arch}",
-            f"mcopy -i {efi_img_chroot} {stage_rel}/arch/boot/{arch}/{kernel_name} ::/arch/boot/{arch}/{kernel_name}",
-            f"mcopy -i {efi_img_chroot} {stage_rel}/arch/boot/{arch}/{initramfs_name} ::/arch/boot/{arch}/{initramfs_name}",
             # loader
             f"mmd -i {efi_img_chroot} ::/loader ::/loader/entries",
         ]
