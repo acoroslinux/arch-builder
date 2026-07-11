@@ -35,6 +35,9 @@
       "spice-vdagent"
     ]
   },
+  "package_sources": {
+    "aur": []
+  },
   "customizations": {
     "services": [
       "lightdm"

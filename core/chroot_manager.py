@@ -465,14 +465,25 @@ class ChrootManager:
                 shutil.copy2(src, dst)
 
         # Initialize the pacman keyring and database inside airootfs
-        self.logger.info("[airootfs] Initializing pacman database in airootfs...")
+        self.logger.info("[airootfs] Initializing pacman keyring and database in airootfs...")
         try:
+            # Initialize keyring
+            self.run_command(
+                ["chroot", "/airootfs", "pacman-key", "--init"],
+                chroot_path=str(run_path),
+            )
+            # Populate keyring with Arch Linux keys
+            self.run_command(
+                ["chroot", "/airootfs", "pacman-key", "--populate", "archlinux"],
+                chroot_path=str(run_path),
+            )
+            # Sync package databases
             self.run_command(
                 ["pacman", "--root", "/airootfs", "--config", "/airootfs/etc/pacman.conf", "-Sy"],
                 chroot_path=str(run_path),
             )
         except ChrootManagerError as e:
-            self.logger.warning(f"[airootfs] pacman -Sy in airootfs failed (may be ok): {e}")
+            self.logger.warning(f"[airootfs] pacman initialization in airootfs failed (may be ok): {e}")
 
     def _install_official_packages_real(self, official_packages: List[str], attempts: int = 3) -> None:
         if not official_packages:
@@ -483,6 +494,16 @@ class ChrootManager:
 
         if use_host:
             # Host mode: run pacman directly on the host targeting the chroot using --root
+            
+            # Always ensure archlinux-keyring is up to date before installing other packages
+            try:
+                subprocess.run(
+                    ["sudo", "pacman", "-S", "--needed", "--noconfirm", "--root", str(self._workdir), "archlinux-keyring"],
+                    check=True, capture_output=True
+                )
+            except Exception as e:
+                self.logger.warning(f"Failed to update archlinux-keyring on host (may be ok): {e}")
+
             for attempt in range(1, max(1, attempts) + 1):
                 try:
                     command = [
@@ -528,6 +549,13 @@ class ChrootManager:
         # Initialize pacman database in airootfs before installing packages
         if iso_rootfs:
             self._init_airootfs_pacman(str(run_path))
+
+        # Always ensure archlinux-keyring is up to date before installing other packages
+        try:
+            keyring_cmd = ["pacman", "-S", "--needed", "--noconfirm", *root_flag, "archlinux-keyring"]
+            self.run_command(keyring_cmd, chroot_path=str(run_path))
+        except Exception as e:
+            self.logger.warning(f"Failed to update archlinux-keyring (may be ok): {e}")
 
         for attempt in range(1, max(1, attempts) + 1):
             try:

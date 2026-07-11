@@ -61,8 +61,14 @@ class OverlayAction(SystemAction):
                 
                 # Fix ownership of copied system directories to be owned by root (0:0)
                 chroot.run_command("chown -R 0:0 /etc 2>/dev/null || true")
-                chroot.run_command("chown -R 0:0 /usr/local 2>/dev/null || true")
+                chroot.run_command("chown -R 0:0 /usr 2>/dev/null || true")
                 chroot.run_command("chown -R 0:0 /boot 2>/dev/null || true")
+                chroot.run_command("chown -R 0:0 /opt 2>/dev/null || true")
+                
+                # Fix directory permissions to 755 (rwxr-xr-x) to avoid pacman warnings
+                chroot.run_command("find /etc /usr /boot /opt -type d -exec chmod 755 {} + 2>/dev/null || true")
+                
+                # Ensure sudo has the correct setuid permissions
                 chroot.run_command("chmod 4755 /usr/bin/sudo 2>/dev/null || true")
             except Exception as e:
                 logger.error(f"[Overlay] Failed to copy overlay: {e}")
