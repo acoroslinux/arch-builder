@@ -5,92 +5,36 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>core.toolchain &#8212; Arch-Builder Documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
-    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=a66d8bb5" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=2bf1fcf8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=a1a28e8c" />
+    
     <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
     <script src="../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" />
-   
-  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
-  
-
-  
-  
-
-  </head><body>
-  <div class="document">
+    <script type="module" src="../../_static/mermaid-init.mjs?v=2b1ff50a"></script>
     
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="../../index.html">Arch-Builder</a></h1>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Arch-Builder Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">core.toolchain</a></li> 
+      </ul>
+    </div>  
 
-
-
-<p class="blurb">Modular Arch Linux ISO builder</p>
-
-
-
-
-
-
-<h3>Navigation</h3>
-<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../getting-started.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../cli-reference.html">CLI Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../build-pipeline.html">Build Pipeline</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting.html">Troubleshooting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
-</ul>
-
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../../index.html">Documentation overview</a><ul>
-  <li><a href="../index.html">Module code</a><ul>
-  </ul></li>
-  </ul></li>
-</ul>
-</div>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
-
-
-
-
-
-
-
-
-        </div>
-      </div>
+    <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-              <div class="related top">
-                &nbsp;
-  <nav id="rellinks">
-    <ul>
-    </ul>
-  </nav>
-              </div>
-          
-
           <div class="body" role="main">
             
   <h1>Source code for core.toolchain</h1><div class="highlight"><pre>
@@ -108,12 +52,11 @@
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
 <span class="kn">import</span> <span class="nn">subprocess</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;Toolchain&quot;</span><span class="p">)</span>
-
 
 <div class="viewcode-block" id="ToolchainManager">
 <a class="viewcode-back" href="../../api.html#core.toolchain.ToolchainManager">[docs]</a>
@@ -139,6 +82,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_ready</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_host</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iso_rootfs_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mounted</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_diag_fallback_warned</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cache_mounted</span> <span class="o">=</span> <span class="kc">False</span>
@@ -148,7 +92,7 @@
             <span class="k">return</span>
 
         <span class="n">log_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">diagnostics_log_path</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toolchain_dir</span> <span class="o">/</span> <span class="s2">&quot;toolchain-debug.log&quot;</span><span class="p">)</span>
-        <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="n">timespec</span><span class="o">=</span><span class="s2">&quot;seconds&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;Z&quot;</span>
+        <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="n">timespec</span><span class="o">=</span><span class="s2">&quot;seconds&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;Z&quot;</span>
         <span class="n">line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">timestamp</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -233,6 +177,9 @@
         <span class="n">bootstrap_url</span> <span class="o">=</span> <span class="s2">&quot;https://mirror.rackspace.com/archlinux/iso/latest/archlinux-bootstrap-x86_64.tar.zst&quot;</span>
         <span class="n">tarball</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolchain_dir</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;archlinux-bootstrap.tar.zst&quot;</span>
 
+        <span class="k">if</span> <span class="n">tarball</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">tarball</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">tarball</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">tarball</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[TOOLCHAIN] Downloading Arch Linux bootstrap: </span><span class="si">{</span><span class="n">bootstrap_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_diag</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;download bootstrap </span><span class="si">{</span><span class="n">bootstrap_url</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">tarball</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -242,8 +189,16 @@
 
         <span class="n">rootfs_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolchain_dir</span> <span class="o">/</span> <span class="s2">&quot;root.x86_64&quot;</span>
         <span class="k">if</span> <span class="n">rootfs_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="c1"># Ensure every new build starts from a clean bootstrap rootfs.</span>
-            <span class="c1"># Reusable cache lives outside this directory.</span>
+            <span class="c1"># Unmount project root and other mounts first to prevent recursive deletion of host project files!</span>
+            <span class="kn">from</span> <span class="nn">core.path_utils</span> <span class="kn">import</span> <span class="n">project_root</span>
+            <span class="n">proj_root</span> <span class="o">=</span> <span class="n">project_root</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+            <span class="n">chroot_proj_root</span> <span class="o">=</span> <span class="n">rootfs_dir</span> <span class="o">/</span> <span class="n">proj_root</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">chroot_proj_root</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;umount&quot;</span><span class="p">,</span> <span class="s2">&quot;-l&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_proj_root</span><span class="p">)],</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
             <span class="k">for</span> <span class="n">mount_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;var/cache/pacman/pkg&quot;</span><span class="p">,</span> <span class="s2">&quot;dev&quot;</span><span class="p">,</span> <span class="s2">&quot;sys&quot;</span><span class="p">,</span> <span class="s2">&quot;proc&quot;</span><span class="p">]:</span>
                 <span class="n">target</span> <span class="o">=</span> <span class="n">rootfs_dir</span> <span class="o">/</span> <span class="n">mount_name</span>
                 <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
@@ -268,6 +223,12 @@
             <span class="p">],</span>
             <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
+
+        <span class="c1"># Create airootfs directory inside the extracted rootfs for package installation</span>
+        <span class="n">airootfs_dir</span> <span class="o">=</span> <span class="n">rootfs_dir</span> <span class="o">/</span> <span class="s2">&quot;airootfs&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">airootfs_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[TOOLCHAIN] Creating airootfs directory in bootstrap rootfs&quot;</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">rootfs_dir</span> <span class="o">/</span> <span class="s2">&quot;airootfs&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="c1"># The extracted directory will be self.toolchain_dir / &quot;root.x86_64&quot;.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span> <span class="o">=</span> <span class="n">rootfs_dir</span>
@@ -414,12 +375,31 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Build chroot path not initialized.&quot;</span><span class="p">)</span>
 
+        <span class="c1"># Helper to check if a path is already mounted</span>
+        <span class="k">def</span> <span class="nf">is_mounted</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;/proc/mounts&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">mounted_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span> <span class="ow">in</span> <span class="n">mounted_paths</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
         <span class="c1"># Mount proc, sys, and dev inside the build chroot.</span>
         <span class="k">for</span> <span class="n">fs</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;proc&quot;</span><span class="p">,</span> <span class="s2">&quot;sys&quot;</span><span class="p">,</span> <span class="s2">&quot;dev&quot;</span><span class="p">]:</span>
             <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span> <span class="o">/</span> <span class="n">fs</span>
             <span class="n">target</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="s2">&quot;--rbind&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">fs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">target</span><span class="p">)])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="s2">&quot;--make-rslave&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">target</span><span class="p">)])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_mounted</span><span class="p">(</span><span class="n">target</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="s2">&quot;--rbind&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">fs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">target</span><span class="p">)])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="s2">&quot;--make-rslave&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">target</span><span class="p">)])</span>
+
+        <span class="c1"># Mount the project root directory inside the build chroot.</span>
+        <span class="kn">from</span> <span class="nn">core.path_utils</span> <span class="kn">import</span> <span class="n">project_root</span>
+        <span class="n">proj_root</span> <span class="o">=</span> <span class="n">project_root</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+        <span class="n">chroot_proj_root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span> <span class="o">/</span> <span class="n">proj_root</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+        <span class="n">chroot_proj_root</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_mounted</span><span class="p">(</span><span class="n">chroot_proj_root</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="s2">&quot;--bind&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">proj_root</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_proj_root</span><span class="p">)])</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_mounted</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="k">def</span> <span class="nf">_mount_pacman_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -432,7 +412,17 @@
         <span class="n">host_cache</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">chroot_cache</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="s2">&quot;--bind&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">host_cache</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_cache</span><span class="p">)])</span>
+        <span class="c1"># Helper to check if a path is already mounted</span>
+        <span class="k">def</span> <span class="nf">is_mounted</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;/proc/mounts&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">mounted_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span> <span class="ow">in</span> <span class="n">mounted_paths</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_mounted</span><span class="p">(</span><span class="n">chroot_cache</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="s2">&quot;--bind&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">host_cache</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_cache</span><span class="p">)])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cache_mounted</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_diag</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pacman cache bind-mounted host=</span><span class="si">{</span><span class="n">host_cache</span><span class="si">}</span><span class="s2"> chroot=</span><span class="si">{</span><span class="n">chroot_cache</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -447,6 +437,15 @@
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">pass</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cache_mounted</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Unmount project root</span>
+        <span class="kn">from</span> <span class="nn">core.path_utils</span> <span class="kn">import</span> <span class="n">project_root</span>
+        <span class="n">proj_root</span> <span class="o">=</span> <span class="n">project_root</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+        <span class="n">chroot_proj_root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span> <span class="o">/</span> <span class="n">proj_root</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;umount&quot;</span><span class="p">,</span> <span class="s2">&quot;-l&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_proj_root</span><span class="p">)],</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span>
 
         <span class="k">for</span> <span class="n">fs</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;dev&quot;</span><span class="p">,</span> <span class="s2">&quot;sys&quot;</span><span class="p">,</span> <span class="s2">&quot;proc&quot;</span><span class="p">]:</span>
             <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span> <span class="o">/</span> <span class="n">fs</span>
@@ -553,32 +552,46 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_umount_chroot</span><span class="p">()</span></div>
 </div>
 
+
 </pre></div>
 
+            <div class="clearer"></div>
           </div>
-              <div class="related bottom">
-                &nbsp;
-  <nav id="rellinks">
-    <ul>
-    </ul>
-  </nav>
-              </div>
-          
         </div>
       </div>
-    <div class="clearer"></div>
-  </div>
-    <div class="footer">
-      &#169;2026, Arch-Builder contributors.
-      
-      |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
-      
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
     </div>
-
-    
-
-    
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Arch-Builder Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">core.toolchain</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Arch-Builder contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    </div>
   </body>
 </html>

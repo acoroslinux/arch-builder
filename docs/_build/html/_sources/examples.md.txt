@@ -144,3 +144,69 @@ sudo python3 cli.py x86_64 \
 ```
 
 Useful when iterating on a build and you intentionally want to preserve the existing tree.
+
+---
+
+## 11. Tutorial: Installing AUR Packages (e.g. pamac-aur, yay)
+
+Arch-Builder supports automatically downloading, compiling, and installing packages from the AUR (Arch User Repository) during the build process using a dedicated non-root build flow with helper accounts.
+
+### Step 1: Create or edit an AUR package profile
+You can edit the default `configs/packages/aur-packages.json` file to specify the AUR package names under the `package_sources.aur` list:
+
+```json
+{
+  "name": "aur-packages",
+  "description": "Custom AUR packages to compile and install.",
+  "package_sources": {
+    "aur": [
+      "yay-bin",
+      "pamac-aur"
+    ]
+  },
+  "dependencies": ["pacman"]
+}
+```
+
+### Step 2: Build the ISO with the AUR profile
+Run the build command and load the profile using the `-p` or `--package-profile` argument:
+
+```bash
+sudo python3 cli.py x86_64 \
+  --mode real \
+  --desktop xfce \
+  --package-profile aur-packages
+```
+
+The orchestrator will:
+1. Grant temporary passwordless sudo rights to a custom `aurbuilder` user inside the build toolchain.
+2. Clone the packages, build dependencies, compile binaries, and package them as `.pkg.tar.zst`.
+3. Safely install them to the live ISO target rootfs (`airootfs`) using `pacman -U`.
+
+---
+
+## 12. Tutorial: Installing Local Custom Packages (e.g. Calamares)
+
+If you have pre-compiled packages (like a custom build of the `calamares` system installer or proprietary drivers), you can easily bundle them without rebuilding them each time.
+
+### Step 1: Place packages in the local folder
+Place the `.pkg.tar.zst` or `.pkg.tar.xz` package files in the dedicated local directory:
+```text
+configs/custom-packages/local/
+```
+Example path:
+```text
+configs/custom-packages/local/calamares-3.3.0-1-x86_64.pkg.tar.zst
+```
+
+### Step 2: Build the ISO using the custom-user profile
+The `configs/packages/custom-user.json` profile is pre-configured to scan the local packages directory. Run the build with:
+
+```bash
+sudo python3 cli.py x86_64 \
+  --mode real \
+  --desktop xfce \
+  --package-profile custom-user
+```
+
+The builder will stage all files matching `*.pkg.tar*` in the directory, verify their dependencies, and install them directly onto the live system.

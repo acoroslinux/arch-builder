@@ -11,6 +11,7 @@ real isolated build-host support, and workspace-local artifact management.
    overview
    getting-started
    cli-reference
+   credits
    configuration
    profiles/index
    examples

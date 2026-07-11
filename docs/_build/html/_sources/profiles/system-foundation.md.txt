@@ -25,7 +25,7 @@ Common pattern across all architecture files:
 
 | File | Purpose | Notable settings |
 | --- | --- | --- |
-| `configs/architectures/x86_64.json` | Main 64-bit x86 profile. | Locale `pt_PT.UTF-8`, timezone `Europe/Lisbon`, keymap `pt-latin1`, live user with wheel/video/audio/networkmanager. |
+| `configs/architectures/x86_64.json` | Main 64-bit x86 profile. | Locale `en_US.UTF-8`, timezone `UTC`, keymap `us`, live user with wheel/video/audio/networkmanager. |
 | `configs/architectures/i386.json` | 32-bit x86 profile. | Leaner base package set, hostname `arch-builder-i386`, locale `en_US.UTF-8`. |
 | `configs/architectures/aarch64.json` | ARM64 profile using the `aarch64` architecture name. | Hostname `arch-builder-arm64`, UTC timezone, standard live user groups. |
 | `configs/architectures/arm64.json` | ARM64 alias profile for `arm64`. | Same overall structure as `aarch64`, kept as a separate selectable target. |
