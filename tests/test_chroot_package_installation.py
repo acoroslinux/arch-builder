@@ -89,6 +89,42 @@ class TestChrootPackageInstallation(unittest.TestCase):
             chroot_path="/tmp/real-chroot"
         )
 
+    @patch("core.chroot_manager.shutil.which", return_value=None)
+    def test_real_mode_host_fallback_requires_pacman(self, mock_which):
+        mock_toolchain = MagicMock()
+        mock_toolchain.use_host = True
+        mock_toolchain.build_chroot = "/tmp/real-chroot"
+        manager = ChrootManager(workdir="/tmp/real-chroot", mode="real", toolchain=mock_toolchain)
+
+        with self.assertRaises(ChrootManagerError) as cm:
+            manager._install_official_packages_real(["base"], attempts=1)
+
+        self.assertIn("Host pacman is unavailable", str(cm.exception))
+
+    @patch("core.chroot_manager.shutil.which", return_value=None)
+    def test_real_mode_local_package_install_requires_pacman(self, mock_which):
+        mock_toolchain = MagicMock()
+        mock_toolchain.use_host = True
+        mock_toolchain.build_chroot = "/tmp/real-chroot"
+        manager = ChrootManager(workdir="/tmp/real-chroot", mode="real", toolchain=mock_toolchain)
+
+        with self.assertRaises(ChrootManagerError) as cm:
+            manager._install_local_packages_real(["/tmp/pkg-1.pkg.tar.zst"])
+
+        self.assertIn("Host pacman is unavailable", str(cm.exception))
+
+    @patch("core.chroot_manager.shutil.which", return_value=None)
+    def test_real_mode_aur_package_install_requires_pacman(self, mock_which):
+        mock_toolchain = MagicMock()
+        mock_toolchain.use_host = True
+        mock_toolchain.build_chroot = "/tmp/real-chroot"
+        manager = ChrootManager(workdir="/tmp/real-chroot", mode="real", toolchain=mock_toolchain)
+
+        with self.assertRaises(ChrootManagerError) as cm:
+            manager._install_aur_packages_real(["yay-bin"])
+
+        self.assertIn("Host pacman is unavailable", str(cm.exception))
+
     def test_aur_package_name_validation(self):
         mock_toolchain = MagicMock()
         mock_toolchain.use_host = False

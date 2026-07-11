@@ -257,6 +257,23 @@ If the booted live ISO reaches the LightDM login screen but loops back or reques
 3. **Verify Session desktop file:** Check that `/usr/share/xsessions/<session>.desktop` exists for the configured session name in `/etc/lightdm/lightdm.conf`.
 4. **Inspect Logs:** Switch to `TTY2` (`Ctrl + Alt + F2`), log in, and check `~/.xsession-errors` or `/var/log/lightdm/lightdm.log`.
 
+## Credits
+
+Created and maintained by Manuel Rosa.
+
+- Email: manuelsilvarosa@gmail.com
+- License: MIT License
+
+## Contributing
+
+Contributions are welcome. Please open issues or pull requests for improvements, bug fixes, documentation updates, and new build profiles.
+
+This project is intended for free use and distribution in accordance with the MIT License.
+
 ## License and Status
 
-This repository currently focuses on implementation and operational documentation. If licensing, packaging, or CI publication are needed, add them explicitly to the repository policy.
+This repository is released under the MIT License. See the `LICENSE` file for details.
+
+Copyright 2026 Manuel Rosa
+
+For questions or contributions, contact Manuel Rosa <manuelsilvarosa@gmail.com>.

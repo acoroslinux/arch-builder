@@ -1,5 +1,6 @@
 import os
 import unittest
+from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -69,6 +70,33 @@ class TestArchBuilderIntegration(unittest.TestCase):
             workdir="/mnt/build-chroot", chroot_mode=True
         )
         self.mock_config = MockConfig()
+
+    def test_install_packages_routes_to_chroot_manager(self):
+        class PackageConfig(MockConfig):
+            def get(self, path: str, default: Any = None) -> Any:
+                if path == "package_sources.official":
+                    return ["base", "linux"]
+                return super().get(path, default)
+
+        mock_toolchain = SimpleNamespace(
+            run_command=MagicMock(return_value=""),
+            logger=MagicMock(),
+        )
+        mock_chroot_manager = MagicMock()
+        mock_config = PackageConfig()
+
+        builder = ISOBuilder(
+            arch="x86_64",
+            config=mock_config,
+            toolchain=mock_toolchain,
+            chroot_manager=mock_chroot_manager,
+        )
+
+        builder.engine.install_packages()
+
+        mock_chroot_manager.install_packages.assert_called_once()
+        plan_arg = mock_chroot_manager.install_packages.call_args[0][0]
+        self.assertEqual(plan_arg["official"], ["base", "networking", "linux"])
 
     def test_full_e2e_build_cycle_simulation(self):
         """Test the full ISO build lifecycle using mocks to simulate real execution."""

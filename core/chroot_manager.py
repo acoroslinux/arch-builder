@@ -258,6 +258,10 @@ class ChrootManager:
         use_host = not self.toolchain or getattr(self.toolchain, "use_host", True)
 
         if use_host:
+            if shutil.which("pacman") is None:
+                raise ChrootManagerError(
+                    "Host pacman is unavailable. Enable an isolated toolchain or install pacman on the host."
+                )
             # Host mode: run pacman -U directly on the host targeting the chroot
             command = [
                 "sudo",
@@ -306,6 +310,10 @@ class ChrootManager:
         use_host = not self.toolchain or getattr(self.toolchain, "use_host", True)
 
         if use_host:
+            if shutil.which("pacman") is None:
+                raise ChrootManagerError(
+                    "Host pacman is unavailable. Enable an isolated toolchain or install pacman on the host."
+                )
             # Prepare build prerequisites on host
             subprocess.run(["sudo", "pacman", "-S", "--needed", "--noconfirm", "git", "base-devel"], check=True)
             
@@ -464,22 +472,49 @@ class ChrootManager:
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src, dst)
 
-        # Initialize the pacman keyring and database inside airootfs
+        # Initialize the pacman keyring and database inside airootfs.
+        # In isolated mode, the build host has pacman and pacman-key, while the
+        # target airootfs only receives the generated keyring directories.
         self.logger.info("[airootfs] Initializing pacman keyring and database in airootfs...")
         try:
-            # Initialize keyring
+            # Use pacman-key from the build host to initialize the gpg directory inside airootfs.
             self.run_command(
-                ["chroot", "/airootfs", "pacman-key", "--init"],
+                [
+                    "pacman-key",
+                    "--gpgdir",
+                    "/airootfs/etc/pacman.d/gnupg",
+                    "--init",
+                ],
                 chroot_path=str(run_path),
             )
-            # Populate keyring with Arch Linux keys
             self.run_command(
-                ["chroot", "/airootfs", "pacman-key", "--populate", "archlinux"],
+                [
+                    "pacman-key",
+                    "--gpgdir",
+                    "/airootfs/etc/pacman.d/gnupg",
+                    "--populate",
+                    "archlinux",
+                ],
                 chroot_path=str(run_path),
             )
-            # Sync package databases
+
+            # Ensure the airootfs keyring directory was created.
+            target_gpgdir = airootfs_path / "etc" / "pacman.d" / "gnupg"
+            if not target_gpgdir.exists():
+                raise ChrootManagerError(
+                    "airootfs pacman keyring directory was not created by pacman-key."
+                )
+
+            # Sync package databases for the target root using its pacman.conf.
             self.run_command(
-                ["pacman", "--root", "/airootfs", "--config", "/airootfs/etc/pacman.conf", "-Sy"],
+                [
+                    "pacman",
+                    "--root",
+                    "/airootfs",
+                    "--config",
+                    "/airootfs/etc/pacman.conf",
+                    "-Sy",
+                ],
                 chroot_path=str(run_path),
             )
         except ChrootManagerError as e:
@@ -493,6 +528,10 @@ class ChrootManager:
         use_host = not self.toolchain or getattr(self.toolchain, "use_host", True)
 
         if use_host:
+            if shutil.which("pacman") is None:
+                raise ChrootManagerError(
+                    "Host pacman is unavailable. Enable an isolated toolchain or install pacman on the host."
+                )
             # Host mode: run pacman directly on the host targeting the chroot using --root
             
             # Always ensure archlinux-keyring is up to date before installing other packages
@@ -544,7 +583,10 @@ class ChrootManager:
         # the build chroot root. This prevents ISO packages from conflicting with
         # the toolchain packages already installed in the build host.
         iso_rootfs = getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
-        root_flag = ["--root", "/airootfs"] if iso_rootfs else []
+        if iso_rootfs:
+            root_flag = ["--root", "/airootfs", "--config", "/airootfs/etc/pacman.conf"]
+        else:
+            root_flag = []
 
         # Initialize pacman database in airootfs before installing packages
         if iso_rootfs:
@@ -580,15 +622,30 @@ class ChrootManager:
                 )
                 if attempt < attempts:
                     try:
-                        self.run_command(
-                            [
-                                "pacman",
-                                "-Syy",
-                                "--noconfirm",
-                                "--disable-download-timeout",
-                            ],
-                            chroot_path=str(run_path),
-                        )
+                        if iso_rootfs:
+                            self.run_command(
+                                [
+                                    "pacman",
+                                    "--root",
+                                    "/airootfs",
+                                    "--config",
+                                    "/airootfs/etc/pacman.conf",
+                                    "-Syy",
+                                    "--noconfirm",
+                                    "--disable-download-timeout",
+                                ],
+                                chroot_path=str(run_path),
+                            )
+                        else:
+                            self.run_command(
+                                [
+                                    "pacman",
+                                    "-Syy",
+                                    "--noconfirm",
+                                    "--disable-download-timeout",
+                                ],
+                                chroot_path=str(run_path),
+                            )
                     except ChrootManagerError:
                         pass
 
