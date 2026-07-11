@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>core.config_loader &#8212; Arch-Builder Documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/classic.css?v=2bf1fcf8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=a1a28e8c" />
+    
+    <script src="../../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script type="module" src="../../_static/mermaid-init.mjs?v=2b1ff50a"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Arch-Builder Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">core.config_loader</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for core.config_loader</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">core.path_utils</span> <span class="kn">import</span> <span class="n">resolve_from_project</span>
+
+<span class="c1"># Setup Logger</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;ConfigLoader&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ConfigValidationError">
+<a class="viewcode-back" href="../../api.html#core.config_loader.ConfigValidationError">[docs]</a>
+<span class="k">class</span> <span class="nc">ConfigValidationError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception raised for configuration validation errors.&quot;&quot;&quot;</span>
+
+    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="Config">
+<a class="viewcode-back" href="../../api.html#core.config_loader.Config">[docs]</a>
+<span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Data wrapper for configuration objects with dot-notation access.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="s2">&quot;Config&quot;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">Config</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">_data</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+
+<div class="viewcode-block" id="Config.get">
+<a class="viewcode-back" href="../../api.html#core.config_loader.Config.get">[docs]</a>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="s2">&quot;_data&quot;</span><span class="p">):</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">current</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">current</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">default</span>
+
+            <span class="k">if</span> <span class="n">current</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">default</span>
+        <span class="k">return</span> <span class="n">current</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">Config</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">val</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&#39; object has no attribute &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Config(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+<div class="viewcode-block" id="Config.to_dict">
+<a class="viewcode-back" href="../../api.html#core.config_loader.Config.to_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ConfigAssembler">
+<a class="viewcode-back" href="../../api.html#core.config_loader.ConfigAssembler">[docs]</a>
+<span class="k">class</span> <span class="nc">ConfigAssembler</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The assembler is the composition brain.</span>
+<span class="sd">    It reads the global manifest and merges the configuration of all components</span>
+<span class="sd">    (architectures, desktops, bootloaders, and so on) into a single</span>
+<span class="sd">    configuration object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="n">config_root</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_deep_merge</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">update</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Recursively merge two dictionaries and combine lists without losing data.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">update</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">base</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">value</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">base</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="c1"># Extend lists while avoiding duplicates where simple checks work.</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                        <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">return</span> <span class="n">base</span>
+
+    <span class="k">def</span> <span class="nf">_load_json_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error reading </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_load_optional_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a profile JSON from configs/&lt;category&gt;/&lt;profile_name&gt;.json if it exists.&quot;&quot;&quot;</span>
+        <span class="n">profile_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">/</span> <span class="n">category</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2">.json&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">profile_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Profile &#39;</span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2">&#39; not found in &#39;</span><span class="si">{</span><span class="n">category</span><span class="si">}</span><span class="s2">&#39; at </span><span class="si">{</span><span class="n">profile_path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_file</span><span class="p">(</span><span class="n">profile_path</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_apply_kernel_override</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set selected kernel and align related fields in platform_specific.&quot;&quot;&quot;</span>
+        <span class="n">platform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;platform_specific&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="c1"># Convert kernel package name to kernel filename (e.g., &quot;linux&quot; -&gt; &quot;vmlinuz-linux&quot;)</span>
+        <span class="n">base_kernel</span> <span class="o">=</span> <span class="n">kernel_name</span> <span class="k">if</span> <span class="n">kernel_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;vmlinuz-&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;vmlinuz-</span><span class="si">{</span><span class="n">kernel_name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">platform</span><span class="p">[</span><span class="s2">&quot;base_kernel&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base_kernel</span>
+
+        <span class="c1"># Keep initramfs naming coherent with selected kernel.</span>
+        <span class="n">platform</span><span class="p">[</span><span class="s2">&quot;initramfs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;initramfs-</span><span class="si">{</span><span class="n">kernel_name</span><span class="si">}</span><span class="s2">.img&quot;</span>
+
+        <span class="n">kernel_candidates</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;linux&quot;</span><span class="p">,</span> <span class="s2">&quot;linux-lts&quot;</span><span class="p">,</span> <span class="s2">&quot;linux-zen&quot;</span><span class="p">,</span> <span class="s2">&quot;linux-hardened&quot;</span><span class="p">}</span>
+
+        <span class="k">def</span> <span class="nf">replace_kernel_in_list</span><span class="p">(</span><span class="n">pkg_list</span><span class="p">):</span>
+            <span class="n">replaced</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pkg_list</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">kernel_candidates</span><span class="p">:</span>
+                        <span class="n">pkg_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">kernel_name</span><span class="p">}</span>
+                        <span class="n">replaced</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">kernel_candidates</span><span class="p">:</span>
+                    <span class="n">pkg_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">kernel_name</span>
+                    <span class="n">replaced</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">replaced</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">pkg_list</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pkg_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="n">pkg_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">kernel_name</span><span class="p">})</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">pkg_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kernel_name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">replaced</span>
+
+        <span class="n">platform_pkgs</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">platform_pkgs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">replace_kernel_in_list</span><span class="p">(</span><span class="n">platform_pkgs</span><span class="p">)</span>
+
+        <span class="n">root_pkgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">root_pkgs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">replace_kernel_in_list</span><span class="p">(</span><span class="n">root_pkgs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_apply_live_user_override</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">live_user</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">live_groups</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Override live user identity/groups and keep display-manager autologin aligned.&quot;&quot;&quot;</span>
+        <span class="n">customizations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;customizations&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">users</span> <span class="o">=</span> <span class="n">customizations</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;users&quot;</span><span class="p">,</span> <span class="p">[])</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">users</span><span class="p">:</span>
+            <span class="n">users</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">customizations</span><span class="p">[</span><span class="s2">&quot;users&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">users</span>
+
+        <span class="n">target_idx</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">user</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">users</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;live&quot;</span><span class="p">:</span>
+                <span class="n">target_idx</span> <span class="o">=</span> <span class="n">idx</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">target_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">users</span><span class="p">:</span>
+                <span class="n">target_idx</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">users</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">live_user</span><span class="p">,</span> <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="s2">&quot;live&quot;</span><span class="p">,</span> <span class="s2">&quot;groups&quot;</span><span class="p">:</span> <span class="p">[]})</span>
+                <span class="n">target_idx</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">target_user</span> <span class="o">=</span> <span class="n">users</span><span class="p">[</span><span class="n">target_idx</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_user</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">target_user</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">users</span><span class="p">[</span><span class="n">target_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_user</span>
+
+        <span class="n">target_user</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">live_user</span>
+        <span class="k">if</span> <span class="n">live_groups</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">target_user</span><span class="p">[</span><span class="s2">&quot;groups&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">g</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">live_groups</span> <span class="k">if</span> <span class="n">g</span><span class="p">]</span>
+
+        <span class="n">commands</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;system_config&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span>
+            <span class="s2">&quot;commands&quot;</span><span class="p">,</span> <span class="p">[]</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">commands</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="n">commands</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">[</span><span class="s2">&quot;system_config&quot;</span><span class="p">][</span><span class="s2">&quot;commands&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">commands</span>
+
+        <span class="n">autologin_commands</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;if [ -f /etc/lightdm/lightdm.conf ]; then &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;sed -i &#39;s/^autologin-user=.*/autologin-user=</span><span class="si">{</span><span class="n">live_user</span><span class="si">}</span><span class="s2">/&#39; /etc/lightdm/lightdm.conf; fi&quot;</span>
+            <span class="p">),</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;if [ -f /etc/gdm/custom.conf ]; then &quot;</span>
+                <span class="s2">&quot;sed -i &#39;s/^AutomaticLogin=.*/&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;AutomaticLogin=</span><span class="si">{</span><span class="n">live_user</span><span class="si">}</span><span class="s2">/&#39; /etc/gdm/custom.conf; fi&quot;</span>
+            <span class="p">),</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;if [ -f /etc/sddm.conf.d/autologin.conf ]; then &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;sed -i &#39;s/^User=.*/User=</span><span class="si">{</span><span class="n">live_user</span><span class="si">}</span><span class="s2">/&#39; /etc/sddm.conf.d/autologin.conf; fi&quot;</span>
+            <span class="p">),</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="n">autologin_commands</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cmd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">commands</span><span class="p">:</span>
+                <span class="n">commands</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_resolve_live_user_from_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the primary live-user dict from current merged configuration.&quot;&quot;&quot;</span>
+        <span class="n">customizations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;customizations&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">customizations</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">users</span> <span class="o">=</span> <span class="n">customizations</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;users&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">users</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">users</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">user</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="ConfigAssembler.assemble">
+<a class="viewcode-back" href="../../api.html#core.config_loader.ConfigAssembler.assemble">[docs]</a>
+    <span class="k">def</span> <span class="nf">assemble</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">target_arch</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">target_desktop</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">target_kernel</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">target_bootloader</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">package_profiles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">service_profiles</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">target_live_profile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">live_user</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">live_groups</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Config</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Configuration assembly process:</span>
+<span class="sd">        1. Load the global manifest (global_build.json).</span>
+<span class="sd">        2. Load the architecture-specific configuration.</span>
+<span class="sd">        3. Load the requested desktop profile.</span>
+<span class="sd">        4. Merge everything together.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting configuration assembly for </span><span class="si">{</span><span class="n">target_arch</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+
+        <span class="c1"># 1. Global manifest</span>
+        <span class="n">global_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">/</span> <span class="s2">&quot;global_build.json&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">global_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Global manifest not found at </span><span class="si">{</span><span class="n">global_path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_file</span><span class="p">(</span><span class="n">global_path</span><span class="p">)</span>
+
+        <span class="c1"># 2. Architecture (for example: configs/architectures/x86_64.json)</span>
+        <span class="c1"># Note: global_build may embed config data or point to an external file.</span>
+        <span class="n">arch_config_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">/</span> <span class="s2">&quot;architectures&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_arch</span><span class="si">}</span><span class="s2">.json&quot;</span>
+        <span class="k">if</span> <span class="n">arch_config_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">arch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_file</span><span class="p">(</span><span class="n">arch_config_path</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">arch_data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No architecture-specific file found at </span><span class="si">{</span><span class="n">arch_config_path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># 3. Desktop profile (if requested)</span>
+        <span class="k">if</span> <span class="n">target_desktop</span><span class="p">:</span>
+            <span class="n">desktop_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">/</span> <span class="s2">&quot;desktops&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_desktop</span><span class="si">}</span><span class="s2">.json&quot;</span>
+            <span class="k">if</span> <span class="n">desktop_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="n">desktop_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_file</span><span class="p">(</span><span class="n">desktop_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">desktop_data</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Desktop &#39;</span><span class="si">{</span><span class="n">target_desktop</span><span class="si">}</span><span class="s2">&#39; not found at </span><span class="si">{</span><span class="n">desktop_path</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># 4. Optional profile selections</span>
+        <span class="k">if</span> <span class="n">target_kernel</span><span class="p">:</span>
+            <span class="n">kernel_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span><span class="s2">&quot;kernels&quot;</span><span class="p">,</span> <span class="n">target_kernel</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">kernel_data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">kernel_data</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apply_kernel_override</span><span class="p">(</span><span class="n">target_kernel</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">target_bootloader</span><span class="p">:</span>
+            <span class="n">bootloader_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span><span class="s2">&quot;bootloaders&quot;</span><span class="p">,</span> <span class="n">target_bootloader</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">bootloader_data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">bootloader_data</span><span class="p">)</span>
+
+        <span class="c1"># Always load the base package profile as it is common to all builds.</span>
+        <span class="n">base_package_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">,</span> <span class="s2">&quot;base&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">base_package_data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">base_package_data</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">profile_name</span> <span class="ow">in</span> <span class="n">package_profiles</span> <span class="ow">or</span> <span class="p">[]:</span>
+            <span class="k">if</span> <span class="n">profile_name</span> <span class="o">==</span> <span class="s2">&quot;base&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">package_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">package_data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">package_data</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">profile_name</span> <span class="ow">in</span> <span class="n">service_profiles</span> <span class="ow">or</span> <span class="p">[]:</span>
+            <span class="n">services_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span><span class="s2">&quot;services&quot;</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">services_data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">services_data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">target_live_profile</span><span class="p">:</span>
+            <span class="n">live_profile_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span><span class="s2">&quot;live-users&quot;</span><span class="p">,</span> <span class="n">target_live_profile</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">live_profile_data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">live_profile_data</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">live_user</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apply_live_user_override</span><span class="p">(</span><span class="n">live_user</span><span class="p">,</span> <span class="n">live_groups</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">target_live_profile</span><span class="p">:</span>
+            <span class="n">profile_user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_live_user_from_config</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">profile_user</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">resolved_name</span> <span class="o">=</span> <span class="n">profile_user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">resolved_name</span><span class="p">:</span>
+                    <span class="n">resolved_groups</span> <span class="o">=</span> <span class="n">profile_user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;groups&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">resolved_groups</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                        <span class="n">resolved_groups</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_apply_live_user_override</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">resolved_name</span><span class="p">),</span> <span class="n">resolved_groups</span><span class="p">)</span>
+
+        <span class="c1"># 4b. Initramfs profile (for live ISO kernel hooks)</span>
+        <span class="n">initramfs_profile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span><span class="s2">&quot;initramfs&quot;</span><span class="p">,</span> <span class="s2">&quot;live&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">initramfs_profile</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">initramfs_profile</span><span class="p">)</span>
+
+        <span class="c1"># 5. Additional components (bootloaders, etc.)</span>
+        <span class="c1"># The global &quot;components&quot; section can be used to discover extra modules.</span>
+        <span class="n">components</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;components&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">for</span> <span class="n">comp_name</span><span class="p">,</span> <span class="n">comp_data</span> <span class="ow">in</span> <span class="n">components</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">comp_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">comp_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;module_binary&quot;</span><span class="p">:</span>
+                <span class="c1"># Placeholder for loading binary bootloader modules if needed.</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">comp_data</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">comp_data</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;module_binary&quot;</span><span class="p">:</span>
+                        <span class="k">pass</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Configuration assembly completed successfully.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="c1"># Keep the legacy interface for compatibility, but delegate to the assembler.</span>
+<div class="viewcode-block" id="ConfigLoader">
+<a class="viewcode-back" href="../../api.html#core.config_loader.ConfigLoader">[docs]</a>
+<span class="k">class</span> <span class="nc">ConfigLoader</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">resolve_from_project</span><span class="p">(</span><span class="n">config_root</span> <span class="ow">or</span> <span class="s2">&quot;configs&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="o">=</span> <span class="n">ConfigAssembler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_root</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ConfigLoader.load_arch_config">
+<a class="viewcode-back" href="../../api.html#core.config_loader.ConfigLoader.load_arch_config">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_arch_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">global_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">arch</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># The assembler needs the config root to load the remaining components.</span>
+            <span class="n">assembler</span> <span class="o">=</span> <span class="n">ConfigAssembler</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">resolve_from_project</span><span class="p">(</span><span class="n">global_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">))</span>
+            <span class="n">config_obj</span> <span class="o">=</span> <span class="n">assembler</span><span class="o">.</span><span class="n">assemble</span><span class="p">(</span><span class="n">arch</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">config_obj</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ConfigLoader error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+</div>
+
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Arch-Builder Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">core.config_loader</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; Copyright 2026, Arch-Builder contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    </div>
+  </body>
+</html>

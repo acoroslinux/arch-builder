@@ -1,0 +1,235 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build Pipeline &mdash; Arch-Builder</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=a1a28e8c" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Customizer Actions" href="operations/customizer-actions.html" />
+    <link rel="prev" title="Build Examples" href="examples.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #E31937" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Arch-Builder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="profiles/index.html">Profile Catalog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Build Examples</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Build Pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#execution-flow-diagram">Execution Flow Diagram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cli-parsing">1. CLI parsing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configuration-assembly">2. Configuration assembly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#workdir-resolution">3. Workdir resolution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#chroot-manager-setup">4. Chroot manager setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#toolchain-preparation">5. Toolchain preparation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#package-installation">6. Package installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#post-install-customization">7. Post-install customization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bootloader-generation">8. Bootloader generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#final-iso-export">9. Final ISO export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cleanup-behavior">Cleanup behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#real-mode-isolation-diagram">Real-Mode Isolation Diagram</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="operations/customizer-actions.html">Customizer Actions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/chroot-manager.html">Chroot Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting-isolated-builds.html">Isolated Build Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #E31937" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arch-Builder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Build Pipeline</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/build-pipeline.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="build-pipeline">
+<h1>Build Pipeline<a class="headerlink" href="#build-pipeline" title="Link to this heading"></a></h1>
+<p>This section describes the high-level execution flow.</p>
+<section id="execution-flow-diagram">
+<h2>Execution Flow Diagram<a class="headerlink" href="#execution-flow-diagram" title="Link to this heading"></a></h2>
+<pre class="mermaid">
+flowchart TD
+	START[CLI invocation] --> PARSE[Parse arguments]
+	PARSE --> NAME[Resolve output name]
+	NAME --> MERGE[Assemble config]
+	MERGE --> WORKDIR[Resolve writable workdir]
+	WORKDIR --> CHROOT[Create target chroot manager]
+	CHROOT --> TOOLCHAIN[Prepare host or isolated toolchain]
+	TOOLCHAIN --> PKG[Install packages]
+	PKG --> CUSTOM[Apply customizations]
+	CUSTOM --> BOOT[Generate bootloader artifacts]
+	BOOT --> FINAL[Export final ISO]
+</pre>
+</section>
+<section id="cli-parsing">
+<h2>1. CLI parsing<a class="headerlink" href="#cli-parsing" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">cli.py</span></code> parses user input, resolves a default output name when necessary, and constructs a <code class="docutils literal notranslate"><span class="pre">BuildOrchestrator</span></code>.</p>
+</section>
+<section id="configuration-assembly">
+<h2>2. Configuration assembly<a class="headerlink" href="#configuration-assembly" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">core.config_loader.ConfigAssembler</span></code> loads and merges:</p>
+<ul class="simple">
+<li><p>global config</p></li>
+<li><p>architecture profile</p></li>
+<li><p>optional desktop/kernel/bootloader/package/service/live-user profiles</p></li>
+<li><p>CLI live-user overrides</p></li>
+</ul>
+</section>
+<section id="workdir-resolution">
+<h2>3. Workdir resolution<a class="headerlink" href="#workdir-resolution" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">core.orchestrator.BuildOrchestrator</span></code> resolves a writable workspace-local workdir and fallback path.</p>
+</section>
+<section id="chroot-manager-setup">
+<h2>4. Chroot manager setup<a class="headerlink" href="#chroot-manager-setup" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">core.chroot_manager.ChrootManager</span></code> is initialized against the active target root filesystem.</p>
+</section>
+<section id="toolchain-preparation">
+<h2>5. Toolchain preparation<a class="headerlink" href="#toolchain-preparation" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">core.toolchain.ToolchainManager</span></code> either:</p>
+<ul class="simple">
+<li><p>uses host tools when available, or</p></li>
+<li><p>bootstraps an isolated Arch build host in real mode</p></li>
+</ul>
+<p>The isolated toolchain handles:</p>
+<ul class="simple">
+<li><p>bootstrap archive download and extraction</p></li>
+<li><p>proc/sys/dev mounts</p></li>
+<li><p>package cache bind-mounting</p></li>
+<li><p>mirrorlist preparation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pacman.conf</span></code> adjustments</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pacman-key</span></code> initialization</p></li>
+<li><p>installation of build tools such as <code class="docutils literal notranslate"><span class="pre">archiso</span></code>, <code class="docutils literal notranslate"><span class="pre">xorriso</span></code>, and <code class="docutils literal notranslate"><span class="pre">grub</span></code></p></li>
+</ul>
+</section>
+<section id="package-installation">
+<h2>6. Package installation<a class="headerlink" href="#package-installation" title="Link to this heading"></a></h2>
+<p>The selected engine computes a normalized package plan and installs official packages. Additional customization layers can extend package sets.</p>
+</section>
+<section id="post-install-customization">
+<h2>7. Post-install customization<a class="headerlink" href="#post-install-customization" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">core.customizer.SystemConfigurator</span></code> applies:</p>
+<ul class="simple">
+<li><p>user creation</p></li>
+<li><p>group creation when required</p></li>
+<li><p>service enablement</p></li>
+<li><p>file copies</p></li>
+<li><p>locale and keymap changes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mkinitcpio</span></code> configuration</p></li>
+</ul>
+</section>
+<section id="bootloader-generation">
+<h2>8. Bootloader generation<a class="headerlink" href="#bootloader-generation" title="Link to this heading"></a></h2>
+<p>The engine runs <code class="docutils literal notranslate"><span class="pre">grub-mkrescue</span></code> or other configured tooling against the prepared rootfs/boot path.</p>
+</section>
+<section id="final-iso-export">
+<h2>9. Final ISO export<a class="headerlink" href="#final-iso-export" title="Link to this heading"></a></h2>
+<p>The final ISO is either copied out from the isolated chroot or created directly with the configured ISO tooling.</p>
+</section>
+<section id="cleanup-behavior">
+<h2>Cleanup behavior<a class="headerlink" href="#cleanup-behavior" title="Link to this heading"></a></h2>
+<p>When <code class="docutils literal notranslate"><span class="pre">--clean</span></code> is active, the builder removes old build artifacts from the active workdir before starting. Reusable cache remains outside the chroot tree.</p>
+</section>
+<section id="real-mode-isolation-diagram">
+<h2>Real-Mode Isolation Diagram<a class="headerlink" href="#real-mode-isolation-diagram" title="Link to this heading"></a></h2>
+<pre class="mermaid">
+flowchart LR
+	HOST[Host Linux distro] -->|bootstrap if needed| BUILDHOST[Isolated Arch build host]
+	BUILDHOST --> ROOTFS[target airootfs]
+	CACHE[arch-builder/cache/pacman/pkg] --> BUILDHOST
+	ROOTFS --> BOOT[boot artifacts]
+	BOOT --> IMAGE[output ISO]
+</pre></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="examples.html" class="btn btn-neutral float-left" title="Build Examples" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="operations/customizer-actions.html" class="btn btn-neutral float-right" title="Customizer Actions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-2026, Manuel Rosa.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

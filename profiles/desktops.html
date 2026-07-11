@@ -1,0 +1,268 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Desktop Profiles &mdash; Arch-Builder</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=a1a28e8c" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Live-User Profiles" href="live-users.html" />
+    <link rel="prev" title="System Foundation Profiles" href="system-foundation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #E31937" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Arch-Builder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Profile Catalog</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="system-foundation.html">System Foundation Profiles</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Desktop Profiles</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#shared-structure">Shared structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#display-manager-config-files">Display-manager config files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-use">Example use</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="live-users.html">Live-User Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packages-services.html">Package And Service Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets-and-templates.html">Asset And Template Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#reading-strategy">Reading Strategy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Build Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build-pipeline.html">Build Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../operations/customizer-actions.html">Customizer Actions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../operations/chroot-manager.html">Chroot Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting-isolated-builds.html">Isolated Build Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #E31937" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Arch-Builder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Profile Catalog</a></li>
+      <li class="breadcrumb-item active">Desktop Profiles</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/profiles/desktops.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="desktop-profiles">
+<h1>Desktop Profiles<a class="headerlink" href="#desktop-profiles" title="Link to this heading"></a></h1>
+<p>This page documents every desktop JSON profile under <code class="docutils literal notranslate"><span class="pre">configs/desktops/</span></code>.</p>
+<section id="shared-structure">
+<h2>Shared structure<a class="headerlink" href="#shared-structure" title="Link to this heading"></a></h2>
+<p>Most desktop profiles contribute three things:</p>
+<ul class="simple">
+<li><p>desktop or window-manager packages via <code class="docutils literal notranslate"><span class="pre">platform_specific.packages</span></code></p></li>
+<li><p>a display manager service via <code class="docutils literal notranslate"><span class="pre">customizations.services</span></code></p></li>
+<li><p>display-manager config files through <code class="docutils literal notranslate"><span class="pre">system_config.files</span></code></p></li>
+</ul>
+<p>Display-manager families:</p>
+<ul class="simple">
+<li><p>LightDM: most X11-oriented desktops and lightweight window managers</p></li>
+<li><p>SDDM: KDE, LXQt, Hyprland, Sway, gaming workstation</p></li>
+<li><p>GDM: GNOME</p></li>
+</ul>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Display manager</p></th>
+<th class="head"><p>Notable packages and behavior</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/awesome.json</span></code></p></td>
+<td><p>Awesome WM profile.</p></td>
+<td><p>LightDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">awesome</span></code>, <code class="docutils literal notranslate"><span class="pre">xterm</span></code>, <code class="docutils literal notranslate"><span class="pre">firefox</span></code>, <code class="docutils literal notranslate"><span class="pre">thunar</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/bspwm.json</span></code></p></td>
+<td><p>BSPWM tiling setup.</p></td>
+<td><p>LightDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">bspwm</span></code>, <code class="docutils literal notranslate"><span class="pre">sxhkd</span></code>, <code class="docutils literal notranslate"><span class="pre">dmenu</span></code>, <code class="docutils literal notranslate"><span class="pre">alacritty</span></code>, <code class="docutils literal notranslate"><span class="pre">thunar</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/budgie.json</span></code></p></td>
+<td><p>Budgie desktop session.</p></td>
+<td><p>LightDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">budgie-desktop</span></code>, <code class="docutils literal notranslate"><span class="pre">firefox</span></code>, <code class="docutils literal notranslate"><span class="pre">alacritty</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/cinnamon.json</span></code></p></td>
+<td><p>Cinnamon desktop.</p></td>
+<td><p>LightDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">cinnamon</span></code>, <code class="docutils literal notranslate"><span class="pre">firefox</span></code>, <code class="docutils literal notranslate"><span class="pre">alacritty</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/gnome.json</span></code></p></td>
+<td><p>GNOME desktop environment.</p></td>
+<td><p>GDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">gnome</span></code>, <code class="docutils literal notranslate"><span class="pre">gnome-tweaks</span></code>, <code class="docutils literal notranslate"><span class="pre">gdm</span></code>, custom <code class="docutils literal notranslate"><span class="pre">/etc/gdm/custom.conf</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/hyprland.json</span></code></p></td>
+<td><p>Wayland-first Hyprland profile.</p></td>
+<td><p>SDDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">hyprland</span></code>, <code class="docutils literal notranslate"><span class="pre">waybar</span></code>, <code class="docutils literal notranslate"><span class="pre">wofi</span></code>, <code class="docutils literal notranslate"><span class="pre">foot</span></code>, <code class="docutils literal notranslate"><span class="pre">xorg-xwayland</span></code>, <code class="docutils literal notranslate"><span class="pre">xdg-desktop-portal-hyprland</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/i3.json</span></code></p></td>
+<td><p>i3 tiling window manager.</p></td>
+<td><p>LightDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">i3-wm</span></code>, <code class="docutils literal notranslate"><span class="pre">i3status</span></code>, <code class="docutils literal notranslate"><span class="pre">dmenu</span></code>, <code class="docutils literal notranslate"><span class="pre">alacritty</span></code>, <code class="docutils literal notranslate"><span class="pre">thunar</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/kde.json</span></code></p></td>
+<td><p>KDE Plasma desktop.</p></td>
+<td><p>SDDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">plasma-meta</span></code>, <code class="docutils literal notranslate"><span class="pre">kde-applications-meta</span></code>, <code class="docutils literal notranslate"><span class="pre">wayland</span></code>, <code class="docutils literal notranslate"><span class="pre">firefox</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/lxqt.json</span></code></p></td>
+<td><p>LXQt desktop.</p></td>
+<td><p>SDDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lxqt</span></code>, <code class="docutils literal notranslate"><span class="pre">breeze-icons</span></code>, <code class="docutils literal notranslate"><span class="pre">firefox</span></code>, <code class="docutils literal notranslate"><span class="pre">alacritty</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/mate.json</span></code></p></td>
+<td><p>MATE desktop.</p></td>
+<td><p>LightDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mate</span></code>, <code class="docutils literal notranslate"><span class="pre">mate-extra</span></code>, <code class="docutils literal notranslate"><span class="pre">firefox</span></code>, <code class="docutils literal notranslate"><span class="pre">alacritty</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/openbox.json</span></code></p></td>
+<td><p>Openbox profile.</p></td>
+<td><p>LightDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">openbox</span></code>, <code class="docutils literal notranslate"><span class="pre">obconf</span></code>, <code class="docutils literal notranslate"><span class="pre">tint2</span></code>, <code class="docutils literal notranslate"><span class="pre">alacritty</span></code>, <code class="docutils literal notranslate"><span class="pre">thunar</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/pantheon.json</span></code></p></td>
+<td><p>Pantheon desktop.</p></td>
+<td><p>LightDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pantheon</span></code>, <code class="docutils literal notranslate"><span class="pre">firefox</span></code>, <code class="docutils literal notranslate"><span class="pre">alacritty</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/sway.json</span></code></p></td>
+<td><p>Wayland Sway compositor profile.</p></td>
+<td><p>SDDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sway</span></code>, <code class="docutils literal notranslate"><span class="pre">swaybg</span></code>, <code class="docutils literal notranslate"><span class="pre">swaylock</span></code>, <code class="docutils literal notranslate"><span class="pre">waybar</span></code>, <code class="docutils literal notranslate"><span class="pre">foot</span></code>, <code class="docutils literal notranslate"><span class="pre">wl-clipboard</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/wm-minimal.json</span></code></p></td>
+<td><p>Minimal i3-based environment.</p></td>
+<td><p>LightDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">i3-wm</span></code>, <code class="docutils literal notranslate"><span class="pre">i3status</span></code>, <code class="docutils literal notranslate"><span class="pre">dmenu</span></code>, <code class="docutils literal notranslate"><span class="pre">alacritty</span></code>, <code class="docutils literal notranslate"><span class="pre">thunar</span></code>, <code class="docutils literal notranslate"><span class="pre">networkmanager</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/workstation-gaming.json</span></code></p></td>
+<td><p>Gaming workstation preset.</p></td>
+<td><p>SDDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">plasma-meta</span></code>, <code class="docutils literal notranslate"><span class="pre">steam</span></code>, <code class="docutils literal notranslate"><span class="pre">lutris</span></code>, <code class="docutils literal notranslate"><span class="pre">gamemode</span></code>, <code class="docutils literal notranslate"><span class="pre">mangohud</span></code>, <code class="docutils literal notranslate"><span class="pre">gamescope</span></code>, <code class="docutils literal notranslate"><span class="pre">discord</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/workstation-office.json</span></code></p></td>
+<td><p>Office workstation preset.</p></td>
+<td><p>LightDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">xfce4</span></code>, <code class="docutils literal notranslate"><span class="pre">xfce4-goodies</span></code>, <code class="docutils literal notranslate"><span class="pre">libreoffice-fresh</span></code>, <code class="docutils literal notranslate"><span class="pre">thunderbird</span></code>, <code class="docutils literal notranslate"><span class="pre">evince</span></code>, <code class="docutils literal notranslate"><span class="pre">file-roller</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/desktops/xfce.json</span></code></p></td>
+<td><p>XFCE desktop.</p></td>
+<td><p>LightDM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">xfce4</span></code>, <code class="docutils literal notranslate"><span class="pre">xfce4-goodies</span></code>, <code class="docutils literal notranslate"><span class="pre">firefox</span></code>, <code class="docutils literal notranslate"><span class="pre">alacritty</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="display-manager-config-files">
+<h2>Display-manager config files<a class="headerlink" href="#display-manager-config-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>LightDM-based profiles commonly inject <code class="docutils literal notranslate"><span class="pre">lightdm.conf</span></code> and <code class="docutils literal notranslate"><span class="pre">lightdm-gtk-greeter.conf</span></code>.</p></li>
+<li><p>SDDM-based profiles commonly inject <code class="docutils literal notranslate"><span class="pre">/etc/sddm.conf.d/autologin.conf</span></code>.</p></li>
+<li><p>GNOME injects <code class="docutils literal notranslate"><span class="pre">/etc/gdm/custom.conf</span></code>.</p></li>
+</ul>
+</section>
+<section id="example-use">
+<h2>Example use<a class="headerlink" href="#example-use" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--desktop<span class="w"> </span>xfce
+python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--desktop<span class="w"> </span>workstation-gaming
+python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--desktop<span class="w"> </span>hyprland
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="system-foundation.html" class="btn btn-neutral float-left" title="System Foundation Profiles" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="live-users.html" class="btn btn-neutral float-right" title="Live-User Profiles" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-2026, Manuel Rosa.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

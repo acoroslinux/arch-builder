@@ -1,0 +1,280 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chroot Manager &mdash; Arch-Builder</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=a1a28e8c" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Troubleshooting" href="../troubleshooting.html" />
+    <link rel="prev" title="Customizer Actions" href="customizer-actions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #E31937" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Arch-Builder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../profiles/index.html">Profile Catalog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Build Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build-pipeline.html">Build Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customizer-actions.html">Customizer Actions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Chroot Manager</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#core-modes">Core modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#lifecycle-overview">Lifecycle overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#construction">Construction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#setup"><code class="docutils literal notranslate"><span class="pre">setup()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run-command"><code class="docutils literal notranslate"><span class="pre">run_command()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#package-installation-flow">Package installation flow</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#official-packages">Official packages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#local-packages">Local packages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#aur-packages">AUR packages</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#generate-fstab"><code class="docutils literal notranslate"><span class="pre">generate_fstab()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mock-filesystem-support">Mock filesystem support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#failure-model">Failure model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#practical-role-in-the-whole-build">Practical role in the whole build</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting-isolated-builds.html">Isolated Build Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #E31937" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Arch-Builder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Chroot Manager</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/operations/chroot-manager.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="chroot-manager">
+<h1>Chroot Manager<a class="headerlink" href="#chroot-manager" title="Link to this heading"></a></h1>
+<p>This page documents the operational responsibilities of <code class="docutils literal notranslate"><span class="pre">core.chroot_manager.ChrootManager</span></code>.</p>
+<p>The chroot manager is the execution boundary for package installation, chroot command invocation, and simple target filesystem tasks.</p>
+<section id="core-modes">
+<h2>Core modes<a class="headerlink" href="#core-modes" title="Link to this heading"></a></h2>
+<p>The manager supports two modes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mock</span></code>: simulation-oriented behavior for tests and development</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">real</span></code>: actual command execution through <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">chroot</span></code></p></li>
+</ul>
+</section>
+<section id="lifecycle-overview">
+<h2>Lifecycle overview<a class="headerlink" href="#lifecycle-overview" title="Link to this heading"></a></h2>
+<pre class="mermaid">
+flowchart TD
+    INIT[ChrootManager init] --> SETUP[setup]
+    SETUP --> RUN[run_command]
+    RUN --> PKG[install_packages]
+    RUN --> FSTAB[generate_fstab]
+    PKG --> OFF[official packages]
+    PKG --> LOCAL[local package files]
+    PKG --> AUR[AUR packages]
+</pre>
+</section>
+<section id="construction">
+<h2>Construction<a class="headerlink" href="#construction" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">ChrootManager</span></code> accepts either:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">workdir</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chroot_path</span></code></p></li>
+</ul>
+<p>One of them must be present. The resolved path becomes the active chroot root.</p>
+</section>
+<section id="setup">
+<h2><code class="docutils literal notranslate"><span class="pre">setup()</span></code><a class="headerlink" href="#setup" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Mock mode: logs virtual setup and returns the workdir.</p></li>
+<li><p>Real mode: creates the underlying chroot directory on disk.</p></li>
+</ul>
+<p>This method is intentionally minimal because most higher-order orchestration happens in the toolchain and ISO builder layers.</p>
+</section>
+<section id="run-command">
+<h2><code class="docutils literal notranslate"><span class="pre">run_command()</span></code><a class="headerlink" href="#run-command" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">run_command()</span></code> is the central execution primitive.</p>
+<p>Behavior:</p>
+<ul class="simple">
+<li><p>accepts either a shell string or a list of command arguments</p></li>
+<li><p>in mock mode, returns simulated output and logs intent</p></li>
+<li><p>in real mode, executes with <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">chroot</span> <span class="pre">&lt;effective_chroot&gt;</span> <span class="pre">...</span></code></p></li>
+</ul>
+<p>Important detail:</p>
+<ul class="simple">
+<li><p>the <code class="docutils literal notranslate"><span class="pre">effective_chroot</span></code> is taken from the explicit <code class="docutils literal notranslate"><span class="pre">chroot_path</span></code> argument when provided, otherwise it uses the manager’s configured workdir</p></li>
+</ul>
+<p>This is what lets orchestration redirect real-mode package and system operations into the isolated bootstrap rootfs when needed.</p>
+</section>
+<section id="package-installation-flow">
+<h2>Package installation flow<a class="headerlink" href="#package-installation-flow" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">install_packages()</span></code> normalizes either a plain package list or a structured package plan.</p>
+<p>The normalized plan includes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">official</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">aur</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">local_paths</span></code></p></li>
+</ul>
+<section id="official-packages">
+<h3>Official packages<a class="headerlink" href="#official-packages" title="Link to this heading"></a></h3>
+<p>Handled by <code class="docutils literal notranslate"><span class="pre">_install_official_packages_real()</span></code>.</p>
+<p>Behavior:</p>
+<ul class="simple">
+<li><p>installs with <code class="docutils literal notranslate"><span class="pre">pacman</span> <span class="pre">-S</span> <span class="pre">--needed</span> <span class="pre">--noconfirm</span></code></p></li>
+<li><p>retries failures up to a fixed attempt count</p></li>
+<li><p>refreshes package databases with <code class="docutils literal notranslate"><span class="pre">pacman</span> <span class="pre">-Syy</span></code> between attempts when necessary</p></li>
+</ul>
+</section>
+<section id="local-packages">
+<h3>Local packages<a class="headerlink" href="#local-packages" title="Link to this heading"></a></h3>
+<p>Handled by <code class="docutils literal notranslate"><span class="pre">_install_local_packages_real()</span></code>.</p>
+<p>Behavior:</p>
+<ul class="simple">
+<li><p>copies local package files into <code class="docutils literal notranslate"><span class="pre">&lt;chroot&gt;/tmp/custom-packages</span></code></p></li>
+<li><p>installs them with <code class="docutils literal notranslate"><span class="pre">pacman</span> <span class="pre">-U</span> <span class="pre">--noconfirm</span></code></p></li>
+</ul>
+</section>
+<section id="aur-packages">
+<h3>AUR packages<a class="headerlink" href="#aur-packages" title="Link to this heading"></a></h3>
+<p>Handled by <code class="docutils literal notranslate"><span class="pre">_install_aur_packages_real()</span></code>.</p>
+<p>Behavior:</p>
+<ul class="simple">
+<li><p>installs <code class="docutils literal notranslate"><span class="pre">git</span></code> and <code class="docutils literal notranslate"><span class="pre">base-devel</span></code></p></li>
+<li><p>creates a non-root <code class="docutils literal notranslate"><span class="pre">aurbuilder</span></code> user if absent</p></li>
+<li><p>clones AUR repos under <code class="docutils literal notranslate"><span class="pre">/tmp</span></code></p></li>
+<li><p>builds packages with <code class="docutils literal notranslate"><span class="pre">makepkg</span> <span class="pre">-si</span></code></p></li>
+</ul>
+<p>Safety detail:</p>
+<ul class="simple">
+<li><p>package names are validated through a conservative regex before being used in the build command</p></li>
+</ul>
+</section>
+</section>
+<section id="generate-fstab">
+<h2><code class="docutils literal notranslate"><span class="pre">generate_fstab()</span></code><a class="headerlink" href="#generate-fstab" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Mock mode: writes a simulated <code class="docutils literal notranslate"><span class="pre">/etc/fstab</span></code> via the mock filesystem handler</p></li>
+<li><p>Real mode: currently uses a placeholder command path and returns logged output</p></li>
+</ul>
+<p>This keeps tests deterministic while leaving room for a more hardware-aware real implementation later.</p>
+</section>
+<section id="mock-filesystem-support">
+<h2>Mock filesystem support<a class="headerlink" href="#mock-filesystem-support" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">MockFSHandler</span></code> supports simulated:</p>
+<ul class="simple">
+<li><p>file creation</p></li>
+<li><p>file reads</p></li>
+<li><p>directory listing</p></li>
+</ul>
+<p>This is mainly for unit and integration-style testing, where executing real privileged filesystem operations would be inappropriate.</p>
+</section>
+<section id="failure-model">
+<h2>Failure model<a class="headerlink" href="#failure-model" title="Link to this heading"></a></h2>
+<p>The manager raises:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ChrootManagerError</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ChrootError</span></code> as a backward-compatible alias</p></li>
+</ul>
+<p>These errors are used by the higher orchestration layers to surface actionable failures without losing the command context.</p>
+</section>
+<section id="practical-role-in-the-whole-build">
+<h2>Practical role in the whole build<a class="headerlink" href="#practical-role-in-the-whole-build" title="Link to this heading"></a></h2>
+<p>The chroot manager does not decide what the system should contain. It provides the execution substrate for:</p>
+<ul class="simple">
+<li><p>package operations</p></li>
+<li><p>file generation inside the target system</p></li>
+<li><p>service enablement</p></li>
+<li><p>shell commands needed by customization</p></li>
+</ul>
+<p>The decision-making remains in config assembly, orchestration, and customization layers.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="customizer-actions.html" class="btn btn-neutral float-left" title="Customizer Actions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../troubleshooting.html" class="btn btn-neutral float-right" title="Troubleshooting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-2026, Manuel Rosa.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,347 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build Examples &mdash; Arch-Builder</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=a1a28e8c" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Build Pipeline" href="build-pipeline.html" />
+    <link rel="prev" title="Asset And Template Files" href="profiles/assets-and-templates.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #E31937" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Arch-Builder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="profiles/index.html">Profile Catalog</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Build Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#scenario-map">Scenario Map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#minimal-base-image">1. Minimal base image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#xfce-desktop-workstation">2. XFCE desktop workstation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#office-workstation">3. Office workstation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gaming-workstation">4. Gaming workstation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#python-developer-image">5. Python developer image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#node-js-developer-image">6. Node.js developer image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#security-and-diagnostics-image">7. Security and diagnostics image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#arm64-image">8. ARM64 image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#real-build-on-a-non-arch-host">9. Real build on a non-Arch host</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reusing-previous-build-state">10. Reusing previous build state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tutorial-installing-aur-packages-e-g-pamac-aur-yay">11. Tutorial: Installing AUR Packages (e.g. pamac-aur, yay)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-create-or-edit-an-aur-package-profile">Step 1: Create or edit an AUR package profile</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-build-the-iso-with-the-aur-profile">Step 2: Build the ISO with the AUR profile</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tutorial-installing-local-custom-packages-e-g-calamares">12. Tutorial: Installing Local Custom Packages (e.g. Calamares)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#step-1-place-packages-in-the-local-folder">Step 1: Place packages in the local folder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#step-2-build-the-iso-using-the-custom-user-profile">Step 2: Build the ISO using the custom-user profile</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="build-pipeline.html">Build Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/customizer-actions.html">Customizer Actions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/chroot-manager.html">Chroot Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting-isolated-builds.html">Isolated Build Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #E31937" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arch-Builder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Build Examples</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/examples.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="build-examples">
+<h1>Build Examples<a class="headerlink" href="#build-examples" title="Link to this heading"></a></h1>
+<p>This page collects complete build commands for common scenarios.</p>
+<section id="scenario-map">
+<h2>Scenario Map<a class="headerlink" href="#scenario-map" title="Link to this heading"></a></h2>
+<pre class="mermaid">
+flowchart TD
+    BASE[Base live ISO] --> XFCE[Desktop workstation]
+    BASE --> GAMING[Gaming workstation]
+    BASE --> ARM[ARM build]
+    BASE --> DEV[Developer image]
+    DEV --> PY[Python stack]
+    DEV --> NODE[Node.js stack]
+</pre>
+</section>
+<section id="minimal-base-image">
+<h2>1. Minimal base image<a class="headerlink" href="#minimal-base-image" title="Link to this heading"></a></h2>
+<p>Use the architecture defaults with a minimal live-user overlay.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--live-profile<span class="w"> </span>live-minimal<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>base<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--service-profile<span class="w"> </span>common-base
+</pre></div>
+</div>
+<p>Use this when you want a small baseline image with minimal live-user privileges.</p>
+</section>
+<section id="xfce-desktop-workstation">
+<h2>2. XFCE desktop workstation<a class="headerlink" href="#xfce-desktop-workstation" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--desktop<span class="w"> </span>xfce<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>audio<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>multimedia<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>fonts-locales<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--service-profile<span class="w"> </span>common-base
+</pre></div>
+</div>
+<p>Typical output name:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>arch-builder-xfce-x86_64.iso
+</pre></div>
+</div>
+</section>
+<section id="office-workstation">
+<h2>3. Office workstation<a class="headerlink" href="#office-workstation" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--desktop<span class="w"> </span>workstation-office<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>printing<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>fonts-locales<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--service-profile<span class="w"> </span>common-base<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--service-profile<span class="w"> </span>common-printing
+</pre></div>
+</div>
+<p>Good fit for LibreOffice, Thunderbird, PDF viewing, and printer support.</p>
+</section>
+<section id="gaming-workstation">
+<h2>4. Gaming workstation<a class="headerlink" href="#gaming-workstation" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--desktop<span class="w"> </span>workstation-gaming<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--kernel<span class="w"> </span>linux-zen<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>audio<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>multimedia<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--service-profile<span class="w"> </span>common-base
+</pre></div>
+</div>
+<p>This combines the Plasma-based gaming profile with a desktop-oriented kernel choice.</p>
+</section>
+<section id="python-developer-image">
+<h2>5. Python developer image<a class="headerlink" href="#python-developer-image" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--desktop<span class="w"> </span>xfce<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>dev-tools<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>python-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>containers<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--service-profile<span class="w"> </span>common-base
+</pre></div>
+</div>
+<p>Useful for building a live development workstation with compilers, Python tooling, and containers.</p>
+</section>
+<section id="node-js-developer-image">
+<h2>6. Node.js developer image<a class="headerlink" href="#node-js-developer-image" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--desktop<span class="w"> </span>xfce<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>dev-tools<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>node-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>containers<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--service-profile<span class="w"> </span>common-base
+</pre></div>
+</div>
+</section>
+<section id="security-and-diagnostics-image">
+<h2>7. Security and diagnostics image<a class="headerlink" href="#security-and-diagnostics-image" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--desktop<span class="w"> </span>wm-minimal<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>security<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>monitoring<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>network-advanced<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--service-profile<span class="w"> </span>common-base<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--service-profile<span class="w"> </span>common-remote
+</pre></div>
+</div>
+<p>Suited for audit, troubleshooting, and remote-access style live sessions.</p>
+</section>
+<section id="arm64-image">
+<h2>8. ARM64 image<a class="headerlink" href="#arm64-image" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>aarch64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--live-profile<span class="w"> </span>aarch64-live<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>base<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--service-profile<span class="w"> </span>common-base
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">arm64</span></code> instead of <code class="docutils literal notranslate"><span class="pre">aarch64</span></code> when you want the alias profile naming.</p>
+</section>
+<section id="real-build-on-a-non-arch-host">
+<h2>9. Real build on a non-Arch host<a class="headerlink" href="#real-build-on-a-non-arch-host" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mode<span class="w"> </span>real<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--desktop<span class="w"> </span>xfce<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--force-isolated-toolchain<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--toolchain-debug<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--toolchain-debug-log<span class="w"> </span>arch-builder/toolchain-debug.log<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--toolchain-pacman-retries<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--clean
+</pre></div>
+</div>
+<p>Use this when host tooling is missing or when you want a more reproducible isolated build path.</p>
+</section>
+<section id="reusing-previous-build-state">
+<h2>10. Reusing previous build state<a class="headerlink" href="#reusing-previous-build-state" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mode<span class="w"> </span>real<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--desktop<span class="w"> </span>xfce<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--no-clean
+</pre></div>
+</div>
+<p>Useful when iterating on a build and you intentionally want to preserve the existing tree.</p>
+</section>
+<hr class="docutils" />
+<section id="tutorial-installing-aur-packages-e-g-pamac-aur-yay">
+<h2>11. Tutorial: Installing AUR Packages (e.g. pamac-aur, yay)<a class="headerlink" href="#tutorial-installing-aur-packages-e-g-pamac-aur-yay" title="Link to this heading"></a></h2>
+<p>Arch-Builder supports automatically downloading, compiling, and installing packages from the AUR (Arch User Repository) during the build process using a dedicated non-root build flow with helper accounts.</p>
+<section id="step-1-create-or-edit-an-aur-package-profile">
+<h3>Step 1: Create or edit an AUR package profile<a class="headerlink" href="#step-1-create-or-edit-an-aur-package-profile" title="Link to this heading"></a></h3>
+<p>You can edit the default <code class="docutils literal notranslate"><span class="pre">configs/packages/aur-packages.json</span></code> file to specify the AUR package names under the <code class="docutils literal notranslate"><span class="pre">package_sources.aur</span></code> list:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aur-packages&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Custom AUR packages to compile and install.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;package_sources&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;aur&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;yay-bin&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;pamac-aur&quot;</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;dependencies&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;pacman&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-build-the-iso-with-the-aur-profile">
+<h3>Step 2: Build the ISO with the AUR profile<a class="headerlink" href="#step-2-build-the-iso-with-the-aur-profile" title="Link to this heading"></a></h3>
+<p>Run the build command and load the profile using the <code class="docutils literal notranslate"><span class="pre">-p</span></code> or <code class="docutils literal notranslate"><span class="pre">--package-profile</span></code> argument:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mode<span class="w"> </span>real<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--desktop<span class="w"> </span>xfce<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>aur-packages
+</pre></div>
+</div>
+<p>The orchestrator will:</p>
+<ol class="arabic simple">
+<li><p>Grant temporary passwordless sudo rights to a custom <code class="docutils literal notranslate"><span class="pre">aurbuilder</span></code> user inside the build toolchain.</p></li>
+<li><p>Clone the packages, build dependencies, compile binaries, and package them as <code class="docutils literal notranslate"><span class="pre">.pkg.tar.zst</span></code>.</p></li>
+<li><p>Safely install them to the live ISO target rootfs (<code class="docutils literal notranslate"><span class="pre">airootfs</span></code>) using <code class="docutils literal notranslate"><span class="pre">pacman</span> <span class="pre">-U</span></code>.</p></li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="tutorial-installing-local-custom-packages-e-g-calamares">
+<h2>12. Tutorial: Installing Local Custom Packages (e.g. Calamares)<a class="headerlink" href="#tutorial-installing-local-custom-packages-e-g-calamares" title="Link to this heading"></a></h2>
+<p>If you have pre-compiled packages (like a custom build of the <code class="docutils literal notranslate"><span class="pre">calamares</span></code> system installer or proprietary drivers), you can easily bundle them without rebuilding them each time.</p>
+<section id="step-1-place-packages-in-the-local-folder">
+<h3>Step 1: Place packages in the local folder<a class="headerlink" href="#step-1-place-packages-in-the-local-folder" title="Link to this heading"></a></h3>
+<p>Place the <code class="docutils literal notranslate"><span class="pre">.pkg.tar.zst</span></code> or <code class="docutils literal notranslate"><span class="pre">.pkg.tar.xz</span></code> package files in the dedicated local directory:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>configs/custom-packages/local/
+</pre></div>
+</div>
+<p>Example path:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>configs/custom-packages/local/calamares-3.3.0-1-x86_64.pkg.tar.zst
+</pre></div>
+</div>
+</section>
+<section id="step-2-build-the-iso-using-the-custom-user-profile">
+<h3>Step 2: Build the ISO using the custom-user profile<a class="headerlink" href="#step-2-build-the-iso-using-the-custom-user-profile" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">configs/packages/custom-user.json</span></code> profile is pre-configured to scan the local packages directory. Run the build with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mode<span class="w"> </span>real<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--desktop<span class="w"> </span>xfce<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--package-profile<span class="w"> </span>custom-user
+</pre></div>
+</div>
+<p>The builder will stage all files matching <code class="docutils literal notranslate"><span class="pre">*.pkg.tar*</span></code> in the directory, verify their dependencies, and install them directly onto the live system.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="profiles/assets-and-templates.html" class="btn btn-neutral float-left" title="Asset And Template Files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="build-pipeline.html" class="btn btn-neutral float-right" title="Build Pipeline" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-2026, Manuel Rosa.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

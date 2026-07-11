@@ -1,0 +1,217 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuration &mdash; Arch-Builder</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=a1a28e8c" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Profile Catalog" href="profiles/index.html" />
+    <link rel="prev" title="Credits" href="credits.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #E31937" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Arch-Builder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#merge-order">Merge Order</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#important-top-level-areas">Important top-level areas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#system"><code class="docutils literal notranslate"><span class="pre">system</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#platform-specific"><code class="docutils literal notranslate"><span class="pre">platform_specific</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#customizations"><code class="docutils literal notranslate"><span class="pre">customizations</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#system-config"><code class="docutils literal notranslate"><span class="pre">system_config</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#live-user-profiles">Live-user profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#custom-files">Custom files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#practical-approach">Practical approach</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="profiles/index.html">Profile Catalog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Build Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build-pipeline.html">Build Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/customizer-actions.html">Customizer Actions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/chroot-manager.html">Chroot Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting-isolated-builds.html">Isolated Build Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #E31937" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arch-Builder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Configuration</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/configuration.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="configuration">
+<h1>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h1>
+<p>Arch-Builder uses JSON files under <code class="docutils literal notranslate"><span class="pre">configs/</span></code> and merges them into a single effective configuration.</p>
+<section id="merge-order">
+<h2>Merge Order<a class="headerlink" href="#merge-order" title="Link to this heading"></a></h2>
+<p>The configuration assembler applies layers in this order:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">global_build.json</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">architectures/&lt;arch&gt;.json</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">desktops/&lt;desktop&gt;.json</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">kernels/&lt;kernel&gt;.json</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bootloaders/&lt;bootloader&gt;.json</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">packages/&lt;profile&gt;.json</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">services/&lt;profile&gt;.json</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">live-users/&lt;profile&gt;.json</span></code></p></li>
+<li><p>CLI live-user overrides</p></li>
+</ol>
+<p>Dictionary keys are merged recursively. Lists are extended while avoiding simple duplicates.</p>
+</section>
+<section id="important-top-level-areas">
+<h2>Important top-level areas<a class="headerlink" href="#important-top-level-areas" title="Link to this heading"></a></h2>
+</section>
+<section id="system">
+<h2><code class="docutils literal notranslate"><span class="pre">system</span></code><a class="headerlink" href="#system" title="Link to this heading"></a></h2>
+<p>Contains build runtime settings such as:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">workdir_base</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iso_label</span></code></p></li>
+<li><p>tool binary paths</p></li>
+<li><p>optional isolated toolchain defaults</p></li>
+</ul>
+</section>
+<section id="platform-specific">
+<h2><code class="docutils literal notranslate"><span class="pre">platform_specific</span></code><a class="headerlink" href="#platform-specific" title="Link to this heading"></a></h2>
+<p>Contains architecture-specific data such as:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">architecture</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">base_kernel</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">initramfs</span></code></p></li>
+<li><p>package list</p></li>
+<li><p>mount layout</p></li>
+</ul>
+</section>
+<section id="customizations">
+<h2><code class="docutils literal notranslate"><span class="pre">customizations</span></code><a class="headerlink" href="#customizations" title="Link to this heading"></a></h2>
+<p>Contains customization intent for:</p>
+<ul class="simple">
+<li><p>hostname</p></li>
+<li><p>timezone</p></li>
+<li><p>locale</p></li>
+<li><p>keymap</p></li>
+<li><p>users</p></li>
+<li><p>services</p></li>
+</ul>
+</section>
+<section id="system-config">
+<h2><code class="docutils literal notranslate"><span class="pre">system_config</span></code><a class="headerlink" href="#system-config" title="Link to this heading"></a></h2>
+<p>Contains operational customization inputs such as:</p>
+<ul class="simple">
+<li><p>overlay file source tree</p></li>
+<li><p>commands to run in the target system</p></li>
+<li><p>specific file copy rules</p></li>
+</ul>
+</section>
+<section id="live-user-profiles">
+<h2>Live-user profiles<a class="headerlink" href="#live-user-profiles" title="Link to this heading"></a></h2>
+<p>Live-user profiles live under <code class="docutils literal notranslate"><span class="pre">configs/live-users/</span></code>. For example, a profile may define:</p>
+<ul class="simple">
+<li><p>username</p></li>
+<li><p>groups</p></li>
+<li><p>password</p></li>
+</ul>
+<p>The builder can also align display-manager autologin settings with the resolved live username.</p>
+</section>
+<section id="custom-files">
+<h2>Custom files<a class="headerlink" href="#custom-files" title="Link to this heading"></a></h2>
+<p>Files under <code class="docutils literal notranslate"><span class="pre">configs/custom_files/</span></code> are copied into the target root filesystem according to explicit rules in configuration.</p>
+</section>
+<section id="practical-approach">
+<h2>Practical approach<a class="headerlink" href="#practical-approach" title="Link to this heading"></a></h2>
+<p>Keep <code class="docutils literal notranslate"><span class="pre">global_build.json</span></code> focused on project-wide defaults and use profiles for optional behavior. This keeps builds composable and reduces duplicated package or service definitions.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="credits.html" class="btn btn-neutral float-left" title="Credits" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="profiles/index.html" class="btn btn-neutral float-right" title="Profile Catalog" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-2026, Manuel Rosa.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

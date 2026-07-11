@@ -1,0 +1,372 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Isolated Build Troubleshooting &mdash; Arch-Builder</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=a1a28e8c" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Development" href="development.html" />
+    <link rel="prev" title="Troubleshooting" href="troubleshooting.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #E31937" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Arch-Builder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="profiles/index.html">Profile Catalog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Build Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build-pipeline.html">Build Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/customizer-actions.html">Customizer Actions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/chroot-manager.html">Chroot Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Isolated Build Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#quick-diagnosis-checklist">Quick diagnosis checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-host-is-not-arch-and-required-tools-are-missing">Symptom: host is not Arch and required tools are missing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-diagnostics-log-path-is-not-writable">Symptom: diagnostics log path is not writable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-tmp-does-not-have-enough-space">Symptom: <code class="docutils literal notranslate"><span class="pre">/tmp</span></code> does not have enough space</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-pacman-reports-not-enough-free-disk-space-inside-the-isolated-chroot">Symptom: <code class="docutils literal notranslate"><span class="pre">pacman</span></code> reports not enough free disk space inside the isolated chroot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-repeated-package-downloads-and-poor-reuse-between-runs">Symptom: repeated package downloads and poor reuse between runs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-mirror-or-package-operations-are-flaky">Symptom: mirror or package operations are flaky</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-chroot-commands-run-in-the-wrong-rootfs">Symptom: chroot commands run in the wrong rootfs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-customization-fails-on-missing-groups-or-initramfs-config-placement">Symptom: customization fails on missing groups or initramfs config placement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-bootloader-creation-fails">Symptom: bootloader creation fails</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-final-iso-packaging-fails-or-the-iso-is-left-inside-the-isolated-rootfs">Symptom: final ISO packaging fails or the ISO is left inside the isolated rootfs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-cleanup-prints-noisy-unmount-warnings">Symptom: cleanup prints noisy unmount warnings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-workspace-local-fallback-path-becomes-unwritable-after-sudo-builds">Symptom: workspace-local fallback path becomes unwritable after <code class="docutils literal notranslate"><span class="pre">sudo</span></code> builds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#recommended-recovery-workflow">Recommended recovery workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #E31937" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arch-Builder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Isolated Build Troubleshooting</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/troubleshooting-isolated-builds.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="isolated-build-troubleshooting">
+<h1>Isolated Build Troubleshooting<a class="headerlink" href="#isolated-build-troubleshooting" title="Link to this heading"></a></h1>
+<p>This page focuses on failure modes that were actually encountered while stabilizing real isolated builds.</p>
+<p>Use it together with the general guide in <a class="reference internal" href="troubleshooting.html"><span class="std std-doc">troubleshooting</span></a>.</p>
+<section id="quick-diagnosis-checklist">
+<h2>Quick diagnosis checklist<a class="headerlink" href="#quick-diagnosis-checklist" title="Link to this heading"></a></h2>
+<p>When a real isolated build fails, check these first:</p>
+<ol class="arabic simple">
+<li><p>Are you running with <code class="docutils literal notranslate"><span class="pre">sudo</span></code> for <code class="docutils literal notranslate"><span class="pre">--mode</span> <span class="pre">real</span></code>?</p></li>
+<li><p>Is the workspace path writable by the current user?</p></li>
+<li><p>Is <code class="docutils literal notranslate"><span class="pre">arch-builder/cache/pacman/pkg/</span></code> writable and reusable?</p></li>
+<li><p>Did you enable <code class="docutils literal notranslate"><span class="pre">--toolchain-debug</span></code> and capture a diagnostics log?</p></li>
+<li><p>Are you forcing isolated mode with <code class="docutils literal notranslate"><span class="pre">--force-isolated-toolchain</span></code> when the host lacks Arch tooling?</p></li>
+</ol>
+<p>Recommended debug command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--mode<span class="w"> </span>real<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--force-isolated-toolchain<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--toolchain-debug<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--toolchain-debug-log<span class="w"> </span>arch-builder/toolchain-debug.log<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--toolchain-pacman-retries<span class="w"> </span><span class="m">4</span>
+</pre></div>
+</div>
+</section>
+<section id="symptom-host-is-not-arch-and-required-tools-are-missing">
+<h2>Symptom: host is not Arch and required tools are missing<a class="headerlink" href="#symptom-host-is-not-arch-and-required-tools-are-missing" title="Link to this heading"></a></h2>
+<p>Typical signal:</p>
+<ul class="simple">
+<li><p>missing <code class="docutils literal notranslate"><span class="pre">pacman</span></code>, <code class="docutils literal notranslate"><span class="pre">grub-mkrescue</span></code>, <code class="docutils literal notranslate"><span class="pre">genisoimage</span></code>, <code class="docutils literal notranslate"><span class="pre">xorriso</span></code>, or <code class="docutils literal notranslate"><span class="pre">mksquashfs</span></code></p></li>
+</ul>
+<p>Current handling:</p>
+<ul class="simple">
+<li><p>the toolchain checks for host tools</p></li>
+<li><p>if they are absent, it bootstraps an isolated Arch rootfs</p></li>
+<li><p>you can also force this path with <code class="docutils literal notranslate"><span class="pre">--force-isolated-toolchain</span></code></p></li>
+</ul>
+<p>Fix:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--mode<span class="w"> </span>real<span class="w"> </span>--force-isolated-toolchain
+</pre></div>
+</div>
+</section>
+<section id="symptom-diagnostics-log-path-is-not-writable">
+<h2>Symptom: diagnostics log path is not writable<a class="headerlink" href="#symptom-diagnostics-log-path-is-not-writable" title="Link to this heading"></a></h2>
+<p>Typical signal:</p>
+<ul class="simple">
+<li><p>permission denied while writing the requested toolchain log path</p></li>
+</ul>
+<p>Current handling:</p>
+<ul class="simple">
+<li><p>the toolchain falls back to a log inside the build-host directory</p></li>
+</ul>
+<p>What to do:</p>
+<ul class="simple">
+<li><p>point <code class="docutils literal notranslate"><span class="pre">--toolchain-debug-log</span></code> to a writable workspace path</p></li>
+<li><p>or inspect the fallback log under the active workdir/build-host area</p></li>
+</ul>
+</section>
+<section id="symptom-tmp-does-not-have-enough-space">
+<h2>Symptom: <code class="docutils literal notranslate"><span class="pre">/tmp</span></code> does not have enough space<a class="headerlink" href="#symptom-tmp-does-not-have-enough-space" title="Link to this heading"></a></h2>
+<p>Historical issue:</p>
+<ul class="simple">
+<li><p>relying on <code class="docutils literal notranslate"><span class="pre">/tmp</span></code> for major build state led to storage failures on constrained systems</p></li>
+</ul>
+<p>Current handling:</p>
+<ul class="simple">
+<li><p>main build state is workspace-local under <code class="docutils literal notranslate"><span class="pre">arch-builder/</span></code></p></li>
+<li><p>persistent pacman cache is outside the target chroot</p></li>
+<li><p>only limited temporary upstream outputs may still use <code class="docutils literal notranslate"><span class="pre">/tmp</span></code></p></li>
+</ul>
+<p>What to do:</p>
+<ul class="simple">
+<li><p>keep the workspace on a filesystem with enough free space</p></li>
+<li><p>avoid placing the repository itself on a tiny temporary volume</p></li>
+</ul>
+</section>
+<section id="symptom-pacman-reports-not-enough-free-disk-space-inside-the-isolated-chroot">
+<h2>Symptom: <code class="docutils literal notranslate"><span class="pre">pacman</span></code> reports not enough free disk space inside the isolated chroot<a class="headerlink" href="#symptom-pacman-reports-not-enough-free-disk-space-inside-the-isolated-chroot" title="Link to this heading"></a></h2>
+<p>Historical cause:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">CheckSpace</span></code> inside bootstrap environments can produce false negatives when mount layout does not map cleanly to the running namespace</p></li>
+</ul>
+<p>Current handling:</p>
+<ul class="simple">
+<li><p>the toolchain patches <code class="docutils literal notranslate"><span class="pre">pacman.conf</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CheckSpace</span></code> is removed</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CacheDir</span></code> is normalized to the bind-mounted reusable cache</p></li>
+</ul>
+<p>What to inspect:</p>
+<ul class="simple">
+<li><p>the generated <code class="docutils literal notranslate"><span class="pre">pacman.conf</span></code> inside the isolated rootfs</p></li>
+<li><p>whether the cache bind mount succeeded</p></li>
+</ul>
+</section>
+<section id="symptom-repeated-package-downloads-and-poor-reuse-between-runs">
+<h2>Symptom: repeated package downloads and poor reuse between runs<a class="headerlink" href="#symptom-repeated-package-downloads-and-poor-reuse-between-runs" title="Link to this heading"></a></h2>
+<p>Historical cause:</p>
+<ul class="simple">
+<li><p>cache living inside the chroot was lost or recreated too often</p></li>
+</ul>
+<p>Current handling:</p>
+<ul class="simple">
+<li><p>package cache is bind-mounted from <code class="docutils literal notranslate"><span class="pre">arch-builder/cache/pacman/pkg/</span></code></p></li>
+</ul>
+<p>What to do:</p>
+<ul class="simple">
+<li><p>ensure the cache path exists and is writable</p></li>
+<li><p>avoid external cleanup of <code class="docutils literal notranslate"><span class="pre">arch-builder/cache/pacman/pkg/</span></code></p></li>
+</ul>
+</section>
+<section id="symptom-mirror-or-package-operations-are-flaky">
+<h2>Symptom: mirror or package operations are flaky<a class="headerlink" href="#symptom-mirror-or-package-operations-are-flaky" title="Link to this heading"></a></h2>
+<p>Historical cause:</p>
+<ul class="simple">
+<li><p>unstable mirrors or transient metadata failures during bootstrap</p></li>
+</ul>
+<p>Current handling:</p>
+<ul class="simple">
+<li><p>curated mirrorlist with stable mirrors first</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DisableDownloadTimeout</span></code></p></li>
+<li><p>retry logic for both <code class="docutils literal notranslate"><span class="pre">pacman-key</span></code> and <code class="docutils literal notranslate"><span class="pre">pacman</span></code></p></li>
+<li><p>extra <code class="docutils literal notranslate"><span class="pre">pacman</span> <span class="pre">-Syy</span></code> refreshes between retries</p></li>
+</ul>
+<p>What to do:</p>
+<ul class="simple">
+<li><p>raise <code class="docutils literal notranslate"><span class="pre">--toolchain-pacman-retries</span></code></p></li>
+<li><p>keep diagnostics enabled for failed attempts</p></li>
+</ul>
+</section>
+<section id="symptom-chroot-commands-run-in-the-wrong-rootfs">
+<h2>Symptom: chroot commands run in the wrong rootfs<a class="headerlink" href="#symptom-chroot-commands-run-in-the-wrong-rootfs" title="Link to this heading"></a></h2>
+<p>Historical cause:</p>
+<ul class="simple">
+<li><p>real-mode chroot operations were not always routed to the isolated toolchain rootfs</p></li>
+</ul>
+<p>Current handling:</p>
+<ul class="simple">
+<li><p>orchestration rebinds the effective <code class="docutils literal notranslate"><span class="pre">ChrootManager</span></code> to the toolchain bootstrap root when present</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">run_command()</span></code> respects the effective chroot path</p></li>
+</ul>
+<p>What to inspect:</p>
+<ul class="simple">
+<li><p>orchestration logs showing the selected toolchain chroot path</p></li>
+<li><p>whether the active rootfs contains the expected <code class="docutils literal notranslate"><span class="pre">/etc</span></code>, <code class="docutils literal notranslate"><span class="pre">/boot</span></code>, and <code class="docutils literal notranslate"><span class="pre">/var/cache/pacman/pkg</span></code></p></li>
+</ul>
+</section>
+<section id="symptom-customization-fails-on-missing-groups-or-initramfs-config-placement">
+<h2>Symptom: customization fails on missing groups or initramfs config placement<a class="headerlink" href="#symptom-customization-fails-on-missing-groups-or-initramfs-config-placement" title="Link to this heading"></a></h2>
+<p>Historical causes:</p>
+<ul class="simple">
+<li><p>user groups referenced by profiles did not always exist yet</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mkinitcpio</span></code> config handling was too indirect for the active rootfs</p></li>
+</ul>
+<p>Current handling:</p>
+<ul class="simple">
+<li><p>user actions create missing groups before <code class="docutils literal notranslate"><span class="pre">useradd</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mkinitcpio.conf</span></code> is written directly into the active chroot rootfs</p></li>
+</ul>
+</section>
+<section id="symptom-bootloader-creation-fails">
+<h2>Symptom: bootloader creation fails<a class="headerlink" href="#symptom-bootloader-creation-fails" title="Link to this heading"></a></h2>
+<p>Historical causes:</p>
+<ul class="simple">
+<li><p>incomplete <code class="docutils literal notranslate"><span class="pre">grub-mkrescue</span></code> invocation</p></li>
+<li><p>wrong source directory resolution for <code class="docutils literal notranslate"><span class="pre">/boot</span></code></p></li>
+</ul>
+<p>Current handling:</p>
+<ul class="simple">
+<li><p>bootloader generation resolves the effective boot source directory from the active chroot when possible</p></li>
+<li><p>GRUB invocation includes the output parameter correctly</p></li>
+</ul>
+<p>What to inspect:</p>
+<ul class="simple">
+<li><p>configured GRUB binary path in <code class="docutils literal notranslate"><span class="pre">configs/global_build.json</span></code></p></li>
+<li><p>generated boot directory inside the active chroot or fallback path</p></li>
+</ul>
+</section>
+<section id="symptom-final-iso-packaging-fails-or-the-iso-is-left-inside-the-isolated-rootfs">
+<h2>Symptom: final ISO packaging fails or the ISO is left inside the isolated rootfs<a class="headerlink" href="#symptom-final-iso-packaging-fails-or-the-iso-is-left-inside-the-isolated-rootfs" title="Link to this heading"></a></h2>
+<p>Historical cause:</p>
+<ul class="simple">
+<li><p>final packaging path handling was incorrect for isolated mode</p></li>
+</ul>
+<p>Current handling:</p>
+<ul class="simple">
+<li><p>if the rescue ISO exists inside the isolated chroot, the builder copies it out to the requested destination path</p></li>
+</ul>
+<p>What to inspect:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;isolated-root&gt;/tmp/bootloader-rescue.iso</span></code></p></li>
+<li><p>requested final output path</p></li>
+</ul>
+</section>
+<section id="symptom-cleanup-prints-noisy-unmount-warnings">
+<h2>Symptom: cleanup prints noisy unmount warnings<a class="headerlink" href="#symptom-cleanup-prints-noisy-unmount-warnings" title="Link to this heading"></a></h2>
+<p>Historical cause:</p>
+<ul class="simple">
+<li><p>best-effort <code class="docutils literal notranslate"><span class="pre">umount</span></code> calls emitted expected noise for already-unmounted targets</p></li>
+</ul>
+<p>Current handling:</p>
+<ul class="simple">
+<li><p>cleanup unmounts use non-check mode with suppressed stdout/stderr where the warnings are not actionable</p></li>
+</ul>
+</section>
+<section id="symptom-workspace-local-fallback-path-becomes-unwritable-after-sudo-builds">
+<h2>Symptom: workspace-local fallback path becomes unwritable after <code class="docutils literal notranslate"><span class="pre">sudo</span></code> builds<a class="headerlink" href="#symptom-workspace-local-fallback-path-becomes-unwritable-after-sudo-builds" title="Link to this heading"></a></h2>
+<p>Historical cause:</p>
+<ul class="simple">
+<li><p>a visible build directory such as <code class="docutils literal notranslate"><span class="pre">arch-builder/</span></code> can become root-owned after real-mode execution</p></li>
+</ul>
+<p>Current handling:</p>
+<ul class="simple">
+<li><p>the builder first tries the workspace-local fallback path</p></li>
+<li><p>if that is not writable, it degrades to <code class="docutils literal notranslate"><span class="pre">/tmp/arch-builder-fallback/&lt;arch&gt;/</span></code></p></li>
+</ul>
+<p>What to do:</p>
+<ul class="simple">
+<li><p>if you want the workspace path back, fix ownership explicitly, for example:</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>chown<span class="w"> </span>-R<span class="w"> </span><span class="s2">&quot;</span><span class="nv">$USER</span><span class="s2">&quot;</span>:<span class="s2">&quot;</span><span class="nv">$USER</span><span class="s2">&quot;</span><span class="w"> </span>arch-builder
+</pre></div>
+</div>
+</section>
+<section id="recommended-recovery-workflow">
+<h2>Recommended recovery workflow<a class="headerlink" href="#recommended-recovery-workflow" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>rerun with <code class="docutils literal notranslate"><span class="pre">--toolchain-debug</span></code></p></li>
+<li><p>inspect the toolchain log</p></li>
+<li><p>verify write permissions on <code class="docutils literal notranslate"><span class="pre">arch-builder/</span></code> and the cache path</p></li>
+<li><p>retry with a higher pacman retry count</p></li>
+<li><p>if ownership is polluted by previous <code class="docutils literal notranslate"><span class="pre">sudo</span></code> runs, repair ownership and rerun with <code class="docutils literal notranslate"><span class="pre">--clean</span></code></p></li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="troubleshooting.html" class="btn btn-neutral float-left" title="Troubleshooting" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="development.html" class="btn btn-neutral float-right" title="Development" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-2026, Manuel Rosa.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

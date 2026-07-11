@@ -1,0 +1,280 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System Foundation Profiles &mdash; Arch-Builder</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=a1a28e8c" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Desktop Profiles" href="desktops.html" />
+    <link rel="prev" title="Profile Catalog" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #E31937" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Arch-Builder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Profile Catalog</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">System Foundation Profiles</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#global-manifest">Global manifest</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#configs-global-build-json"><code class="docutils literal notranslate"><span class="pre">configs/global_build.json</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#architecture-profiles">Architecture profiles</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#example-use">Example use</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#bootloader-profiles">Bootloader profiles</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Example use</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#kernel-profiles">Kernel profiles</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Example use</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="desktops.html">Desktop Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="live-users.html">Live-User Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packages-services.html">Package And Service Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assets-and-templates.html">Asset And Template Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#reading-strategy">Reading Strategy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Build Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build-pipeline.html">Build Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../operations/customizer-actions.html">Customizer Actions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../operations/chroot-manager.html">Chroot Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting-isolated-builds.html">Isolated Build Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #E31937" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Arch-Builder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Profile Catalog</a></li>
+      <li class="breadcrumb-item active">System Foundation Profiles</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/profiles/system-foundation.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="system-foundation-profiles">
+<h1>System Foundation Profiles<a class="headerlink" href="#system-foundation-profiles" title="Link to this heading"></a></h1>
+<p>This page documents the JSON files that define the core build substrate: global defaults, architecture layers, bootloaders, and kernels.</p>
+<section id="global-manifest">
+<h2>Global manifest<a class="headerlink" href="#global-manifest" title="Link to this heading"></a></h2>
+<section id="configs-global-build-json">
+<h3><code class="docutils literal notranslate"><span class="pre">configs/global_build.json</span></code><a class="headerlink" href="#configs-global-build-json" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Purpose: master manifest for build defaults and shared binary paths.</p></li>
+<li><p>Important keys: <code class="docutils literal notranslate"><span class="pre">metadata</span></code>, <code class="docutils literal notranslate"><span class="pre">build_environment</span></code>, <code class="docutils literal notranslate"><span class="pre">system</span></code>, <code class="docutils literal notranslate"><span class="pre">components</span></code>.</p></li>
+<li><p>Notable values: visible workspace workdir at <code class="docutils literal notranslate"><span class="pre">arch-builder/workdir</span></code>, ISO label <code class="docutils literal notranslate"><span class="pre">ARCH-MODERN</span></code>, binary paths for <code class="docutils literal notranslate"><span class="pre">grub-mkrescue</span></code> and <code class="docutils literal notranslate"><span class="pre">genisoimage</span></code>.</p></li>
+<li><p>Use when: changing workspace layout, default binaries, or globally available component declarations.</p></li>
+</ul>
+</section>
+</section>
+<section id="architecture-profiles">
+<h2>Architecture profiles<a class="headerlink" href="#architecture-profiles" title="Link to this heading"></a></h2>
+<p>Common pattern across all architecture files:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">platform_specific.architecture</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">platform_specific.base_kernel</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">platform_specific.initramfs</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">platform_specific.initramfs_config</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">platform_specific.packages</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">customizations</span></code> for hostname, locale, keymap, users, and services</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">system_config</span></code> for overlay files and post-install commands</p></li>
+</ul>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Notable settings</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/architectures/x86_64.json</span></code></p></td>
+<td><p>Main 64-bit x86 profile.</p></td>
+<td><p>Locale <code class="docutils literal notranslate"><span class="pre">en_US.UTF-8</span></code>, timezone <code class="docutils literal notranslate"><span class="pre">UTC</span></code>, keymap <code class="docutils literal notranslate"><span class="pre">us</span></code>, live user with wheel/video/audio/networkmanager.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/architectures/i386.json</span></code></p></td>
+<td><p>32-bit x86 profile.</p></td>
+<td><p>Leaner base package set, hostname <code class="docutils literal notranslate"><span class="pre">arch-builder-i386</span></code>, locale <code class="docutils literal notranslate"><span class="pre">en_US.UTF-8</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/architectures/aarch64.json</span></code></p></td>
+<td><p>ARM64 profile using the <code class="docutils literal notranslate"><span class="pre">aarch64</span></code> architecture name.</p></td>
+<td><p>Hostname <code class="docutils literal notranslate"><span class="pre">arch-builder-arm64</span></code>, UTC timezone, standard live user groups.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/architectures/arm64.json</span></code></p></td>
+<td><p>ARM64 alias profile for <code class="docutils literal notranslate"><span class="pre">arm64</span></code>.</p></td>
+<td><p>Same overall structure as <code class="docutils literal notranslate"><span class="pre">aarch64</span></code>, kept as a separate selectable target.</p></td>
+</tr>
+</tbody>
+</table>
+<section id="example-use">
+<h3>Example use<a class="headerlink" href="#example-use" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64
+python3<span class="w"> </span>cli.py<span class="w"> </span>i386
+</pre></div>
+</div>
+</section>
+</section>
+<section id="bootloader-profiles">
+<h2>Bootloader profiles<a class="headerlink" href="#bootloader-profiles" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Important keys</p></th>
+<th class="head"><p>Notable items</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/bootloaders/grub.json</span></code></p></td>
+<td><p>GRUB-based bootloader profile.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">platform_specific.packages</span></code>, <code class="docutils literal notranslate"><span class="pre">system.binaries</span></code></p></td>
+<td><p>Adds <code class="docutils literal notranslate"><span class="pre">grub</span></code> and <code class="docutils literal notranslate"><span class="pre">efibootmgr</span></code>; pins <code class="docutils literal notranslate"><span class="pre">grub-mkrescue</span></code> paths.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/bootloaders/syslinux.json</span></code></p></td>
+<td><p>Syslinux/Isolinux profile for BIOS-style flows.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">platform_specific.packages</span></code></p></td>
+<td><p>Adds <code class="docutils literal notranslate"><span class="pre">syslinux</span></code>, <code class="docutils literal notranslate"><span class="pre">mtools</span></code>, <code class="docutils literal notranslate"><span class="pre">dosfstools</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+<section id="id1">
+<h3>Example use<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--bootloader<span class="w"> </span>grub
+python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--bootloader<span class="w"> </span>syslinux
+</pre></div>
+</div>
+</section>
+</section>
+<section id="kernel-profiles">
+<h2>Kernel profiles<a class="headerlink" href="#kernel-profiles" title="Link to this heading"></a></h2>
+<p>Kernel files primarily override <code class="docutils literal notranslate"><span class="pre">platform_specific.base_kernel</span></code> and initramfs naming.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Notable values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/kernels/linux.json</span></code></p></td>
+<td><p>Default stable kernel.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">base_kernel:</span> <span class="pre">linux</span></code>, <code class="docutils literal notranslate"><span class="pre">initramfs-linux.img</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/kernels/linux-lts.json</span></code></p></td>
+<td><p>Long-term support kernel.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">base_kernel:</span> <span class="pre">linux-lts</span></code>, <code class="docutils literal notranslate"><span class="pre">initramfs-linux-lts.img</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/kernels/linux-zen.json</span></code></p></td>
+<td><p>Performance-oriented desktop kernel.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">base_kernel:</span> <span class="pre">linux-zen</span></code>, <code class="docutils literal notranslate"><span class="pre">initramfs-linux-zen.img</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/kernels/linux-hardened.json</span></code></p></td>
+<td><p>Security-focused kernel variant.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">base_kernel:</span> <span class="pre">linux-hardened</span></code>, <code class="docutils literal notranslate"><span class="pre">initramfs-linux-hardened.img</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<section id="id2">
+<h3>Example use<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--kernel<span class="w"> </span>linux-lts
+python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--kernel<span class="w"> </span>linux-zen
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Profile Catalog" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="desktops.html" class="btn btn-neutral float-right" title="Desktop Profiles" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-2026, Manuel Rosa.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

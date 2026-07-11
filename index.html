@@ -1,0 +1,302 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arch-Builder Documentation &mdash; Arch-Builder</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=a1a28e8c" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Overview" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #E31937" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            Arch-Builder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="profiles/index.html">Profile Catalog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Build Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build-pipeline.html">Build Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/customizer-actions.html">Customizer Actions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/chroot-manager.html">Chroot Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting-isolated-builds.html">Isolated Build Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #E31937" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Arch-Builder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Arch-Builder Documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="arch-builder-documentation">
+<h1>Arch-Builder Documentation<a class="headerlink" href="#arch-builder-documentation" title="Link to this heading"></a></h1>
+<p>Arch-Builder is a modular Arch Linux ISO builder with profile-driven configuration,
+real isolated build-host support, and workspace-local artifact management.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#architecture-at-a-glance">Architecture At A Glance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#goals">Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#core-execution-modes">Core Execution Modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#mock-mode">Mock mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#real-mode">Real mode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#default-workspace-layout">Default Workspace Layout</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#profile-composition-model">Profile Composition Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="overview.html#profile-types">Profile Types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="getting-started.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting-started.html#repository-setup">Repository Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting-started.html#discover-available-profiles">Discover available profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting-started.html#first-mock-build">First mock build</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting-started.html#first-real-build">First real build</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting-started.html#useful-build-options">Useful build options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting-started.html#output-naming">Output naming</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cli-reference.html">CLI Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#syntax">Syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#core-arguments">Core arguments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#build-tree-behavior">Build-tree behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#isolated-toolchain">Isolated toolchain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#profile-overrides">Profile overrides</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#metadata-and-inspection">Metadata and inspection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#output-control">Output control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#example-commands">Example commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#mock-build-with-xfce">Mock build with XFCE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#real-build-with-isolated-toolchain-and-debug-logging">Real build with isolated toolchain and debug logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#real-build-reusing-previous-state">Real build reusing previous state</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="credits.html#project-and-documentation">Project and Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#merge-order">Merge Order</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#important-top-level-areas">Important top-level areas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#system"><code class="docutils literal notranslate"><span class="pre">system</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#platform-specific"><code class="docutils literal notranslate"><span class="pre">platform_specific</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#customizations"><code class="docutils literal notranslate"><span class="pre">customizations</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#system-config"><code class="docutils literal notranslate"><span class="pre">system_config</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#live-user-profiles">Live-user profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#custom-files">Custom files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#practical-approach">Practical approach</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="profiles/index.html">Profile Catalog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="profiles/system-foundation.html">System Foundation Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiles/desktops.html">Desktop Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiles/live-users.html">Live-User Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiles/packages-services.html">Package And Service Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiles/assets-and-templates.html">Asset And Template Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="profiles/index.html#reading-strategy">Reading Strategy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Build Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#scenario-map">Scenario Map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#minimal-base-image">1. Minimal base image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#xfce-desktop-workstation">2. XFCE desktop workstation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#office-workstation">3. Office workstation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#gaming-workstation">4. Gaming workstation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#python-developer-image">5. Python developer image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#node-js-developer-image">6. Node.js developer image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#security-and-diagnostics-image">7. Security and diagnostics image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#arm64-image">8. ARM64 image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#real-build-on-a-non-arch-host">9. Real build on a non-Arch host</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#reusing-previous-build-state">10. Reusing previous build state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#tutorial-installing-aur-packages-e-g-pamac-aur-yay">11. Tutorial: Installing AUR Packages (e.g. pamac-aur, yay)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#tutorial-installing-local-custom-packages-e-g-calamares">12. Tutorial: Installing Local Custom Packages (e.g. Calamares)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="build-pipeline.html">Build Pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#execution-flow-diagram">Execution Flow Diagram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#cli-parsing">1. CLI parsing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#configuration-assembly">2. Configuration assembly</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#workdir-resolution">3. Workdir resolution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#chroot-manager-setup">4. Chroot manager setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#toolchain-preparation">5. Toolchain preparation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#package-installation">6. Package installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#post-install-customization">7. Post-install customization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#bootloader-generation">8. Bootloader generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#final-iso-export">9. Final ISO export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#cleanup-behavior">Cleanup behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#real-mode-isolation-diagram">Real-Mode Isolation Diagram</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="operations/customizer-actions.html">Customizer Actions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="operations/customizer-actions.html#execution-model">Execution model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/customizer-actions.html#action-ordering">Action ordering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/customizer-actions.html#overlayaction"><code class="docutils literal notranslate"><span class="pre">OverlayAction</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/customizer-actions.html#localeaction"><code class="docutils literal notranslate"><span class="pre">LocaleAction</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/customizer-actions.html#useraction"><code class="docutils literal notranslate"><span class="pre">UserAction</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/customizer-actions.html#serviceaction"><code class="docutils literal notranslate"><span class="pre">ServiceAction</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/customizer-actions.html#commandaction"><code class="docutils literal notranslate"><span class="pre">CommandAction</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/customizer-actions.html#mkinitcpioaction"><code class="docutils literal notranslate"><span class="pre">MkinitcpioAction</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/customizer-actions.html#fileaction"><code class="docutils literal notranslate"><span class="pre">FileAction</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/customizer-actions.html#systemconfigurator-apply-behavior"><code class="docutils literal notranslate"><span class="pre">SystemConfigurator.apply()</span></code> behavior</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/customizer-actions.html#config-sources-that-feed-these-actions">Config sources that feed these actions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="operations/chroot-manager.html">Chroot Manager</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="operations/chroot-manager.html#core-modes">Core modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/chroot-manager.html#lifecycle-overview">Lifecycle overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/chroot-manager.html#construction">Construction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/chroot-manager.html#setup"><code class="docutils literal notranslate"><span class="pre">setup()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/chroot-manager.html#run-command"><code class="docutils literal notranslate"><span class="pre">run_command()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/chroot-manager.html#package-installation-flow">Package installation flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/chroot-manager.html#generate-fstab"><code class="docutils literal notranslate"><span class="pre">generate_fstab()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/chroot-manager.html#mock-filesystem-support">Mock filesystem support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/chroot-manager.html#failure-model">Failure model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/chroot-manager.html#practical-role-in-the-whole-build">Practical role in the whole build</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#workdir-not-writable">Workdir not writable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#tmp-is-too-small"><code class="docutils literal notranslate"><span class="pre">/tmp</span></code> is too small</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#non-arch-host-missing-pacman">Non-Arch host missing <code class="docutils literal notranslate"><span class="pre">pacman</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#pacman-cache-should-be-reusable">pacman cache should be reusable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#build-state-should-be-preserved-between-runs">Build state should be preserved between runs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#bootstrap-package-operations-are-flaky">Bootstrap package operations are flaky</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#diagnostics-log-location">Diagnostics log location</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting.html#bootloader-or-final-iso-generation-fails">Bootloader or final ISO generation fails</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting-isolated-builds.html">Isolated Build Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#quick-diagnosis-checklist">Quick diagnosis checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-host-is-not-arch-and-required-tools-are-missing">Symptom: host is not Arch and required tools are missing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-diagnostics-log-path-is-not-writable">Symptom: diagnostics log path is not writable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-tmp-does-not-have-enough-space">Symptom: <code class="docutils literal notranslate"><span class="pre">/tmp</span></code> does not have enough space</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-pacman-reports-not-enough-free-disk-space-inside-the-isolated-chroot">Symptom: <code class="docutils literal notranslate"><span class="pre">pacman</span></code> reports not enough free disk space inside the isolated chroot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-repeated-package-downloads-and-poor-reuse-between-runs">Symptom: repeated package downloads and poor reuse between runs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-mirror-or-package-operations-are-flaky">Symptom: mirror or package operations are flaky</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-chroot-commands-run-in-the-wrong-rootfs">Symptom: chroot commands run in the wrong rootfs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-customization-fails-on-missing-groups-or-initramfs-config-placement">Symptom: customization fails on missing groups or initramfs config placement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-bootloader-creation-fails">Symptom: bootloader creation fails</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-final-iso-packaging-fails-or-the-iso-is-left-inside-the-isolated-rootfs">Symptom: final ISO packaging fails or the ISO is left inside the isolated rootfs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-cleanup-prints-noisy-unmount-warnings">Symptom: cleanup prints noisy unmount warnings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-workspace-local-fallback-path-becomes-unwritable-after-sudo-builds">Symptom: workspace-local fallback path becomes unwritable after <code class="docutils literal notranslate"><span class="pre">sudo</span></code> builds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#recommended-recovery-workflow">Recommended recovery workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="development.html#project-workflow">Project workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development.html#test-commands">Test commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development.html#documentation-build">Documentation build</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development.html#adding-a-new-profile">Adding a new profile</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development.html#adding-a-new-architecture-engine">Adding a new architecture engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development.html#documentation-strategy">Documentation strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="development.html#config-profile-maintenance">Config profile maintenance</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-cli">CLI Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-core.orchestrator">Orchestration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-core.config_loader">Configuration Loader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-core.iso_engine">ISO Engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-core.chroot_manager">Chroot Manager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-core.customizer">Customizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-core.toolchain">Toolchain</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-2026, Manuel Rosa.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

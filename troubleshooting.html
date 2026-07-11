@@ -1,0 +1,191 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Troubleshooting &mdash; Arch-Builder</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=a1a28e8c" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Isolated Build Troubleshooting" href="troubleshooting-isolated-builds.html" />
+    <link rel="prev" title="Chroot Manager" href="operations/chroot-manager.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #E31937" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Arch-Builder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="profiles/index.html">Profile Catalog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Build Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build-pipeline.html">Build Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/customizer-actions.html">Customizer Actions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/chroot-manager.html">Chroot Manager</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#workdir-not-writable">Workdir not writable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tmp-is-too-small"><code class="docutils literal notranslate"><span class="pre">/tmp</span></code> is too small</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#non-arch-host-missing-pacman">Non-Arch host missing <code class="docutils literal notranslate"><span class="pre">pacman</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pacman-cache-should-be-reusable">pacman cache should be reusable</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#build-state-should-be-preserved-between-runs">Build state should be preserved between runs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bootstrap-package-operations-are-flaky">Bootstrap package operations are flaky</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#diagnostics-log-location">Diagnostics log location</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#bootloader-or-final-iso-generation-fails">Bootloader or final ISO generation fails</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting-isolated-builds.html">Isolated Build Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #E31937" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arch-Builder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Troubleshooting</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/troubleshooting.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="troubleshooting">
+<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h1>
+<section id="workdir-not-writable">
+<h2>Workdir not writable<a class="headerlink" href="#workdir-not-writable" title="Link to this heading"></a></h2>
+<p>If the configured workdir cannot be written, Arch-Builder falls back to:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>arch-builder/fallback/&lt;architecture&gt;/
+</pre></div>
+</div>
+<p>Check repository permissions and available space if fallback usage is unexpected.</p>
+</section>
+<section id="tmp-is-too-small">
+<h2><code class="docutils literal notranslate"><span class="pre">/tmp</span></code> is too small<a class="headerlink" href="#tmp-is-too-small" title="Link to this heading"></a></h2>
+<p>The project is designed to build in the workspace-local paths under <code class="docutils literal notranslate"><span class="pre">arch-builder/</span></code>, not in <code class="docutils literal notranslate"><span class="pre">/tmp</span></code>, except for temporary tool outputs used internally by upstream tooling.</p>
+</section>
+<section id="non-arch-host-missing-pacman">
+<h2>Non-Arch host missing <code class="docutils literal notranslate"><span class="pre">pacman</span></code><a class="headerlink" href="#non-arch-host-missing-pacman" title="Link to this heading"></a></h2>
+<p>Run the real build with isolated bootstrap:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--mode<span class="w"> </span>real<span class="w"> </span>--force-isolated-toolchain
+</pre></div>
+</div>
+</section>
+<section id="pacman-cache-should-be-reusable">
+<h2>pacman cache should be reusable<a class="headerlink" href="#pacman-cache-should-be-reusable" title="Link to this heading"></a></h2>
+<p>The persistent cache is outside the target chroot tree under:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>arch-builder/cache/pacman/pkg/
+</pre></div>
+</div>
+<p>If packages are downloaded repeatedly, verify this path is writable and not being removed externally.</p>
+</section>
+<section id="build-state-should-be-preserved-between-runs">
+<h2>Build state should be preserved between runs<a class="headerlink" href="#build-state-should-be-preserved-between-runs" title="Link to this heading"></a></h2>
+<p>Use:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--no-clean
+</pre></div>
+</div>
+</section>
+<section id="bootstrap-package-operations-are-flaky">
+<h2>Bootstrap package operations are flaky<a class="headerlink" href="#bootstrap-package-operations-are-flaky" title="Link to this heading"></a></h2>
+<p>Increase retries and enable diagnostics:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--mode<span class="w"> </span>real<span class="w"> </span>--toolchain-debug<span class="w"> </span>--toolchain-pacman-retries<span class="w"> </span><span class="m">4</span>
+</pre></div>
+</div>
+</section>
+<section id="diagnostics-log-location">
+<h2>Diagnostics log location<a class="headerlink" href="#diagnostics-log-location" title="Link to this heading"></a></h2>
+<p>By default, diagnostics are written inside the active workdir unless overridden with <code class="docutils literal notranslate"><span class="pre">--toolchain-debug-log</span></code>.</p>
+</section>
+<section id="bootloader-or-final-iso-generation-fails">
+<h2>Bootloader or final ISO generation fails<a class="headerlink" href="#bootloader-or-final-iso-generation-fails" title="Link to this heading"></a></h2>
+<p>Check:</p>
+<ul class="simple">
+<li><p>configured binary paths in <code class="docutils literal notranslate"><span class="pre">configs/global_build.json</span></code></p></li>
+<li><p>real build permissions</p></li>
+<li><p>presence of generated files under the active workdir or fallback tree</p></li>
+<li><p>toolchain debug log when isolated mode is enabled</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="operations/chroot-manager.html" class="btn btn-neutral float-left" title="Chroot Manager" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="troubleshooting-isolated-builds.html" class="btn btn-neutral float-right" title="Isolated Build Troubleshooting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-2026, Manuel Rosa.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
