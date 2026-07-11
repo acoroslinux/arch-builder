@@ -38,6 +38,8 @@ class SyslinuxBootloader:
                 for part in parts:
                     if isinstance(current, dict) and part in current:
                         current = current[part]
+                    elif hasattr(current, "get"):
+                        current = current.get(part)
                     else:
                         return default
                 return current if current is not None else default
@@ -55,6 +57,11 @@ class SyslinuxBootloader:
         )
         iso_label = self._cfg_get("system.iso_label", "ARCH-MODERN")
         arch = self._cfg_get("platform_specific.architecture", "x86_64")
+
+        logger.info(
+            f"[SYSLINUX] Using kernel={kernel_file} initramfs={initramfs_file} "
+            f"iso_label={iso_label} arch={arch}"
+        )
 
         kernel_params = self._cfg_get(
             "boot.kernel_params",
