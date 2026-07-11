@@ -3,7 +3,12 @@
 [![Documentation](https://img.shields.io/badge/docs-online-blue)](https://acoroslinux.github.io/arch-builder/)
 [![Live Docs](https://img.shields.io/badge/published-live-brightgreen?logo=github&logoColor=white)](https://acoroslinux.github.io/arch-builder/)
 
-Documentation is live at: https://acoroslinux.github.io/arch-builder/
+
+## Documentation
+
+The online documentation is published at:
+
+https://acoroslinux.github.io/arch-builder/
 
 Arch-Builder is a modular Arch Linux ISO builder written in Python. It assembles build profiles from JSON configuration files, prepares a target root filesystem, applies customizations, configures bootloaders, and produces a final ISO image.
 
