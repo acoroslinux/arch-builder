@@ -1,54 +1,106 @@
+
+
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<html lang="en" data-content_root="./">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Development &mdash; Arch-Builder</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=f5127f15" />
+      <link rel="stylesheet" type="text/css" href="_static/custom.css?v=a1a28e8c" />
 
-    <title>Development &#8212; Arch-Builder Documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="_static/classic.css?v=2bf1fcf8" />
-    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=a1a28e8c" />
-    
-    <script src="_static/documentation_options.js?v=f2a433a1"></script>
-    <script src="_static/doctools.js?v=9bcbadda"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script type="module" src="_static/mermaid-init.mjs?v=2b1ff50a"></script>
-    
+  
+      <script src="_static/jquery.js?v=8dae8fb0"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=8d563738"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="API Reference" href="api.html" />
     <link rel="prev" title="Isolated Build Troubleshooting" href="troubleshooting-isolated-builds.html" /> 
-  </head><body>
-    <div class="related" role="navigation" aria-label="Related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="api.html" title="API Reference"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="troubleshooting-isolated-builds.html" title="Isolated Build Troubleshooting"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Arch-Builder Documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Development</a></li> 
-      </ul>
-    </div>  
+</head>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #E31937" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Arch-Builder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="profiles/index.html">Profile Catalog</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Build Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="build-pipeline.html">Build Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/customizer-actions.html">Customizer Actions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="operations/chroot-manager.html">Chroot Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting-isolated-builds.html">Isolated Build Troubleshooting</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Development</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#project-workflow">Project workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#test-commands">Test commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation-build">Documentation build</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-a-new-profile">Adding a new profile</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-a-new-architecture-engine">Adding a new architecture engine</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation-strategy">Documentation strategy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#config-profile-maintenance">Config profile maintenance</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #E31937" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Arch-Builder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Development</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/development.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <section id="development">
-<h1>Development<a class="headerlink" href="#development" title="Link to this heading">¶</a></h1>
+<h1>Development<a class="headerlink" href="#development" title="Link to this heading"></a></h1>
 <section id="project-workflow">
-<h2>Project workflow<a class="headerlink" href="#project-workflow" title="Link to this heading">¶</a></h2>
+<h2>Project workflow<a class="headerlink" href="#project-workflow" title="Link to this heading"></a></h2>
 <p>For implementation changes, the safest loop is:</p>
 <ol class="arabic simple">
 <li><p>make a focused code change</p></li>
@@ -58,7 +110,7 @@
 </ol>
 </section>
 <section id="test-commands">
-<h2>Test commands<a class="headerlink" href="#test-commands" title="Link to this heading">¶</a></h2>
+<h2>Test commands<a class="headerlink" href="#test-commands" title="Link to this heading"></a></h2>
 <p>Full suite:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>unittest<span class="w"> </span>discover<span class="w"> </span>-s<span class="w"> </span>tests
 </pre></div>
@@ -73,7 +125,7 @@
 </div>
 </section>
 <section id="documentation-build">
-<h2>Documentation build<a class="headerlink" href="#documentation-build" title="Link to this heading">¶</a></h2>
+<h2>Documentation build<a class="headerlink" href="#documentation-build" title="Link to this heading"></a></h2>
 <p>Install doc dependencies:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>docs/requirements.txt
 </pre></div>
@@ -84,7 +136,7 @@
 </div>
 </section>
 <section id="adding-a-new-profile">
-<h2>Adding a new profile<a class="headerlink" href="#adding-a-new-profile" title="Link to this heading">¶</a></h2>
+<h2>Adding a new profile<a class="headerlink" href="#adding-a-new-profile" title="Link to this heading"></a></h2>
 <p>Choose the appropriate config subdirectory and add a JSON file:</p>
 <ul class="simple">
 <li><p>desktop profile: <code class="docutils literal notranslate"><span class="pre">configs/desktops/</span></code></p></li>
@@ -99,11 +151,11 @@
 </div>
 </section>
 <section id="adding-a-new-architecture-engine">
-<h2>Adding a new architecture engine<a class="headerlink" href="#adding-a-new-architecture-engine" title="Link to this heading">¶</a></h2>
+<h2>Adding a new architecture engine<a class="headerlink" href="#adding-a-new-architecture-engine" title="Link to this heading"></a></h2>
 <p>Add or register a new engine under <code class="docutils literal notranslate"><span class="pre">core.iso_engine</span></code> and ensure the architecture profile exists under <code class="docutils literal notranslate"><span class="pre">configs/architectures/</span></code>.</p>
 </section>
 <section id="documentation-strategy">
-<h2>Documentation strategy<a class="headerlink" href="#documentation-strategy" title="Link to this heading">¶</a></h2>
+<h2>Documentation strategy<a class="headerlink" href="#documentation-strategy" title="Link to this heading"></a></h2>
 <p>The repository now contains two documentation layers:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">README.md</span></code> for fast onboarding and common commands</p></li>
@@ -111,87 +163,40 @@
 </ul>
 </section>
 <section id="config-profile-maintenance">
-<h2>Config profile maintenance<a class="headerlink" href="#config-profile-maintenance" title="Link to this heading">¶</a></h2>
+<h2>Config profile maintenance<a class="headerlink" href="#config-profile-maintenance" title="Link to this heading"></a></h2>
 <p>When adding or changing files under <code class="docutils literal notranslate"><span class="pre">configs/</span></code>, update the matching page under <code class="docutils literal notranslate"><span class="pre">docs/profiles/</span></code> so the profile catalog stays aligned with the repository.</p>
 </section>
 </section>
 
 
-            <div class="clearer"></div>
+           </div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
-        <div class="sphinxsidebarwrapper">
-  <div>
-    <h3><a href="index.html">Table of Contents</a></h3>
-    <ul>
-<li><a class="reference internal" href="#">Development</a><ul>
-<li><a class="reference internal" href="#project-workflow">Project workflow</a></li>
-<li><a class="reference internal" href="#test-commands">Test commands</a></li>
-<li><a class="reference internal" href="#documentation-build">Documentation build</a></li>
-<li><a class="reference internal" href="#adding-a-new-profile">Adding a new profile</a></li>
-<li><a class="reference internal" href="#adding-a-new-architecture-engine">Adding a new architecture engine</a></li>
-<li><a class="reference internal" href="#documentation-strategy">Documentation strategy</a></li>
-<li><a class="reference internal" href="#config-profile-maintenance">Config profile maintenance</a></li>
-</ul>
-</li>
-</ul>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="troubleshooting-isolated-builds.html" class="btn btn-neutral float-left" title="Isolated Build Troubleshooting" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-2026, Manuel Rosa.</p>
   </div>
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="troubleshooting-isolated-builds.html"
-                          title="previous chapter">Isolated Build Troubleshooting</a></p>
-  </div>
-  <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="api.html"
-                          title="next chapter">API Reference</a></p>
-  </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/development.md.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="Related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="api.html" title="API Reference"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="troubleshooting-isolated-builds.html" title="Isolated Build Troubleshooting"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Arch-Builder Documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Development</a></li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Arch-Builder contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
-    </div>
-  </body>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>

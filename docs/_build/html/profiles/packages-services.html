@@ -1,56 +1,117 @@
+
+
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<html lang="en" data-content_root="../">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Package And Service Profiles &mdash; Arch-Builder</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=f5127f15" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=a1a28e8c" />
 
-    <title>Package And Service Profiles &#8212; Arch-Builder Documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/classic.css?v=2bf1fcf8" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=a1a28e8c" />
-    
-    <script src="../_static/documentation_options.js?v=f2a433a1"></script>
-    <script src="../_static/doctools.js?v=9bcbadda"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script type="module" src="../_static/mermaid-init.mjs?v=2b1ff50a"></script>
-    
+  
+      <script src="../_static/jquery.js?v=8dae8fb0"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Asset And Template Files" href="assets-and-templates.html" />
     <link rel="prev" title="Live-User Profiles" href="live-users.html" /> 
-  </head><body>
-    <div class="related" role="navigation" aria-label="Related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="assets-and-templates.html" title="Asset And Template Files"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="live-users.html" title="Live-User Profiles"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Arch-Builder Documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Profile Catalog</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Package And Service Profiles</a></li> 
-      </ul>
-    </div>  
+</head>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #E31937" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Arch-Builder
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli-reference.html">CLI Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../configuration.html">Configuration</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Profile Catalog</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="system-foundation.html">System Foundation Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="desktops.html">Desktop Profiles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="live-users.html">Live-User Profiles</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Package And Service Profiles</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#package-profiles">Package profiles</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#example-use">Example use</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#service-profiles">Service profiles</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Example use</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="assets-and-templates.html">Asset And Template Files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#reading-strategy">Reading Strategy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Build Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build-pipeline.html">Build Pipeline</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../operations/customizer-actions.html">Customizer Actions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../operations/chroot-manager.html">Chroot Manager</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../troubleshooting-isolated-builds.html">Isolated Build Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../development.html">Development</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #E31937" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Arch-Builder</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Profile Catalog</a></li>
+      <li class="breadcrumb-item active">Package And Service Profiles</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/profiles/packages-services.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <section id="package-and-service-profiles">
-<h1>Package And Service Profiles<a class="headerlink" href="#package-and-service-profiles" title="Link to this heading">¶</a></h1>
+<h1>Package And Service Profiles<a class="headerlink" href="#package-and-service-profiles" title="Link to this heading"></a></h1>
 <p>This page documents every JSON file under <code class="docutils literal notranslate"><span class="pre">configs/packages/</span></code> and <code class="docutils literal notranslate"><span class="pre">configs/services/</span></code>.</p>
 <section id="package-profiles">
-<h2>Package profiles<a class="headerlink" href="#package-profiles" title="Link to this heading">¶</a></h2>
+<h2>Package profiles<a class="headerlink" href="#package-profiles" title="Link to this heading"></a></h2>
 <p>Package profiles usually provide either:</p>
 <ul class="simple">
 <li><p>a <code class="docutils literal notranslate"><span class="pre">packages</span></code> list for feature bundles, or</p></li>
@@ -155,7 +216,7 @@
 </tbody>
 </table>
 <section id="example-use">
-<h3>Example use<a class="headerlink" href="#example-use" title="Link to this heading">¶</a></h3>
+<h3>Example use<a class="headerlink" href="#example-use" title="Link to this heading"></a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--package-profile<span class="w"> </span>audio<span class="w"> </span>--package-profile<span class="w"> </span>multimedia
 python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--package-profile<span class="w"> </span>dev-tools<span class="w"> </span>--package-profile<span class="w"> </span>python-dev
 python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--package-profile<span class="w"> </span>custom-user
@@ -164,7 +225,7 @@ python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="
 </section>
 </section>
 <section id="service-profiles">
-<h2>Service profiles<a class="headerlink" href="#service-profiles" title="Link to this heading">¶</a></h2>
+<h2>Service profiles<a class="headerlink" href="#service-profiles" title="Link to this heading"></a></h2>
 <p>Service profiles generally populate <code class="docutils literal notranslate"><span class="pre">customizations.services</span></code> with systemd units to enable in the target image.</p>
 <table class="docutils align-default">
 <thead>
@@ -197,7 +258,7 @@ python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="
 </tbody>
 </table>
 <section id="id1">
-<h3>Example use<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<h3>Example use<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--service-profile<span class="w"> </span>common-base<span class="w"> </span>--service-profile<span class="w"> </span>common-printing
 python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--service-profile<span class="w"> </span>common-remote
 </pre></div>
@@ -207,83 +268,34 @@ python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="
 </section>
 
 
-            <div class="clearer"></div>
+           </div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
-        <div class="sphinxsidebarwrapper">
-  <div>
-    <h3><a href="../index.html">Table of Contents</a></h3>
-    <ul>
-<li><a class="reference internal" href="#">Package And Service Profiles</a><ul>
-<li><a class="reference internal" href="#package-profiles">Package profiles</a><ul>
-<li><a class="reference internal" href="#example-use">Example use</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#service-profiles">Service profiles</a><ul>
-<li><a class="reference internal" href="#id1">Example use</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="live-users.html" class="btn btn-neutral float-left" title="Live-User Profiles" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="assets-and-templates.html" class="btn btn-neutral float-right" title="Asset And Template Files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026-2026, Manuel Rosa.</p>
   </div>
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="live-users.html"
-                          title="previous chapter">Live-User Profiles</a></p>
-  </div>
-  <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="assets-and-templates.html"
-                          title="next chapter">Asset And Template Files</a></p>
-  </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/profiles/packages-services.md.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="Related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="assets-and-templates.html" title="Asset And Template Files"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="live-users.html" title="Live-User Profiles"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">Arch-Builder Documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="index.html" >Profile Catalog</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Package And Service Profiles</a></li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-    &#169; Copyright 2026, Arch-Builder contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
-    </div>
-  </body>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>
