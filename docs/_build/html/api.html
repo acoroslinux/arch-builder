@@ -287,8 +287,8 @@ configuration object.</p>
 <dt class="sig sig-object py" id="core.iso_engine.ArchEngine.build_bootloaders">
 <span class="sig-name descname"><span class="pre">build_bootloaders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mountpoint</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ArchEngine.build_bootloaders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ArchEngine.build_bootloaders" title="Link to this definition">¶</a></dt>
 <dd><p>Build the complete Arch Linux live ISO directory structure.</p>
-<p>Standard Arch ISO layout:
-/
+<p>Standard Arch ISO layout:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>/
 ├── boot/
 │   ├── vmlinuz-linux       # Kernel
 │   ├── initramfs-linux.img # Initramfs
@@ -302,13 +302,11 @@ configuration object.</p>
 │   ├── loader.conf         # systemd-boot config
 │   └── entries/
 │       └── arch-live.conf  # Boot entry
-└── arch/</p>
-<blockquote>
-<div><dl class="simple">
-<dt>└── x86_64/</dt><dd><p>└── airootfs.sfs    # Squashfs root filesystem</p>
-</dd>
-</dl>
-</div></blockquote>
+└── arch/
+    └── x86_64/
+        └── airootfs.sfs    # Squashfs root filesystem
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>mountpoint</strong> (<em>str</em>)</p>

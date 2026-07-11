@@ -506,24 +506,25 @@
     <span class="k">def</span> <span class="nf">build_bootloaders</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the complete Arch Linux live ISO directory structure.</span>
 
-<span class="sd">        Standard Arch ISO layout:</span>
-<span class="sd">        /</span>
-<span class="sd">        ├── boot/</span>
-<span class="sd">        │   ├── vmlinuz-linux       # Kernel</span>
-<span class="sd">        │   ├── initramfs-linux.img # Initramfs</span>
-<span class="sd">        │   └── grub/</span>
-<span class="sd">        │       ├── grub.cfg        # GRUB config</span>
-<span class="sd">        │       └── boot.img        # GRUB BIOS boot image</span>
-<span class="sd">        ├── EFI/</span>
-<span class="sd">        │   └── BOOT/</span>
-<span class="sd">        │       └── BOOTx64.EFI     # GRUB EFI binary</span>
-<span class="sd">        ├── loader/</span>
-<span class="sd">        │   ├── loader.conf         # systemd-boot config</span>
-<span class="sd">        │   └── entries/</span>
-<span class="sd">        │       └── arch-live.conf  # Boot entry</span>
-<span class="sd">        └── arch/</span>
-<span class="sd">            └── x86_64/</span>
-<span class="sd">                └── airootfs.sfs    # Squashfs root filesystem</span>
+<span class="sd">        Standard Arch ISO layout::</span>
+
+<span class="sd">            /</span>
+<span class="sd">            ├── boot/</span>
+<span class="sd">            │   ├── vmlinuz-linux       # Kernel</span>
+<span class="sd">            │   ├── initramfs-linux.img # Initramfs</span>
+<span class="sd">            │   └── grub/</span>
+<span class="sd">            │       ├── grub.cfg        # GRUB config</span>
+<span class="sd">            │       └── boot.img        # GRUB BIOS boot image</span>
+<span class="sd">            ├── EFI/</span>
+<span class="sd">            │   └── BOOT/</span>
+<span class="sd">            │       └── BOOTx64.EFI     # GRUB EFI binary</span>
+<span class="sd">            ├── loader/</span>
+<span class="sd">            │   ├── loader.conf         # systemd-boot config</span>
+<span class="sd">            │   └── entries/</span>
+<span class="sd">            │       └── arch-live.conf  # Boot entry</span>
+<span class="sd">            └── arch/</span>
+<span class="sd">                └── x86_64/</span>
+<span class="sd">                    └── airootfs.sfs    # Squashfs root filesystem</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">effective_root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">mountpoint</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
 

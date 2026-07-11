@@ -426,24 +426,25 @@ class ArchEngine(BaseEngine):
     def build_bootloaders(self, mountpoint: str) -> None:
         """Build the complete Arch Linux live ISO directory structure.
 
-        Standard Arch ISO layout:
-        /
-        ├── boot/
-        │   ├── vmlinuz-linux       # Kernel
-        │   ├── initramfs-linux.img # Initramfs
-        │   └── grub/
-        │       ├── grub.cfg        # GRUB config
-        │       └── boot.img        # GRUB BIOS boot image
-        ├── EFI/
-        │   └── BOOT/
-        │       └── BOOTx64.EFI     # GRUB EFI binary
-        ├── loader/
-        │   ├── loader.conf         # systemd-boot config
-        │   └── entries/
-        │       └── arch-live.conf  # Boot entry
-        └── arch/
-            └── x86_64/
-                └── airootfs.sfs    # Squashfs root filesystem
+        Standard Arch ISO layout::
+
+            /
+            ├── boot/
+            │   ├── vmlinuz-linux       # Kernel
+            │   ├── initramfs-linux.img # Initramfs
+            │   └── grub/
+            │       ├── grub.cfg        # GRUB config
+            │       └── boot.img        # GRUB BIOS boot image
+            ├── EFI/
+            │   └── BOOT/
+            │       └── BOOTx64.EFI     # GRUB EFI binary
+            ├── loader/
+            │   ├── loader.conf         # systemd-boot config
+            │   └── entries/
+            │       └── arch-live.conf  # Boot entry
+            └── arch/
+                └── x86_64/
+                    └── airootfs.sfs    # Squashfs root filesystem
         """
         effective_root = Path(mountpoint).parent
 

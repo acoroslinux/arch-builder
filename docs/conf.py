@@ -31,10 +31,6 @@ master_doc = "index"
 html_theme = "classic"
 html_static_path = ["_static"]
 html_title = "Arch-Builder Documentation"
-html_theme_options = {
-    "sidebar_width": "220px",
-    "page_width": "980px",
-}
 
 myst_enable_extensions = [
     "colon_fence",
