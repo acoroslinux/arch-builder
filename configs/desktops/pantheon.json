@@ -1,7 +1,7 @@
 {
   "platform_specific": {
     "packages": [
-      "pantheon-desktop",
+      "pantheon",
       "xorg-server",
       "lightdm",
       "lightdm-pantheon-greeter",
