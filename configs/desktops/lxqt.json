@@ -2,20 +2,11 @@
   "platform_specific": {
     "packages": [
       "lxqt",
-      "lxqt-connman-applet",
-      "pcmanfm-qt",
-      "qterminal",
-      "xorg-server",
+      "breeze-icons",
+      "oxygen-icons",
       "sddm",
       "firefox",
-      "networkmanager",
-      "pipewire",
-      "pipewire-pulse",
-      "pipewire-alsa",
       "wireplumber",
-      "alsa-utils",
-      "bluez",
-      "bluez-utils",
       "xclip",
       "xsel",
       "spice-vdagent"
