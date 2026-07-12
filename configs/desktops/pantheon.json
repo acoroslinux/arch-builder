@@ -2,7 +2,6 @@
   "platform_specific": {
     "packages": [
       "pantheon",
-      "mutter",
       "xorg-server",
       "lightdm",
       "lightdm-pantheon-greeter",
