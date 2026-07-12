@@ -312,8 +312,24 @@ class Grub2Bootloader:
         # embedded GRUB binary can load them directly.
         boot_theme_dir = stage / "boot" / "grub"
         if boot_theme_dir.exists():
-            # Create directories
-            fat_cmds.append(f"mmd -i {efi_img_chroot} ::/boot ::/boot/grub ::/boot/grub/themes ::/boot/grub/fonts")
+            # Collect all directories needed in the FAT image dynamically so
+            # that nested theme directories (e.g. themes/modern/) are created.
+            dirs_to_create = set()
+            for f in (stage / "boot").rglob("*"):
+                if f.is_file():
+                    parent = f.relative_to(stage).parent
+                    # Add every intermediate path component
+                    parts = parent.parts
+                    for i in range(1, len(parts) + 1):
+                        dirs_to_create.add("::/" + "/".join(parts[:i]))
+            # Also ensure base dirs exist even if empty
+            dirs_to_create.update([
+                "::/boot", "::/boot/grub",
+                "::/boot/grub/themes", "::/boot/grub/fonts",
+            ])
+            # Sort by depth so parent dirs are created before children
+            sorted_dirs = sorted(dirs_to_create, key=lambda d: (d.count("/"), d))
+            fat_cmds.append(f"mmd -i {efi_img_chroot} {' '.join(sorted_dirs)}")
             # Copy all files under stage/boot into the FAT image preserving relative paths
             for f in (stage / "boot").rglob("*"):
                 if f.is_file():
