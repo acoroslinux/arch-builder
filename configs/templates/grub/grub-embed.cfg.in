@@ -18,6 +18,7 @@ if [ "${ARCHISO_HINT}" == 'memdisk' -o -z "${ARCHISO_HINT}" ]; then
 elif [ -e "(${ARCHISO_HINT})/boot/grub/grub.cfg" ]; then
     export ARCHISO_HINT
     set root="${ARCHISO_HINT}"
+    set prefix="(${ARCHISO_HINT})/boot/grub"
     configfile "(${ARCHISO_HINT})/boot/grub/grub.cfg"
 else
     echo 'ERROR: Could not find grub.cfg on the ISO!'

@@ -7,6 +7,9 @@ insmod ntfs
 insmod exfat
 insmod udf
 
+# Set prefix to the correct path on the ISO
+set prefix="(${root})/boot/grub"
+
 # Use graphics-mode output
 if loadfont "${prefix}/fonts/unicode.pf2" ; then
     insmod all_video
