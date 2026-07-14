@@ -463,21 +463,32 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[squashfs] Created: </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_generate_grub_boot_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">staging_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">effective_root</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">iso_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate GRUB BIOS boot image (boot.img) and EFI binary (BOOTx64.EFI) using the chroot.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate GRUB BIOS boot image (boot.img) and EFI binary (BOOT*.EFI) using the chroot.&quot;&quot;&quot;</span>
         <span class="n">grub_dir</span> <span class="o">=</span> <span class="n">staging_dir</span> <span class="o">/</span> <span class="s2">&quot;boot&quot;</span> <span class="o">/</span> <span class="s2">&quot;grub&quot;</span>
         <span class="n">grub_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">efi_dir</span> <span class="o">=</span> <span class="n">staging_dir</span> <span class="o">/</span> <span class="s2">&quot;EFI&quot;</span> <span class="o">/</span> <span class="s2">&quot;BOOT&quot;</span>
         <span class="n">efi_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
+        <span class="n">arch_lower</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arch</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">arch_lower</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;aarch64&quot;</span><span class="p">,</span> <span class="s2">&quot;arm64&quot;</span><span class="p">):</span>
+            <span class="n">grub_target</span> <span class="o">=</span> <span class="s2">&quot;arm64-efi&quot;</span>
+            <span class="n">efi_filename</span> <span class="o">=</span> <span class="s2">&quot;BOOTAA64.EFI&quot;</span>
+        <span class="k">elif</span> <span class="n">arch_lower</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;i386&quot;</span><span class="p">,</span> <span class="s2">&quot;i686&quot;</span><span class="p">):</span>
+            <span class="n">grub_target</span> <span class="o">=</span> <span class="s2">&quot;i386-efi&quot;</span>
+            <span class="n">efi_filename</span> <span class="o">=</span> <span class="s2">&quot;BOOTIA32.EFI&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">grub_target</span> <span class="o">=</span> <span class="s2">&quot;x86_64-efi&quot;</span>
+            <span class="n">efi_filename</span> <span class="o">=</span> <span class="s2">&quot;BOOTx64.EFI&quot;</span>
+
         <span class="n">is_mock</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="s2">&quot;mock&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;mock&quot;</span>
         <span class="k">if</span> <span class="n">is_mock</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[grub] [MOCK] Would generate GRUB BIOS and EFI boot images&quot;</span><span class="p">)</span>
             <span class="p">(</span><span class="n">grub_dir</span> <span class="o">/</span> <span class="s2">&quot;boot.img&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x00</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">512</span><span class="p">)</span>
-            <span class="p">(</span><span class="n">efi_dir</span> <span class="o">/</span> <span class="s2">&quot;BOOTx64.EFI&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">efi_dir</span> <span class="o">/</span> <span class="n">efi_filename</span><span class="p">)</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
             <span class="k">return</span>
 
         <span class="c1"># Paths inside the chroot where the grub packages install modules</span>
-        <span class="n">chroot_efi_modules</span> <span class="o">=</span> <span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;usr&quot;</span> <span class="o">/</span> <span class="s2">&quot;lib&quot;</span> <span class="o">/</span> <span class="s2">&quot;grub&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">arch</span><span class="si">}</span><span class="s2">-efi&quot;</span>
+        <span class="n">chroot_efi_modules</span> <span class="o">=</span> <span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;usr&quot;</span> <span class="o">/</span> <span class="s2">&quot;lib&quot;</span> <span class="o">/</span> <span class="s2">&quot;grub&quot;</span> <span class="o">/</span> <span class="n">grub_target</span>
         <span class="n">chroot_bios_modules</span> <span class="o">=</span> <span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;usr&quot;</span> <span class="o">/</span> <span class="s2">&quot;lib&quot;</span> <span class="o">/</span> <span class="s2">&quot;grub&quot;</span> <span class="o">/</span> <span class="s2">&quot;i386-pc&quot;</span>
 
         <span class="c1"># 1. --- Generate GRUB BIOS boot image (boot.img) ---</span>
@@ -501,8 +512,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[grub] GRUB BIOS modules not found at </span><span class="si">{</span><span class="n">chroot_bios_modules</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">boot_img_dest</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x00</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="mi">512</span><span class="p">)</span>
 
-        <span class="c1"># 2. --- Generate GRUB EFI binary (BOOTx64.EFI) ---</span>
-        <span class="n">efi_binary_dest</span> <span class="o">=</span> <span class="n">efi_dir</span> <span class="o">/</span> <span class="s2">&quot;BOOTx64.EFI&quot;</span>
+        <span class="c1"># 2. --- Generate GRUB EFI binary (BOOT*.EFI) ---</span>
+        <span class="n">efi_binary_dest</span> <span class="o">=</span> <span class="n">efi_dir</span> <span class="o">/</span> <span class="n">efi_filename</span>
         <span class="k">if</span> <span class="n">chroot_efi_modules</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[grub] Generating GRUB EFI binary in chroot...&quot;</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
@@ -527,22 +538,22 @@
                 <span class="c1"># Compile the standalone EFI image inside the chroot</span>
                 <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span>
                     <span class="s2">&quot;chroot&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">effective_root</span><span class="p">),</span> <span class="s2">&quot;bash&quot;</span><span class="p">,</span> <span class="s2">&quot;-c&quot;</span><span class="p">,</span>
-                    <span class="sa">f</span><span class="s2">&quot;grub-mkimage -d /usr/lib/grub/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">arch</span><span class="si">}</span><span class="s2">-efi -o /tmp/BOOTx64.EFI -O </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">arch</span><span class="si">}</span><span class="s2">-efi &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;grub-mkimage -d /usr/lib/grub/</span><span class="si">{</span><span class="n">grub_target</span><span class="si">}</span><span class="s2"> -o /tmp/</span><span class="si">{</span><span class="n">efi_filename</span><span class="si">}</span><span class="s2"> -O </span><span class="si">{</span><span class="n">grub_target</span><span class="si">}</span><span class="s2"> &quot;</span>
                     <span class="s2">&quot;-c /tmp/grub-embed.cfg -p /boot/grub &quot;</span>
                     <span class="s2">&quot;efifwsetup efinet efi_uga fat iso9660 part_gpt part_msdos search_fs_uuid search_label &quot;</span>
                     <span class="s2">&quot;normal boot configfile linux loopback chain&quot;</span>
                 <span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
-                <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;tmp&quot;</span> <span class="o">/</span> <span class="s2">&quot;BOOTx64.EFI&quot;</span><span class="p">,</span> <span class="n">efi_binary_dest</span><span class="p">)</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;tmp&quot;</span> <span class="o">/</span> <span class="n">efi_filename</span><span class="p">,</span> <span class="n">efi_binary_dest</span><span class="p">)</span>
                 
                 <span class="c1"># Cleanup</span>
-                <span class="p">(</span><span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;tmp&quot;</span> <span class="o">/</span> <span class="s2">&quot;BOOTx64.EFI&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="p">(</span><span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;tmp&quot;</span> <span class="o">/</span> <span class="n">efi_filename</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="p">(</span><span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;tmp&quot;</span> <span class="o">/</span> <span class="s2">&quot;grub-embed.cfg&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[grub] Created EFI binary: </span><span class="si">{</span><span class="n">efi_binary_dest</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[grub] Failed to create EFI binary in chroot: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="c1"># Clean up any leftover temp files</span>
-                <span class="p">(</span><span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;tmp&quot;</span> <span class="o">/</span> <span class="s2">&quot;BOOTx64.EFI&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="p">(</span><span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;tmp&quot;</span> <span class="o">/</span> <span class="n">efi_filename</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="p">(</span><span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;tmp&quot;</span> <span class="o">/</span> <span class="s2">&quot;grub-embed.cfg&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="n">efi_binary_dest</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -930,20 +941,7 @@
 </div>
 
 
-<div class="viewcode-block" id="LegacyEngine">
-<a class="viewcode-back" href="../../api.html#core.iso_engine.LegacyEngine">[docs]</a>
-<span class="nd">@ISOEngine</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;i386&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">LegacyEngine</span><span class="p">(</span><span class="n">ArchEngine</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Legacy engine that currently reuses the x86_64 workflow.&quot;&quot;&quot;</span></div>
 
-
-<span class="nd">@ISOEngine</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;aarch64&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">Aarch64Engine</span><span class="p">(</span><span class="n">ArchEngine</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;ARM64 engine reusing the generic build workflow.&quot;&quot;&quot;</span>
-
-<span class="nd">@ISOEngine</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;arm64&quot;</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">Arm64Engine</span><span class="p">(</span><span class="n">ArchEngine</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Alias ARM64 engine reusing the generic build workflow.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="ISOBuilder">
 <a class="viewcode-back" href="../../api.html#core.iso_engine.ISOBuilder">[docs]</a>
@@ -958,6 +956,8 @@
         <span class="n">chroot_manager</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChrootManager</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">arch</span> <span class="o">=</span> <span class="n">arch</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arch</span> <span class="o">==</span> <span class="s2">&quot;i386&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">arch</span> <span class="o">=</span> <span class="s2">&quot;i686&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">Config</span><span class="p">)</span> <span class="k">else</span> <span class="n">Config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coerce_toolchain</span><span class="p">(</span><span class="n">toolchain</span><span class="p">,</span> <span class="n">chroot_manager</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_engine</span><span class="p">()</span>

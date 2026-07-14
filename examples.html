@@ -60,15 +60,14 @@
 <li class="toctree-l2"><a class="reference internal" href="#python-developer-image">5. Python developer image</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#node-js-developer-image">6. Node.js developer image</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#security-and-diagnostics-image">7. Security and diagnostics image</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#arm64-image">8. ARM64 image</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#real-build-on-a-non-arch-host">9. Real build on a non-Arch host</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#reusing-previous-build-state">10. Reusing previous build state</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#tutorial-installing-aur-packages-e-g-pamac-aur-yay">11. Tutorial: Installing AUR Packages (e.g. pamac-aur, yay)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#real-build-on-a-non-arch-host">8. Real build on a non-Arch host</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reusing-previous-build-state">9. Reusing previous build state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tutorial-installing-aur-packages-e-g-pamac-aur-yay">10. Tutorial: Installing AUR Packages (e.g. pamac-aur, yay)</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#step-1-create-or-edit-an-aur-package-profile">Step 1: Create or edit an AUR package profile</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-2-build-the-iso-with-the-aur-profile">Step 2: Build the ISO with the AUR profile</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#tutorial-installing-local-custom-packages-e-g-calamares">12. Tutorial: Installing Local Custom Packages (e.g. Calamares)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#tutorial-installing-local-custom-packages-e-g-calamares">11. Tutorial: Installing Local Custom Packages (e.g. Calamares)</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#step-1-place-packages-in-the-local-folder">Step 1: Place packages in the local folder</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-2-build-the-iso-using-the-custom-user-profile">Step 2: Build the ISO using the custom-user profile</a></li>
 </ul>
@@ -120,7 +119,6 @@
 flowchart TD
     BASE[Base live ISO] --> XFCE[Desktop workstation]
     BASE --> GAMING[Gaming workstation]
-    BASE --> ARM[ARM build]
     BASE --> DEV[Developer image]
     DEV --> PY[Python stack]
     DEV --> NODE[Node.js stack]
@@ -212,18 +210,8 @@ flowchart TD
 </div>
 <p>Suited for audit, troubleshooting, and remote-access style live sessions.</p>
 </section>
-<section id="arm64-image">
-<h2>8. ARM64 image<a class="headerlink" href="#arm64-image" title="Link to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>aarch64<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--live-profile<span class="w"> </span>aarch64-live<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--package-profile<span class="w"> </span>base<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--service-profile<span class="w"> </span>common-base
-</pre></div>
-</div>
-<p>Use <code class="docutils literal notranslate"><span class="pre">arm64</span></code> instead of <code class="docutils literal notranslate"><span class="pre">aarch64</span></code> when you want the alias profile naming.</p>
-</section>
 <section id="real-build-on-a-non-arch-host">
-<h2>9. Real build on a non-Arch host<a class="headerlink" href="#real-build-on-a-non-arch-host" title="Link to this heading"></a></h2>
+<h2>8. Real build on a non-Arch host<a class="headerlink" href="#real-build-on-a-non-arch-host" title="Link to this heading"></a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--mode<span class="w"> </span>real<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--desktop<span class="w"> </span>xfce<span class="w"> </span><span class="se">\</span>
@@ -237,7 +225,7 @@ flowchart TD
 <p>Use this when host tooling is missing or when you want a more reproducible isolated build path.</p>
 </section>
 <section id="reusing-previous-build-state">
-<h2>10. Reusing previous build state<a class="headerlink" href="#reusing-previous-build-state" title="Link to this heading"></a></h2>
+<h2>9. Reusing previous build state<a class="headerlink" href="#reusing-previous-build-state" title="Link to this heading"></a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--mode<span class="w"> </span>real<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--desktop<span class="w"> </span>xfce<span class="w"> </span><span class="se">\</span>
@@ -248,7 +236,7 @@ flowchart TD
 </section>
 <hr class="docutils" />
 <section id="tutorial-installing-aur-packages-e-g-pamac-aur-yay">
-<h2>11. Tutorial: Installing AUR Packages (e.g. pamac-aur, yay)<a class="headerlink" href="#tutorial-installing-aur-packages-e-g-pamac-aur-yay" title="Link to this heading"></a></h2>
+<h2>10. Tutorial: Installing AUR Packages (e.g. pamac-aur, yay)<a class="headerlink" href="#tutorial-installing-aur-packages-e-g-pamac-aur-yay" title="Link to this heading"></a></h2>
 <p>Arch-Builder supports automatically downloading, compiling, and installing packages from the AUR (Arch User Repository) during the build process using a dedicated non-root build flow with helper accounts.</p>
 <section id="step-1-create-or-edit-an-aur-package-profile">
 <h3>Step 1: Create or edit an AUR package profile<a class="headerlink" href="#step-1-create-or-edit-an-aur-package-profile" title="Link to this heading"></a></h3>
@@ -286,7 +274,7 @@ flowchart TD
 </section>
 <hr class="docutils" />
 <section id="tutorial-installing-local-custom-packages-e-g-calamares">
-<h2>12. Tutorial: Installing Local Custom Packages (e.g. Calamares)<a class="headerlink" href="#tutorial-installing-local-custom-packages-e-g-calamares" title="Link to this heading"></a></h2>
+<h2>11. Tutorial: Installing Local Custom Packages (e.g. Calamares)<a class="headerlink" href="#tutorial-installing-local-custom-packages-e-g-calamares" title="Link to this heading"></a></h2>
 <p>If you have pre-compiled packages (like a custom build of the <code class="docutils literal notranslate"><span class="pre">calamares</span></code> system installer or proprietary drivers), you can easily bundle them without rebuilding them each time.</p>
 <section id="step-1-place-packages-in-the-local-folder">
 <h3>Step 1: Place packages in the local folder<a class="headerlink" href="#step-1-place-packages-in-the-local-folder" title="Link to this heading"></a></h3>

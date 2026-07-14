@@ -125,7 +125,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#core.iso_engine.ISOEngine.register"><code class="docutils literal notranslate"><span class="pre">ISOEngine.register()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#core.iso_engine.LegacyEngine"><code class="docutils literal notranslate"><span class="pre">LegacyEngine</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-core.chroot_manager">Chroot Manager</a><ul>
@@ -751,22 +750,6 @@ It handles all the complexity of:
 
 </dd></dl>
 
-<dl class="py class">
-<dt class="sig sig-object py" id="core.iso_engine.LegacyEngine">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">LegacyEngine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#LegacyEngine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.LegacyEngine" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#core.iso_engine.ArchEngine" title="core.iso_engine.ArchEngine"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArchEngine</span></code></a></p>
-<p>Legacy engine that currently reuses the x86_64 workflow.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>arch</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>config</strong> (<a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p></li>
-<li><p><strong>toolchain</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 <section id="module-core.chroot_manager">
 <span id="chroot-manager"></span><h2>Chroot Manager<a class="headerlink" href="#module-core.chroot_manager" title="Link to this heading"></a></h2>
@@ -849,7 +832,7 @@ It handles all the complexity of:
 
 <dl class="py class">
 <dt class="sig sig-object py" id="core.chroot_manager.ChrootManager">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.chroot_manager.</span></span><span class="sig-name descname"><span class="pre">ChrootManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManager" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.chroot_manager.</span></span><span class="sig-name descname"><span class="pre">ChrootManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManager" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Manages a chroot environment that can operate in two modes:
 *   Mock mode – pure Python simulation (no external processes).
@@ -862,6 +845,7 @@ It handles all the complexity of:
 <li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
 <li><p><strong>chroot_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em> | </em><em>None</em>)</p></li>
 <li><p><strong>toolchain</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>arch</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1206,7 +1190,7 @@ reproducibility across any Linux distribution.</p>
 </section>
 <dl class="py class">
 <dt class="sig sig-object py" id="core.toolchain.ToolchainManager">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.toolchain.</span></span><span class="sig-name descname"><span class="pre">ToolchainManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir_base</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_isolated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pacman_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics_enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics_log_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pacman_cache_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/toolchain.html#ToolchainManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.toolchain.ToolchainManager" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.toolchain.</span></span><span class="sig-name descname"><span class="pre">ToolchainManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir_base</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_isolated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pacman_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics_enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics_log_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pacman_cache_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/toolchain.html#ToolchainManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.toolchain.ToolchainManager" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1218,6 +1202,7 @@ reproducibility across any Linux distribution.</p>
 <li><p><strong>diagnostics_enabled</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
 <li><p><strong>diagnostics_log_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a><em> | </em><em>None</em>)</p></li>
 <li><p><strong>pacman_cache_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>arch</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>

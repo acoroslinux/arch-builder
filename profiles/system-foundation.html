@@ -154,24 +154,11 @@
 <td><p>Main 64-bit x86 profile.</p></td>
 <td><p>Locale <code class="docutils literal notranslate"><span class="pre">en_US.UTF-8</span></code>, timezone <code class="docutils literal notranslate"><span class="pre">UTC</span></code>, keymap <code class="docutils literal notranslate"><span class="pre">us</span></code>, live user with wheel/video/audio/networkmanager.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/architectures/i386.json</span></code></p></td>
-<td><p>32-bit x86 profile.</p></td>
-<td><p>Leaner base package set, hostname <code class="docutils literal notranslate"><span class="pre">arch-builder-i386</span></code>, locale <code class="docutils literal notranslate"><span class="pre">en_US.UTF-8</span></code>.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/architectures/aarch64.json</span></code></p></td>
-<td><p>ARM64 profile using the <code class="docutils literal notranslate"><span class="pre">aarch64</span></code> architecture name.</p></td>
-<td><p>Hostname <code class="docutils literal notranslate"><span class="pre">arch-builder-arm64</span></code>, UTC timezone, standard live user groups.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/architectures/arm64.json</span></code></p></td>
-<td><p>ARM64 alias profile for <code class="docutils literal notranslate"><span class="pre">arm64</span></code>.</p></td>
-<td><p>Same overall structure as <code class="docutils literal notranslate"><span class="pre">aarch64</span></code>, kept as a separate selectable target.</p></td>
-</tr>
 </tbody>
 </table>
 <section id="example-use">
 <h3>Example use<a class="headerlink" href="#example-use" title="Link to this heading"></a></h3>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64
-python3<span class="w"> </span>cli.py<span class="w"> </span>i386
 </pre></div>
 </div>
 </section>
