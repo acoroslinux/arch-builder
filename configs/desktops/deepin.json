@@ -1,12 +1,11 @@
 {
   "platform_specific": {
     "packages": [
-      "pantheon",
-      "xorg-server",
+      "deepin",
       "lightdm",
-      "lightdm-pantheon-greeter",
-      "pantheon-terminal",
-      "pantheon-files",
+      "lightdm-gtk-greeter",
+      "deepin-kwin",
+      "deepin-extra",
       "firefox",
       "network-manager-applet",
       "xclip",
@@ -44,13 +43,13 @@
         "mode": "0644"
       },
       {
-        "src": "configs/custom_files/desktops/pantheon/etc/skel/.bashrc",
+        "src": "configs/custom_files/desktops/deepin/etc/skel/.bashrc",
         "dest": "/etc/skel/.bashrc",
         "mode": "0644"
       }
     ],
     "commands": [
-      "sed -i 's/user-session=xfce/user-session=pantheon/' /etc/lightdm/lightdm.conf"
+      "sed -i 's/user-session=xfce/user-session=deepin/' /etc/lightdm/lightdm.conf"
     ]
   }
 }

@@ -94,6 +94,7 @@ class ChrootManager:
         mode: str = "mock",
         chroot_mode: Optional[bool] = None,
         toolchain: Optional[Any] = None,
+        arch: Optional[str] = None,
     ):
         base_path = chroot_path or workdir
         if base_path is None:
@@ -106,6 +107,10 @@ class ChrootManager:
         self.is_mock = mode != "real"
         self.fs_handler = MockFSHandler(self._workdir)
         self.toolchain = toolchain
+        self.arch = (arch or "x86_64").lower()
+        if self.arch not in ("x86_64", "x86-64"):
+            raise ChrootManagerError(f"Architecture '{self.arch}' is not supported. Only x86_64 is supported.")
+        self.arch = "x86_64"
 
         # Each manager gets its own logger (useful for debugging)
         self.logger = setup_logger("chroot", "chroot.log", logging.INFO)
@@ -471,6 +476,27 @@ class ChrootManager:
             if src.exists():
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src, dst)
+
+        # Ensure the target architecture and mirrors are correctly configured in the target configs
+        pacman_conf_dst = airootfs_path / "etc" / "pacman.conf"
+        mirrorlist_dst = airootfs_path / "etc" / "pacman.d" / "mirrorlist"
+        
+        if pacman_conf_dst.exists():
+            content = pacman_conf_dst.read_text(encoding="utf-8")
+            # Ensure Architecture is set correctly
+            expected_arch_line = f"Architecture = {self.arch}"
+            if expected_arch_line not in content:
+                if re.search(r"(?m)^\s*Architecture\s*=", content):
+                    content = re.sub(r"(?m)^\s*Architecture\s*=.*$", expected_arch_line, content)
+                elif "[options]" in content:
+                    content = content.replace("[options]", f"[options]\n{expected_arch_line}", 1)
+            pacman_conf_dst.write_text(content, encoding="utf-8")
+
+        # Copy the target's mirrorlist to the build host chroot's /etc/pacman.d/mirrorlist as well
+        if mirrorlist_dst.exists():
+            build_host_mirrorlist = build_chroot / "etc" / "pacman.d" / "mirrorlist"
+            build_host_mirrorlist.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(mirrorlist_dst, build_host_mirrorlist)
 
         # Initialize the pacman keyring and database inside airootfs.
         # In isolated mode, the build host has pacman and pacman-key, while the

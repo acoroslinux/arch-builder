@@ -178,6 +178,10 @@ def main():
     )
 
     args = parser.parse_args()
+    if args.architecture.lower() not in ("x86_64", "x86-64"):
+        print(f"Error: Architecture '{args.architecture}' is not supported. Only x86_64 is supported.")
+        sys.exit(1)
+    args.architecture = "x86_64"
     output_name = _resolve_output_name(
         architecture=args.architecture,
         desktop=args.desktop,

@@ -70,6 +70,18 @@ class OverlayAction(SystemAction):
                 
                 # Ensure sudo has the correct setuid permissions
                 chroot.run_command("chmod 4755 /usr/bin/sudo 2>/dev/null || true")
+
+                # Dynamically patch architecture in Calamares unpackfs.conf if present in the target rootfs
+                unpackfs_path = chroot.chroot_path / "etc" / "calamares" / "modules" / "unpackfs.conf"
+                if unpackfs_path.exists():
+                    try:
+                        content = unpackfs_path.read_text(encoding="utf-8")
+                        if "/x86_64/" in content:
+                            new_content = content.replace("/x86_64/", f"/{chroot.arch}/")
+                            unpackfs_path.write_text(new_content, encoding="utf-8")
+                            logger.info(f"[Overlay] Patched Calamares unpackfs.conf source path to use target architecture: {chroot.arch}")
+                    except Exception as patch_err:
+                        logger.warning(f"[Overlay] Failed to patch Calamares unpackfs.conf: {patch_err}")
             except Exception as e:
                 logger.error(f"[Overlay] Failed to copy overlay: {e}")
         else:
@@ -206,7 +218,13 @@ class ServiceAction(SystemAction):
         for srv in self.services:
             logger.info(f"  [Service] Enable {srv}")
             if chroot.mode == "real":
-                chroot.run_command(f"systemctl enable {srv}")
+                try:
+                    chroot.run_command(f"systemctl enable {srv}")
+                except Exception as e:
+                    logger.warning(
+                        f"  [Service] Could not enable {srv}: {e}. "
+                        f"Service may not be installed or available."
+                    )
             else:
                 logger.info(f"    [Mock] systemctl enable {srv}")
 

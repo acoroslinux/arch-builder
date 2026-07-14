@@ -138,30 +138,12 @@
 <td><p><code class="docutils literal notranslate"><span class="pre">wheel</span></code>, <code class="docutils literal notranslate"><span class="pre">video</span></code>, <code class="docutils literal notranslate"><span class="pre">audio</span></code>, <code class="docutils literal notranslate"><span class="pre">networkmanager</span></code></p></td>
 <td><p>Mirrors the standard desktop-friendly x86_64 setup.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/live-users/i386-live.json</span></code></p></td>
-<td><p>i386-tailored live-user preset.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">live32</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">wheel</span></code>, <code class="docutils literal notranslate"><span class="pre">audio</span></code>, <code class="docutils literal notranslate"><span class="pre">networkmanager</span></code></p></td>
-<td><p>Lighter group set for 32-bit builds.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/live-users/aarch64-live.json</span></code></p></td>
-<td><p>aarch64 live-user preset.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">livearm</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">wheel</span></code>, <code class="docutils literal notranslate"><span class="pre">audio</span></code>, <code class="docutils literal notranslate"><span class="pre">video</span></code>, <code class="docutils literal notranslate"><span class="pre">networkmanager</span></code></p></td>
-<td><p>ARM-friendly naming.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/live-users/arm64-live.json</span></code></p></td>
-<td><p>arm64 alias live-user preset.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">livearm</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">wheel</span></code>, <code class="docutils literal notranslate"><span class="pre">audio</span></code>, <code class="docutils literal notranslate"><span class="pre">video</span></code>, <code class="docutils literal notranslate"><span class="pre">networkmanager</span></code></p></td>
-<td><p>Parallel preset for <code class="docutils literal notranslate"><span class="pre">arm64</span></code> naming.</p></td>
-</tr>
 </tbody>
 </table>
 <section id="example-use">
 <h2>Example use<a class="headerlink" href="#example-use" title="Link to this heading"></a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--live-profile<span class="w"> </span>live-admin
-python3<span class="w"> </span>cli.py<span class="w"> </span>i386<span class="w"> </span>--live-profile<span class="w"> </span>i386-live
+python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--live-profile<span class="w"> </span>x86_64-live
 python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--live-user<span class="w"> </span>demo<span class="w"> </span>--live-groups<span class="w"> </span>wheel,audio,video
 </pre></div>
 </div>

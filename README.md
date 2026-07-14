@@ -93,17 +93,15 @@ Examples:
 
 ## Choosing Architecture and Kernel
 
-Arch-Builder supports building ISOs for different CPU architectures and customizing the Linux kernel packaged in the ISO.
+Arch-Builder supports customizing the Linux kernel packaged in the ISO. Only `x86_64` (64-bit) architecture is supported.
 
 ### 1. Selecting Architecture
-Specify the target architecture as the first positional argument. The available architectures correspond to JSON files in `configs/architectures/`:
-*   `x86_64` (default)
-*   `aarch64` / `arm64` (ARM64 targets)
-*   `i386` (Legacy 32-bit targets)
+Specify the target architecture as the first positional argument. Only the `x86_64` architecture is supported:
+*   `x86_64` (default and only supported architecture)
 
 Example:
 ```bash
-python3 cli.py aarch64
+python3 cli.py x86_64
 ```
 
 ### 2. Selecting Kernel
@@ -118,8 +116,8 @@ Examples:
 # Build an x86_64 ISO using the LTS kernel
 python3 cli.py x86_64 --kernel linux-lts
 
-# Build an ARM64 ISO using the Zen kernel
-python3 cli.py arm64 --kernel linux-zen
+# Build an x86_64 ISO using the Zen kernel
+python3 cli.py x86_64 --kernel linux-zen
 ```
 
 ## Real build with isolated toolchain

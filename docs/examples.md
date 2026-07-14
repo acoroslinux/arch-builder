@@ -8,7 +8,6 @@ This page collects complete build commands for common scenarios.
 flowchart TD
     BASE[Base live ISO] --> XFCE[Desktop workstation]
     BASE --> GAMING[Gaming workstation]
-    BASE --> ARM[ARM build]
     BASE --> DEV[Developer image]
     DEV --> PY[Python stack]
     DEV --> NODE[Node.js stack]
@@ -108,18 +107,7 @@ python3 cli.py x86_64 \
 
 Suited for audit, troubleshooting, and remote-access style live sessions.
 
-## 8. ARM64 image
-
-```bash
-python3 cli.py aarch64 \
-  --live-profile aarch64-live \
-  --package-profile base \
-  --service-profile common-base
-```
-
-Use `arm64` instead of `aarch64` when you want the alias profile naming.
-
-## 9. Real build on a non-Arch host
+## 8. Real build on a non-Arch host
 
 ```bash
 sudo python3 cli.py x86_64 \
@@ -134,7 +122,7 @@ sudo python3 cli.py x86_64 \
 
 Use this when host tooling is missing or when you want a more reproducible isolated build path.
 
-## 10. Reusing previous build state
+## 9. Reusing previous build state
 
 ```bash
 sudo python3 cli.py x86_64 \
@@ -145,9 +133,10 @@ sudo python3 cli.py x86_64 \
 
 Useful when iterating on a build and you intentionally want to preserve the existing tree.
 
+
 ---
 
-## 11. Tutorial: Installing AUR Packages (e.g. pamac-aur, yay)
+## 10. Tutorial: Installing AUR Packages (e.g. pamac-aur, yay)
 
 Arch-Builder supports automatically downloading, compiling, and installing packages from the AUR (Arch User Repository) during the build process using a dedicated non-root build flow with helper accounts.
 
@@ -185,7 +174,7 @@ The orchestrator will:
 
 ---
 
-## 12. Tutorial: Installing Local Custom Packages (e.g. Calamares)
+## 11. Tutorial: Installing Local Custom Packages (e.g. Calamares)
 
 If you have pre-compiled packages (like a custom build of the `calamares` system installer or proprietary drivers), you can easily bundle them without rebuilding them each time.
 

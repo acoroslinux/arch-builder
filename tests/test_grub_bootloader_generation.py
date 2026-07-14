@@ -85,6 +85,48 @@ class TestGrubBootloaderGeneration(unittest.TestCase):
             # Verify correct path format matching simpler /boot/ structure
             self.assertIn("/boot/", content)
 
+    def test_grub_bootloader_resolves_architecture_correctly(self):
+        from core.bootloaders.grub2 import Grub2Bootloader
+        
+        # Test x86_64
+        config_x86_64 = type("Config", (), {"get": lambda s, k, d=None: "x86_64" if k == "platform_specific.architecture" else d})()
+        loader = Grub2Bootloader(config_x86_64, root_device_id="")
+        with tempfile.TemporaryDirectory() as tmp:
+            workdir = Path(tmp)
+            loader.generate_boot_image(workdir, chroot_path=None)
+            self.assertTrue((workdir / "EFI" / "BOOT" / "BOOTx64.EFI").exists())
+
+    def test_grub_bootloader_real_chroot_execution(self):
+        from unittest.mock import patch, MagicMock
+        from core.bootloaders.grub2 import Grub2Bootloader
+
+        config = type("Config", (), {"get": lambda s, k, d=None: "x86_64" if k == "platform_specific.architecture" else d})()
+        loader = Grub2Bootloader(config, root_device_id="")
+        
+        with tempfile.TemporaryDirectory() as tmp_work, tempfile.TemporaryDirectory() as tmp_chroot:
+            workdir = Path(tmp_work)
+            chroot = Path(tmp_chroot)
+            
+            # Create grub-mkstandalone in mock chroot to satisfy has_real_chroot check
+            mkstandalone_bin = chroot / "usr" / "bin" / "grub-mkstandalone"
+            mkstandalone_bin.parent.mkdir(parents=True, exist_ok=True)
+            mkstandalone_bin.touch()
+            
+            # Mock subprocess.run to avoid executing actual chroot commands
+            mock_run = MagicMock()
+            mock_run.returncode = 0
+            mock_run.stdout = b""
+            mock_run.stderr = b""
+            
+            # Mock generate_embed_cfg as it resolves templates we don't want to rely on
+            with patch("subprocess.run", return_value=mock_run), \
+                 patch.object(loader, "generate_embed_cfg", return_value=True):
+                
+                # Run the actual method which now enters the real chroot code path
+                # containing the formerly undefined 'arch' variable
+                res = loader.generate_boot_image(workdir, chroot_path=chroot)
+                self.assertTrue(res)
+
 
 if __name__ == "__main__":
     unittest.main()

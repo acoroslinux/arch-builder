@@ -28,6 +28,7 @@ class ToolchainManager:
         diagnostics_enabled: bool = False,
         diagnostics_log_path: Optional[Path] = None,
         pacman_cache_dir: Optional[Path] = None,
+        arch: Optional[str] = None,
     ):
         self.mode = mode
         self.force_isolated = force_isolated
@@ -44,6 +45,7 @@ class ToolchainManager:
         self._mounted = False
         self._diag_fallback_warned = False
         self._cache_mounted = False
+        self.arch = arch or "x86_64"
 
     def _diag(self, message: str) -> None:
         if not self.diagnostics_enabled:
@@ -197,6 +199,14 @@ class ToolchainManager:
         # Ensure networking works from within the chroot package manager.
         host_resolv = Path("/etc/resolv.conf")
         chroot_resolv = self.build_chroot / "etc" / "resolv.conf"
+        # Ensure the custom pacman.conf is present inside the build chroot before any pacman operations.
+        custom_pacman_src = Path("configs/custom_files/common/etc/pacman.conf")
+        custom_pacman_dst = self.build_chroot / "etc" / "pacman.conf"
+        if custom_pacman_src.exists():
+            custom_pacman_dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(custom_pacman_src, custom_pacman_dst)
+        else:
+            self._diag(f"Custom pacman.conf not found at {custom_pacman_src}, using existing one.")
         if host_resolv.exists():
             chroot_resolv.parent.mkdir(parents=True, exist_ok=True)
             if chroot_resolv.exists() or chroot_resolv.is_symlink():
@@ -263,7 +273,13 @@ class ToolchainManager:
             self._diag(f"pacman.conf missing at {pacman_conf_path}")
             return
 
-        content = pacman_conf_path.read_text(encoding="utf-8")
+        # Skip patching if the expected CacheDir line is already present –
+        # this preserves a custom pacman.conf copied by ChrootSetup.
+        existing_content = pacman_conf_path.read_text(encoding="utf-8")
+        if "CacheDir = /var/cache/pacman/pkg" in existing_content:
+            self._diag("pacman.conf already patched – skipping rewrite")
+            return
+        content = existing_content
 
         # Disable disk-space checks inside chroot bootstrap to avoid false negatives
         # when / is not represented as a dedicated mountpoint in the current namespace.

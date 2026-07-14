@@ -337,21 +337,32 @@ class ArchEngine(BaseEngine):
         self.logger.info(f"[squashfs] Created: {output_path}")
 
     def _generate_grub_boot_images(self, staging_dir: Path, effective_root: Path, iso_uuid: str = "") -> None:
-        """Generate GRUB BIOS boot image (boot.img) and EFI binary (BOOTx64.EFI) using the chroot."""
+        """Generate GRUB BIOS boot image (boot.img) and EFI binary (BOOT*.EFI) using the chroot."""
         grub_dir = staging_dir / "boot" / "grub"
         grub_dir.mkdir(parents=True, exist_ok=True)
         efi_dir = staging_dir / "EFI" / "BOOT"
         efi_dir.mkdir(parents=True, exist_ok=True)
 
+        arch_lower = self.arch.lower()
+        if arch_lower in ("aarch64", "arm64"):
+            grub_target = "arm64-efi"
+            efi_filename = "BOOTAA64.EFI"
+        elif arch_lower in ("i386", "i686"):
+            grub_target = "i386-efi"
+            efi_filename = "BOOTIA32.EFI"
+        else:
+            grub_target = "x86_64-efi"
+            efi_filename = "BOOTx64.EFI"
+
         is_mock = getattr(self.toolchain, "mode", "mock") == "mock"
         if is_mock:
             self.logger.info("[grub] [MOCK] Would generate GRUB BIOS and EFI boot images")
             (grub_dir / "boot.img").write_bytes(b"\x00" * 512)
-            (efi_dir / "BOOTx64.EFI").write_bytes(b"")
+            (efi_dir / efi_filename).write_bytes(b"")
             return
 
         # Paths inside the chroot where the grub packages install modules
-        chroot_efi_modules = effective_root / "usr" / "lib" / "grub" / f"{self.arch}-efi"
+        chroot_efi_modules = effective_root / "usr" / "lib" / "grub" / grub_target
         chroot_bios_modules = effective_root / "usr" / "lib" / "grub" / "i386-pc"
 
         # 1. --- Generate GRUB BIOS boot image (boot.img) ---
@@ -375,8 +386,8 @@ class ArchEngine(BaseEngine):
             self.logger.warning(f"[grub] GRUB BIOS modules not found at {chroot_bios_modules}")
             boot_img_dest.write_bytes(b"\x00" * 512)
 
-        # 2. --- Generate GRUB EFI binary (BOOTx64.EFI) ---
-        efi_binary_dest = efi_dir / "BOOTx64.EFI"
+        # 2. --- Generate GRUB EFI binary (BOOT*.EFI) ---
+        efi_binary_dest = efi_dir / efi_filename
         if chroot_efi_modules.exists():
             self.logger.info("[grub] Generating GRUB EFI binary in chroot...")
             try:
@@ -401,22 +412,22 @@ class ArchEngine(BaseEngine):
                 # Compile the standalone EFI image inside the chroot
                 cmd = [
                     "chroot", str(effective_root), "bash", "-c",
-                    f"grub-mkimage -d /usr/lib/grub/{self.arch}-efi -o /tmp/BOOTx64.EFI -O {self.arch}-efi "
+                    f"grub-mkimage -d /usr/lib/grub/{grub_target} -o /tmp/{efi_filename} -O {grub_target} "
                     "-c /tmp/grub-embed.cfg -p /boot/grub "
                     "efifwsetup efinet efi_uga fat iso9660 part_gpt part_msdos search_fs_uuid search_label "
                     "normal boot configfile linux loopback chain"
                 ]
                 self._run_command(cmd)
-                shutil.copy2(effective_root / "tmp" / "BOOTx64.EFI", efi_binary_dest)
+                shutil.copy2(effective_root / "tmp" / efi_filename, efi_binary_dest)
                 
                 # Cleanup
-                (effective_root / "tmp" / "BOOTx64.EFI").unlink(missing_ok=True)
+                (effective_root / "tmp" / efi_filename).unlink(missing_ok=True)
                 (effective_root / "tmp" / "grub-embed.cfg").unlink(missing_ok=True)
                 self.logger.info(f"[grub] Created EFI binary: {efi_binary_dest}")
             except Exception as e:
                 self.logger.warning(f"[grub] Failed to create EFI binary in chroot: {e}")
                 # Clean up any leftover temp files
-                (effective_root / "tmp" / "BOOTx64.EFI").unlink(missing_ok=True)
+                (effective_root / "tmp" / efi_filename).unlink(missing_ok=True)
                 (effective_root / "tmp" / "grub-embed.cfg").unlink(missing_ok=True)
                 efi_binary_dest.write_bytes(b"")
         else:
@@ -794,17 +805,7 @@ class ArchEngine(BaseEngine):
             )
             self.logger.info(f"Service '{service}' enabled.")
 
-@ISOEngine.register("i386")
-class LegacyEngine(ArchEngine):
-    """Legacy engine that currently reuses the x86_64 workflow."""
 
-@ISOEngine.register("aarch64")
-class Aarch64Engine(ArchEngine):
-    """ARM64 engine reusing the generic build workflow."""
-
-@ISOEngine.register("arm64")
-class Arm64Engine(ArchEngine):
-    """Alias ARM64 engine reusing the generic build workflow."""
 
 class ISOBuilder:
     """Canonical high-level build orchestrator used by the project."""
@@ -817,6 +818,8 @@ class ISOBuilder:
         chroot_manager: Optional[ChrootManager] = None,
     ):
         self.arch = arch.lower()
+        if self.arch == "i386":
+            self.arch = "i686"
         self.config = config if isinstance(config, Config) else Config(config)
         self.toolchain = self._coerce_toolchain(toolchain, chroot_manager)
         self.engine = self._select_engine()

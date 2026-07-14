@@ -44,7 +44,10 @@
         "plymouth",
         "qt6-svg",
         "qt6-declarative",
-        "os-prober"
+        "os-prober",
+        "bluez",
+        "bluez-utils",
+        "blueman"
     ],
     "dependencies": ["pacman"]
 }

@@ -162,20 +162,29 @@ class ChrootBuilder:
             except ChrootSetupError as e:
                 print(f"  [COPY ERROR] Failed to copy {src_value}: {e}")
 
-    def build_chroot(self, packages_config: Dict[str, Any], desktop_config: Dict[str, Any], file_rules: List[Dict[str, str]]) -> None:
+    def build_chroot(self, packages_config: Dict[str, Any], desktop_config: Dict[str, Any], file_rules: List[Dict[str, str]], arch: str = "x86_64") -> None:
         """Main function that orchestrates the full chroot build."""
         print("=" * 60)
         print(f"[*] STARTING CHROOT BUILD IN {self.chroot_dir}")
         print("=" * 60)
 
+        # 3. Copy custom files – ensure pacman.conf is in place first
+        pacman_rule = {
+            "src": "configs/custom_files/common/etc/pacman.conf",
+            "dest": "/etc/pacman.conf",
+            "type": "file",
+        }
+        # Add the rule only if the caller hasn't supplied it already
+        if not any(r.get("dest") == "/etc/pacman.conf" for r in file_rules):
+            file_rules.append(pacman_rule)
+
+        self.copy_custom_files(file_rules)
+
         # 1. Install packages.
-        self.install_packages(packages_config.get('packages'), 'x86_64') # Assume x86_64 for now.
+        self.install_packages(packages_config.get('packages'), arch)
 
         # 2. Apply profile configuration (desktop, and so on).
         if desktop_config:
             self.apply_profile_config("Custom", desktop_config)
-
-        # 3. Copy custom files.
-        self.copy_custom_files(file_rules)
 
         print("\n[SUCCESS] Chroot structure completed successfully.")

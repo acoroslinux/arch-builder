@@ -144,7 +144,7 @@ class Grub2Bootloader:
           grub        → grub-mkstandalone
 
         The resulting efiboot.img contains:
-          /EFI/BOOT/BOOTx64.EFI             — GRUB EFI binary with embedded search cfg
+          /EFI/BOOT/BOOT*.EFI               — GRUB EFI binary with embedded search cfg
           /arch/boot/<arch>/vmlinuz-linux    — kernel (for systemd-boot in the ESP)
           /arch/boot/<arch>/initramfs-*.img  — initramfs
           /loader/loader.conf               — systemd-boot config
@@ -152,15 +152,18 @@ class Grub2Bootloader:
         """
         logger.info("[GRUB2] Generating UEFI boot image (efiboot.img)...")
 
+        grub_target = "x86_64-efi"
+        efi_filename = "BOOTx64.EFI"
+
         efi_img_path = workdir / "EFI" / "efiboot.img"
         efi_img_path.parent.mkdir(parents=True, exist_ok=True)
-        efi_binary = workdir / "EFI" / "BOOT" / "BOOTx64.EFI"
+        efi_binary = workdir / "EFI" / "BOOT" / efi_filename
         efi_binary.parent.mkdir(parents=True, exist_ok=True)
 
         iso_label = self._cfg_get("system.iso_label", "ARCH-MODERN")
-        arch = self._cfg_get("platform_specific.architecture", "x86_64")
         kernel_name = self._cfg_get("platform_specific.base_kernel", "vmlinuz-linux")
         initramfs_name = self._cfg_get("platform_specific.initramfs", "initramfs-linux.img")
+        arch = self._cfg_get("platform_specific.architecture", "x86_64")
 
         has_real_chroot = bool(
             chroot_path
@@ -188,7 +191,7 @@ class Grub2Bootloader:
         (stage / f"arch" / "boot" / arch).mkdir(parents=True, exist_ok=True)
         (stage / "loader" / "entries").mkdir(parents=True, exist_ok=True)
 
-        # ── Step 1: Generate grub-embed.cfg and create BOOTx64.EFI ─────────────
+        # ── Step 1: Generate grub-embed.cfg and create BOOT*.EFI ─────────────
         embed_cfg_chroot = stage / "grub-embed.cfg"
         self.generate_embed_cfg(workdir, embed_cfg_chroot)
 
@@ -210,26 +213,26 @@ class Grub2Bootloader:
         try:
             cmd_grub = [
                 *chroot_cmd, str(chroot), "bash", "-c",
-                f"grub-mkstandalone -O x86_64-efi "
+                f"grub-mkstandalone -O {grub_target} "
                 f"--modules=\"{grub_modules}\" "
                 f"--locales=\"en@quot\" "
                 f"--themes=\"\" "
-                f"-o {stage_rel}/EFI/BOOT/BOOTx64.EFI "
+                f"-o {stage_rel}/EFI/BOOT/{efi_filename} "
                 f"boot/grub/grub.cfg={stage_rel}/grub-embed.cfg"
             ]
             result = subprocess.run(cmd_grub, capture_output=True, timeout=180)
             if result.returncode != 0:
                 raise subprocess.CalledProcessError(result.returncode, cmd_grub,
                                                     result.stdout, result.stderr)
-            logger.info("[GRUB2] BOOTx64.EFI created via grub-mkstandalone in chroot")
+            logger.info(f"[GRUB2] {efi_filename} created via grub-mkstandalone in chroot")
         except Exception as e:
             # Captures errors of execution (ex: command inexistente, permissão negada em tempo real)
             error_output = f"Failed to execute the command '{cmd_grub[0]}'. Error:\n{e}"
             logger.error(error_output)
             raise Grub2BootloaderError(error_output)
 
-        # Copy BOOTx64.EFI out to workdir/EFI/BOOT/ as well
-        efi_in_stage = stage / "EFI" / "BOOT" / "BOOTx64.EFI"
+        # Copy BOOT*.EFI out to workdir/EFI/BOOT/ as well
+        efi_in_stage = stage / "EFI" / "BOOT" / efi_filename
         if efi_in_stage.exists():
             shutil.copy2(efi_in_stage, efi_binary)
 
@@ -287,7 +290,7 @@ class Grub2Bootloader:
             f"mkfs.fat -n ARCHISO_EFI {efi_img_chroot}",
             # EFI binary
             f"mmd -i {efi_img_chroot} ::/EFI ::/EFI/BOOT",
-            f"mcopy -i {efi_img_chroot} {stage_rel}/EFI/BOOT/BOOTx64.EFI ::/EFI/BOOT/BOOTx64.EFI",
+            f"mcopy -i {efi_img_chroot} {stage_rel}/EFI/BOOT/{efi_filename} ::/EFI/BOOT/{efi_filename}",
             # loader
             f"mmd -i {efi_img_chroot} ::/loader ::/loader/entries",
         ]

@@ -63,7 +63,10 @@ class BuildOrchestrator:
             live_user: Override live ISO username.
             live_groups: Override live ISO user groups.
         """
-        self.arch = arch
+        self.arch = (arch or "x86_64").lower()
+        if self.arch not in ("x86_64", "x86-64"):
+            raise BuildOrchestratorError(f"Architecture '{self.arch}' is not supported. Only x86_64 is supported.")
+        self.arch = "x86_64"
         self.config_path = str(resolve_from_project(config_path))
         self.mode = mode
         self.clean = clean
@@ -181,7 +184,7 @@ class BuildOrchestrator:
 
         # The chroot manager uses the rootfs inside the workdir.
         chroot_path = workdir / "airootfs"
-        self.chroot = ChrootManager(chroot_path=chroot_path, mode=self.mode)
+        self.chroot = ChrootManager(chroot_path=chroot_path, mode=self.mode, arch=self.arch)
 
         # 3. Prepare a build toolchain (host tools or isolated Arch bootstrap in real mode).
         force_isolated = self.force_isolated_toolchain or bool(
@@ -219,6 +222,7 @@ class BuildOrchestrator:
             diagnostics_enabled=diagnostics_enabled,
             diagnostics_log_path=diagnostics_log_path,
             pacman_cache_dir=pacman_cache_path,
+            arch=self.arch,
         )
         if self.chroot:
             self.chroot.toolchain = self.toolchain
@@ -250,6 +254,7 @@ class BuildOrchestrator:
                     chroot_path=iso_rootfs,
                     mode=self.mode,
                     toolchain=self.toolchain,
+                    arch=self.arch,
                 )
 
         # 4. Initialize ISOBuilder with chroot manager and toolchain injected.
