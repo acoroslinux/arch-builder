@@ -47,7 +47,9 @@
         "os-prober",
         "bluez",
         "bluez-utils",
-        "blueman"
+        "blueman",
+        "parted",
+        "gptfdisk"
     ],
     "dependencies": ["pacman"]
 }
