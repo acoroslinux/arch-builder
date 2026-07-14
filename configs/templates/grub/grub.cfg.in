@@ -13,6 +13,8 @@ set prefix="(${root})/boot/grub"
 # Use graphics-mode output
 if loadfont "${prefix}/fonts/unicode.pf2" ; then
     insmod all_video
+    insmod gfxmenu
+    insmod png
     set gfxmode="auto"
     terminal_input console
     terminal_output gfxterm
@@ -20,6 +22,7 @@ if loadfont "${prefix}/fonts/unicode.pf2" ; then
     # Load modern theme if available
     if [ -f "${prefix}/themes/modern/theme.txt" ]; then
         set theme="${prefix}/themes/modern/theme.txt"
+        export theme
     fi
 fi
 
