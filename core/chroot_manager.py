@@ -704,9 +704,12 @@ class ChrootManager:
                     self.logger.debug(f"{dst} is already mounted, skipping.")
                     continue
             except Exception:
-                pass
-                
             _sudo_run(["mount", opts, str(src), str(dst)], check=False)
+
+        # Mount /dev/shm properly for python multiprocessing
+        shm_dst = self.chroot_path / "dev" / "shm"
+        shm_dst.mkdir(parents=True, exist_ok=True)
+        _sudo_run(["mount", "-t", "tmpfs", "tmpfs", str(shm_dst)], check=False)
 
     def _unmount_essential_filesystems(self) -> None:
         """Unmount /proc, /sys, and /dev from the chroot path."""
@@ -715,6 +718,7 @@ class ChrootManager:
         
         self.logger.info("[chroot] Unmounting essential filesystems...")
         mounts = [
+            self.chroot_path / "dev" / "shm",
             self.chroot_path / "proc",
             self.chroot_path / "sys",
             self.chroot_path / "dev",
