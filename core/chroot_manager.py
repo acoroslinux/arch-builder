@@ -558,6 +558,12 @@ class ChrootManager:
                 raise ChrootManagerError(
                     "Host pacman is unavailable. Enable an isolated toolchain or install pacman on the host."
                 )
+            
+            # Ensure pacman database directory exists in the target rootfs
+            target_path = Path(self._workdir)
+            for d in ["var/lib/pacman", "var/cache/pacman/pkg"]:
+                (target_path / d).mkdir(parents=True, exist_ok=True)
+
             # Host mode: run pacman directly on the host targeting the chroot using --root
             
             # Always ensure archlinux-keyring is up to date before installing other packages
@@ -704,6 +710,7 @@ class ChrootManager:
                     self.logger.debug(f"{dst} is already mounted, skipping.")
                     continue
             except Exception:
+                pass
             _sudo_run(["mount", opts, str(src), str(dst)], check=False)
 
         # Mount /dev/shm properly for python multiprocessing
