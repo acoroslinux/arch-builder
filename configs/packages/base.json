@@ -49,7 +49,15 @@
         "bluez-utils",
         "blueman",
         "parted",
-        "gptfdisk"
+        "gptfdisk",
+        "kpmcore",
+        "dosfstools",
+        "e2fsprogs",
+        "btrfs-progs",
+        "xfsprogs",
+        "ntfs-3g",
+        "mtools",
+        "mdadm"
     ],
     "dependencies": ["pacman"]
 }
