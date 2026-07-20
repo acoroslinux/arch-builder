@@ -47,6 +47,10 @@
     {
       "source": "etc",
       "destination": "/etc"
+    },
+    {
+      "source": "backgrounds",
+      "destination": "/usr/share/backgrounds"
     }
   ]
 }
