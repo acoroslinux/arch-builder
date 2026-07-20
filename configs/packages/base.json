@@ -64,7 +64,8 @@
         "accountsservice",
         "xkeyboard-config",
         "xorg-setxkbmap",
-        "iso-codes"
+        "iso-codes",
+        "libxkbcommon-x11"
     ],
     "dependencies": ["pacman"]
 }

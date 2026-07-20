@@ -1,0 +1,52 @@
+{
+  "base_copy_files": [
+    {
+      "source": "calamares",
+      "destination": "/etc/calamares"
+    },
+    {
+      "source": "skel",
+      "destination": "/etc/skel"
+    },
+    {
+      "source": "autostart",
+      "destination": "/etc/xdg/autostart"
+    },
+    {
+      "source": "applications",
+      "destination": "/usr/share/applications"
+    },
+    {
+      "source": "plymouth/themes/void-modern",
+      "destination": "/usr/share/plymouth/themes/void-modern"
+    },
+    {
+      "source": "plymouth/plymouthd.conf",
+      "destination": "/etc/plymouth/plymouthd.conf"
+    },
+    {
+      "source": "grub",
+      "destination": "/usr/share/grub/themes"
+    },
+    {
+      "source": "samba",
+      "destination": "/etc/samba"
+    },
+    {
+      "source": "sudoers.d",
+      "destination": "/etc/sudoers.d"
+    },
+    {
+      "source": "default",
+      "destination": "/etc/default"
+    },
+    {
+      "source": "scripts",
+      "destination": "/usr/local/bin"
+    },
+    {
+      "source": "etc",
+      "destination": "/etc"
+    }
+  ]
+}

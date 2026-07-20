@@ -27,128 +27,7 @@ class SystemAction:
     def execute(self, chroot: ChrootManager, source_base: Path):
         raise NotImplementedError()
 
-class OverlayAction(SystemAction):
-    """Copy a full overlay directory onto the chroot (like airootfs)."""
 
-    def __init__(self, overlay_dir: str):
-        self.overlay_dir = overlay_dir
-
-    def execute(self, chroot: ChrootManager, source_base: Path):
-        overlay_path = resolve_from_base(source_base, self.overlay_dir)
-        if not overlay_path.exists():
-            logger.warning(
-                f"[Overlay] Overlay directory not found: {overlay_path}"
-            )
-            return
-
-        logger.info(f"[Overlay] Applying overlay from {overlay_path} to rootfs...")
-        if chroot.mode == "real":
-            # Use cp or rsync from the toolchain to copy the overlay.
-            chroot_path = chroot.chroot_path
-            # To copy the directory contents, overlay_path/* would be enough,
-            # but cp -a behaves poorly with an empty wildcard, so rsync or cp -aT is safer.
-            try:
-                # Ideally this would use shutil.copytree locally when possible,
-                # or defer to the chroot manager / toolchain.
-                import subprocess
-                import os
-
-                cmd = ["cp", "-aT", str(overlay_path), str(chroot_path)]
-                if os.geteuid() != 0:
-                    cmd = ["sudo"] + cmd
-
-                subprocess.run(cmd, check=True)
-                
-                # Fix ownership of copied system directories to be owned by root (0:0)
-                chroot.run_command("chown -R 0:0 /etc 2>/dev/null || true")
-                chroot.run_command("chown -R 0:0 /usr 2>/dev/null || true")
-                chroot.run_command("chown -R 0:0 /boot 2>/dev/null || true")
-                chroot.run_command("chown -R 0:0 /opt 2>/dev/null || true")
-                
-                # Fix directory permissions to 755 (rwxr-xr-x) to avoid pacman warnings
-                chroot.run_command("find /etc /usr /boot /opt -type d -exec chmod 755 {} + 2>/dev/null || true")
-                
-                # Ensure sudo has the correct setuid permissions
-                chroot.run_command("chmod 4755 /usr/bin/sudo 2>/dev/null || true")
-
-                # Dynamically patch architecture in Calamares unpackfs.conf if present in the target rootfs
-                unpackfs_path = chroot.chroot_path / "etc" / "calamares" / "modules" / "unpackfs.conf"
-                if unpackfs_path.exists():
-                    try:
-                        content = unpackfs_path.read_text(encoding="utf-8")
-                        if "/x86_64/" in content:
-                            new_content = content.replace("/x86_64/", f"/{chroot.arch}/")
-                            unpackfs_path.write_text(new_content, encoding="utf-8")
-                            logger.info(f"[Overlay] Patched Calamares unpackfs.conf source path to use target architecture: {chroot.arch}")
-                    except Exception as patch_err:
-                        logger.warning(f"[Overlay] Failed to patch Calamares unpackfs.conf: {patch_err}")
-            except Exception as e:
-                logger.error(f"[Overlay] Failed to copy overlay: {e}")
-        else:
-            logger.info(f"    [Mock] Simulated overlay: cp -aT {overlay_path} /")
-
-class FileAction(SystemAction):
-    """Copy one file from a source path to a destination inside the chroot."""
-
-    def __init__(self, src: str, dest: str, mode: Optional[str] = None):
-        self.src = src
-        self.dest = dest
-        self.mode = mode
-
-    def execute(self, chroot: ChrootManager, source_base: Path):
-        src_full = resolve_from_base(source_base, self.src)
-        dest_full = Path(self.dest)
-
-        if not src_full.exists():
-            logger.error(f"[Config] Source not found: {src_full}")
-            return
-
-        logger.info(f"  [File] {self.src} -> {self.dest}")
-
-        if chroot.mode == "real":
-            chroot.run_command(f"mkdir -p {dest_full.parent}")
-            # For scripts, avoid routing through the toolchain because files may live outside it.
-            # Copy them into place and then adjust permissions.
-            host_dest = chroot.chroot_path / self.dest.lstrip("/")
-            
-            import os
-            import subprocess
-            if os.geteuid() != 0:
-                subprocess.run(["sudo", "mkdir", "-p", str(host_dest.parent)], check=True)
-                subprocess.run(["sudo", "cp", "-a", str(src_full), str(host_dest)], check=True)
-            else:
-                host_dest.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src_full, host_dest)
-
-            # Ensure the copied file is owned by root if inside system paths
-            if self.dest.startswith(("/etc/", "/usr/", "/boot/")):
-                chroot.run_command(f"chown 0:0 {self.dest}")
-
-            if self.mode:
-                chroot.run_command(f"chmod {self.mode} {self.dest}")
-
-            # Mirror to existing users home directories if destination is in /etc/skel/
-            if self.dest.startswith("/etc/skel/"):
-                relative_path = self.dest[len("/etc/skel/"):]
-                chroot_home = chroot.chroot_path / "home"
-                if chroot_home.exists():
-                    for user_dir in chroot_home.iterdir():
-                        if user_dir.is_dir() and user_dir.name not in ["lost+found", "aurbuilder"]:
-                            user_dest = user_dir / relative_path
-                            if os.geteuid() != 0:
-                                subprocess.run(["sudo", "mkdir", "-p", str(user_dest.parent)], check=True)
-                                subprocess.run(["sudo", "cp", "-a", str(src_full), str(user_dest)], check=True)
-                            else:
-                                user_dest.parent.mkdir(parents=True, exist_ok=True)
-                                shutil.copy2(src_full, user_dest)
-                            
-                            # Set correct ownership for the user home subdirectory
-                            first_subpart = relative_path.split("/")[0]
-                            chroot.run_command(f"chown -R {user_dir.name}:{user_dir.name} /home/{user_dir.name}/{first_subpart}")
-                            if self.mode:
-                                chroot.run_command(f"chmod {self.mode} /home/{user_dir.name}/{relative_path}")
-        else:
-            logger.info(f"    [Mock] Virtual copy from {self.src} to {self.dest}")
 
 class CommandAction(SystemAction):
     """Execute a command directly inside the chroot."""
@@ -291,6 +170,74 @@ class LocaleAction(SystemAction):
         else:
             logger.info("    [Mock] Apply locale/timezone/hostname")
 
+class StructuredCopyAction(SystemAction):
+    """Configures structured copy of files from custom_files to rootfs."""
+
+    def __init__(self, customizations_path: str, copy_files_list: List[Dict[str, str]], architecture: str):
+        self.customizations_path = Path(customizations_path)
+        self.copy_files_list = copy_files_list
+        self.architecture = architecture
+
+    def execute(self, chroot: ChrootManager, source_base: Path):
+        logger.info(f"  [StructuredCopy] Copying {len(self.copy_files_list)} structured files to rootfs...")
+        
+        is_arm = self.architecture.startswith(("aarch64", "arm"))
+        
+        # Resolve python version in chroot if {python_version} is present in destinations
+        py_ver = "3.12"
+        if chroot.mode == "real":
+            python_dirs = list(chroot.chroot_path.glob("usr/lib/python3.*"))
+            if python_dirs:
+                py_ver = python_dirs[0].name.replace("python", "")
+        
+        for entry in self.copy_files_list:
+            src_rel = entry.get("source")
+            dest_rel = entry.get("destination")
+            if not src_rel or not dest_rel:
+                continue
+
+            # Apply conditional architecture filters as described in the comments
+            if is_arm:
+                if "grub/themes" in src_rel:
+                    logger.info(f"  [StructuredCopy] Skipping {src_rel} (not copied on ARM architecture)")
+                    continue
+
+            # Format destinations that contain python_version
+            dest_rel = dest_rel.format(python_version=py_ver)
+            
+            src_path = source_base / self.customizations_path / src_rel
+            dest_path = chroot.chroot_path / dest_rel.lstrip("/")
+            
+            logger.info(f"  [StructuredCopy] Copying: {src_rel} -> {dest_rel}")
+            
+            if chroot.mode == "real":
+                if not src_path.exists():
+                    logger.warning(f"  [StructuredCopy] Source path does not exist: {src_path}")
+                    continue
+                
+                import os
+                import subprocess
+                
+                # Ensure destination parent directory exists
+                dest_dir = dest_path if src_path.is_dir() and not dest_rel.endswith(src_path.name) else dest_path.parent
+                dest_dir_in_chroot = Path("/") / dest_dir.relative_to(chroot.chroot_path)
+                
+                chroot.run_command(f"mkdir -p {dest_dir_in_chroot}")
+                
+                # Copy file/directory preserving all attributes and merging contents (-T)
+                cmd_copy = ["cp", "-aT", str(src_path), str(dest_path)]
+                try:
+                    if os.geteuid() != 0:
+                        subprocess.run(["sudo"] + cmd_copy, check=True)
+                        subprocess.run(["sudo", "chroot", str(chroot.chroot_path), "chown", "-R", "0:0", f"/{dest_rel.lstrip('/')}"], check=True)
+                    else:
+                        subprocess.run(cmd_copy, check=True)
+                        subprocess.run(["chroot", str(chroot.chroot_path), "chown", "-R", "0:0", f"/{dest_rel.lstrip('/')}"], check=True)
+                except Exception as e:
+                    logger.error(f"  [StructuredCopy] Failed to copy {src_path} to {dest_path}: {e}")
+            else:
+                logger.info(f"    [Mock] Copy {src_path} to {dest_path}")
+
 class SystemConfigurator:
     """
     The configurator is the system customization coordinator.
@@ -324,20 +271,7 @@ class SystemConfigurator:
         else:
             return
 
-        # 1. Overlay
-        overlay_dir = cust_config.get("overlay_dir") or sys_config.get("overlay_dir")
-        if overlay_dir:
-            self.actions.append(OverlayAction(overlay_dir))
 
-        # 2. Standalone files (less common when overlay is used; moved earlier to populate skel before useradd)
-        files = cust_config.get("files", []) or sys_config.get("files", [])
-        for f in files:
-            if hasattr(f, "get"):
-                src = f.get("src")
-                dest = f.get("dest")
-                mode = f.get("mode")
-                if src and dest:
-                    self.actions.append(FileAction(src, dest, mode))
 
         # 3. Locale / hostname
         if cust_config:
@@ -377,6 +311,41 @@ class SystemConfigurator:
                 initramfs = initramfs._data
             if isinstance(initramfs, dict):
                 self.actions.append(MkinitcpioAction(initramfs))
+
+        # 8. Structured Copy (Desktop-environment file copying)
+        desktop_env = _safe_get(config, "desktop_environment")
+        if desktop_env:
+            if hasattr(desktop_env, "_data"):
+                desktop_env = desktop_env._data
+            if isinstance(desktop_env, dict):
+                custom_path = desktop_env.get("customizations_path", "configs/custom_files/")
+                use_common = desktop_env.get("use_common_config", False)
+                copy_files = desktop_env.get("copy_files", []) or []
+
+                final_copy_list = []
+                if use_common:
+                    base_custom_path = resolve_from_project("configs/base_customizations.json")
+                    if base_custom_path.exists():
+                        try:
+                            import json
+                            with open(base_custom_path, "r", encoding="utf-8") as f:
+                                base_data = json.load(f)
+                            base_list = base_data.get("base_copy_files", [])
+                            final_copy_list.extend(base_list)
+                            logger.info(f"Loaded {len(base_list)} common copy entries from base_customizations.json")
+                        except Exception as e:
+                            logger.error(f"Failed to load/parse configs/base_customizations.json: {e}")
+
+                # Add desktop specific copy_files
+                for item in copy_files:
+                    if hasattr(item, "_data"):
+                        item = item._data
+                    if isinstance(item, dict):
+                        final_copy_list.append(item)
+
+                if final_copy_list:
+                    arch = _safe_get(config, "platform_specific.architecture", "x86_64")
+                    self.actions.append(StructuredCopyAction(custom_path, final_copy_list, arch))
 
     def apply(self, source_base_dir: Optional[Path] = None):
         """Apply all registered actions to the chroot."""

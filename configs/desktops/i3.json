@@ -39,25 +39,18 @@
     ]
   },
   "system_config": {
-    "files": [
-      {
-        "src": "configs/custom_files/desktops/xfce/etc/lightdm/lightdm.conf",
-        "dest": "/etc/lightdm/lightdm.conf",
-        "mode": "0644"
-      },
-      {
-        "src": "configs/custom_files/desktops/xfce/etc/lightdm/lightdm-gtk-greeter.conf",
-        "dest": "/etc/lightdm/lightdm-gtk-greeter.conf",
-        "mode": "0644"
-      },
-      {
-        "src": "configs/custom_files/desktops/i3/etc/skel/.bashrc",
-        "dest": "/etc/skel/.bashrc",
-        "mode": "0644"
-      }
-    ],
     "commands": [
       "sed -i 's/user-session=xfce/user-session=i3/' /etc/lightdm/lightdm.conf"
+    ]
+  },
+  "desktop_environment": {
+    "customizations_path": "configs/custom_files/",
+    "use_common_config": true,
+    "copy_files": [
+      {
+        "source": "desktops/i3/etc/skel",
+        "destination": "/etc/skel"
+      }
     ]
   }
 }

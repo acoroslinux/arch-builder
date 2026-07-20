@@ -30,7 +30,9 @@
       }
     ]
   },
-  "system_config": {
-    "files": []
+  "desktop_environment": {
+    "customizations_path": "configs/custom_files/",
+    "use_common_config": true,
+    "copy_files": []
   }
 }

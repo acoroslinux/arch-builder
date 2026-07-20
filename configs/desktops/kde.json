@@ -35,17 +35,17 @@
       }
     ]
   },
-  "system_config": {
-    "files": [
+  "desktop_environment": {
+    "customizations_path": "configs/custom_files/",
+    "use_common_config": true,
+    "copy_files": [
       {
-        "src": "configs/custom_files/desktops/kde/etc/sddm.conf.d/autologin.conf",
-        "dest": "/etc/sddm.conf.d/autologin.conf",
-        "mode": "0644"
+        "source": "desktops/kde/etc/skel",
+        "destination": "/etc/skel"
       },
       {
-        "src": "configs/custom_files/desktops/kde/etc/skel/.bashrc",
-        "dest": "/etc/skel/.bashrc",
-        "mode": "0644"
+        "source": "desktops/kde/etc/sddm.conf.d",
+        "destination": "/etc/sddm.conf.d"
       }
     ]
   }

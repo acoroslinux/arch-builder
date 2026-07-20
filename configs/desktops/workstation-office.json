@@ -41,22 +41,13 @@
       "lightdm"
     ]
   },
-  "system_config": {
-    "files": [
+  "desktop_environment": {
+    "customizations_path": "configs/custom_files/",
+    "use_common_config": true,
+    "copy_files": [
       {
-        "src": "configs/custom_files/desktops/xfce/etc/lightdm/lightdm.conf",
-        "dest": "/etc/lightdm/lightdm.conf",
-        "mode": "0644"
-      },
-      {
-        "src": "configs/custom_files/desktops/xfce/etc/lightdm/lightdm-gtk-greeter.conf",
-        "dest": "/etc/lightdm/lightdm-gtk-greeter.conf",
-        "mode": "0644"
-      },
-      {
-        "src": "configs/custom_files/desktops/workstation-office/etc/skel/.bashrc",
-        "dest": "/etc/skel/.bashrc",
-        "mode": "0644"
+        "source": "desktops/workstation-office/etc/skel",
+        "destination": "/etc/skel"
       }
     ]
   }

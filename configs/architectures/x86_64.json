@@ -154,7 +154,6 @@
     ]
   },
   "system_config": {
-    "overlay_dir": "configs/custom_files/common",
     "commands": [
       "echo 'Build finished' > /var/log/build_status.txt",
       "mkdir -p /srv/samba/public",

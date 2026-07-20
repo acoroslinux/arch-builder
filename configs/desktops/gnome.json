@@ -34,17 +34,17 @@
       }
     ]
   },
-  "system_config": {
-    "files": [
+  "desktop_environment": {
+    "customizations_path": "configs/custom_files/",
+    "use_common_config": true,
+    "copy_files": [
       {
-        "src": "configs/custom_files/desktops/gnome/etc/gdm/custom.conf",
-        "dest": "/etc/gdm/custom.conf",
-        "mode": "0644"
+        "source": "desktops/gnome/etc/skel",
+        "destination": "/etc/skel"
       },
       {
-        "src": "configs/custom_files/desktops/gnome/etc/skel/.bashrc",
-        "dest": "/etc/skel/.bashrc",
-        "mode": "0644"
+        "source": "desktops/gnome/etc/gdm",
+        "destination": "/etc/gdm"
       }
     ]
   }

@@ -571,6 +571,10 @@ class ArchEngine(BaseEngine):
         arch_dir = iso_staging / "arch" / self.arch
         arch_dir.mkdir(parents=True, exist_ok=True)
         squashfs_path = arch_dir / "airootfs.sfs"
+        
+        # Clean the chroot to drastically reduce ISO size
+        self._clean_airootfs(effective_root)
+        
         self._create_squashfs(effective_root, squashfs_path)
 
         # --- Create systemd-boot loader config from template ---
@@ -696,6 +700,55 @@ class ArchEngine(BaseEngine):
                 raise ISOBuilderError(f"xorriso failed: {e}")
 
         self.logger.info(f"[finalize] Bootable ISO created: {output_abs}")
+
+    def _clean_airootfs(self, airootfs: Path) -> None:
+        """Perform cleanup on the airootfs before squashfs generation to reduce ISO size."""
+        self.logger.info("[cleanup] Cleaning up airootfs before squashing...")
+        import shutil
+
+        # Delete all files in /boot
+        boot_dir = airootfs / "boot"
+        if boot_dir.exists():
+            for item in boot_dir.iterdir():
+                if item.is_file():
+                    item.unlink(missing_ok=True)
+                elif item.is_dir():
+                    shutil.rmtree(item, ignore_errors=True)
+
+        # Delete pacman databases, cache, and sync data
+        pacman_lib = airootfs / "var" / "lib" / "pacman"
+        if pacman_lib.exists():
+            for item in pacman_lib.iterdir():
+                if item.is_file():
+                    item.unlink(missing_ok=True)
+            shutil.rmtree(pacman_lib / "sync", ignore_errors=True)
+        
+        shutil.rmtree(airootfs / "var" / "cache" / "pacman" / "pkg", ignore_errors=True)
+
+        # Clean logs and tmp
+        shutil.rmtree(airootfs / "var" / "log", ignore_errors=True)
+        (airootfs / "var" / "log").mkdir(parents=True, exist_ok=True)
+        
+        shutil.rmtree(airootfs / "var" / "tmp", ignore_errors=True)
+        (airootfs / "var" / "tmp").mkdir(parents=True, exist_ok=True)
+        (airootfs / "tmp").mkdir(parents=True, exist_ok=True)
+        
+        for item in (airootfs / "tmp").iterdir():
+            if item.is_file():
+                item.unlink(missing_ok=True)
+            elif item.is_dir():
+                shutil.rmtree(item, ignore_errors=True)
+
+        # Delete pacman package related files
+        for p in airootfs.rglob("*.pacnew"): p.unlink(missing_ok=True)
+        for p in airootfs.rglob("*.pacsave"): p.unlink(missing_ok=True)
+        for p in airootfs.rglob("*.pacorig"): p.unlink(missing_ok=True)
+
+        # Uninitialize machine-id
+        machine_id = airootfs / "etc" / "machine-id"
+        machine_id.parent.mkdir(parents=True, exist_ok=True)
+        machine_id.unlink(missing_ok=True)
+        machine_id.write_text("uninitialized\n")
 
     def _generate_initramfs(self) -> None:
         """Generate the initramfs inside the airootfs using mkinitcpio.

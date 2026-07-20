@@ -35,17 +35,17 @@
       }
     ]
   },
-  "system_config": {
-    "files": [
+  "desktop_environment": {
+    "customizations_path": "configs/custom_files/",
+    "use_common_config": true,
+    "copy_files": [
       {
-        "src": "configs/custom_files/desktops/hyprland/etc/systemd/system/getty@tty1.service.d/autologin.conf",
-        "dest": "/etc/systemd/system/getty@tty1.service.d/autologin.conf",
-        "mode": "0644"
+        "source": "desktops/hyprland/etc/skel",
+        "destination": "/etc/skel"
       },
       {
-        "src": "configs/custom_files/desktops/hyprland/etc/skel/.bash_profile",
-        "dest": "/etc/skel/.bash_profile",
-        "mode": "0644"
+        "source": "desktops/hyprland/etc/systemd",
+        "destination": "/etc/systemd"
       }
     ]
   }
