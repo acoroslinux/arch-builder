@@ -61,7 +61,10 @@
         "dbus",
         "polkit",
         "polkit-gnome",
-        "accountsservice"
+        "accountsservice",
+        "xkeyboard-config",
+        "xorg-setxkbmap",
+        "iso-codes"
     ],
     "dependencies": ["pacman"]
 }

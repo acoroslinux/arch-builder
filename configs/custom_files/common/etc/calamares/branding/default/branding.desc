@@ -30,7 +30,8 @@ windowPlacement: center
 sidebar: qml,bottom
 navigation: qml,right
 
-slideshow:               []
+slideshow:               "show.qml"
+slideshowAPI:            2
 
 style:
     SidebarBackground:    "#1A1C1E"
