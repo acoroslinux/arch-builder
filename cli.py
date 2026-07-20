@@ -3,6 +3,7 @@ import re
 import sys
 from pathlib import Path
 
+import json
 from core.config_loader import ConfigLoader
 from core.iso_engine import Config
 from core.orchestrator import BuildOrchestrator, BuildOrchestratorError
@@ -32,6 +33,15 @@ def _resolve_output_name(architecture: str, desktop: str = None, output: str = N
 
 
 def main():
+    default_config_path = resolve_from_project("configs/global_build.json")
+    defaults = {}
+    try:
+        with open(default_config_path, 'r') as f:
+            cfg = json.load(f)
+            defaults = cfg.get("defaults", {})
+    except Exception:
+        pass
+
     parser = argparse.ArgumentParser(
         description="Arch-Builder: Modular and Dynamic Arch Linux ISO Builder",
         epilog="Use --help to see a detailed list of available arguments.",
@@ -106,6 +116,7 @@ def main():
         "-k",
         "--kernel",
         type=str,
+        default=defaults.get("kernel"),
         help="Kernel selection (profile in configs/kernels or direct package name, e.g. linux-lts).",
     )
 
@@ -113,6 +124,7 @@ def main():
         "-d",
         "--desktop",
         type=str,
+        default=defaults.get("desktop"),
         help="Override the default desktop environment defined in the configuration.",
     )
 
@@ -120,6 +132,7 @@ def main():
         "-b",
         "--bootloader",
         type=str,
+        default=defaults.get("bootloader"),
         help="Bootloader profile name from configs/bootloaders.",
     )
 
@@ -127,7 +140,7 @@ def main():
         "-p",
         "--package-profile",
         action="append",
-        default=[],
+        default=defaults.get("package_profiles", []),
         help="Package profile from configs/packages. Can be provided multiple times.",
     )
 
@@ -135,7 +148,7 @@ def main():
         "-s",
         "--service-profile",
         action="append",
-        default=[],
+        default=defaults.get("service_profiles", []),
         help="Common services profile from configs/services. Can be provided multiple times.",
     )
 

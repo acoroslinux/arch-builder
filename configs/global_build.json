@@ -4,6 +4,23 @@
     "version": "1.0.0",
     "description": "Global manifest for building modular ISOs."
   },
+  "defaults": {
+    "desktop": "xfce",
+    "kernel": "linux",
+    "package_profiles": [
+      "base",
+      "custom-user",
+      "xorg"
+    ],
+    "service_profiles": [
+      "common-base"
+    ]
+  },
+  "customizations": {
+    "timezone": "UTC",
+    "locale": "en_US.UTF-8",
+    "keymap": "us"
+  },
   "build_environment": {
     "workdir_base": "arch-builder/workdir",
     "iso_label": "ARCH-MODERN",
@@ -27,12 +44,32 @@
   },
   "components": {
     "bootloaders": [
-      { "name": "grub", "type": "module" },
-      { "name": "syslinux", "type": "module" }
+      {
+        "name": "grub",
+        "type": "module"
+      },
+      {
+        "name": "syslinux",
+        "type": "module"
+      }
     ],
     "kernels": [
-      { "name": "linux", "type": "module" },
-      { "name": "linux-lts", "type": "module" }
+      {
+        "name": "linux",
+        "type": "module"
+      },
+      {
+        "name": "linux-lts",
+        "type": "module"
+      },
+      {
+        "name": "linux-zen",
+        "type": "module"
+      },
+      {
+        "name": "linux-hardened",
+        "type": "module"
+      }
     ]
   }
 }

@@ -1,0 +1,16 @@
+{
+  "name": "common-base",
+  "description": "Common system services to be enabled on all ISO builds",
+  "customizations": {
+    "services": [
+      "NetworkManager",
+      "avahi-daemon",
+      "bluetooth",
+      "sshd",
+      "systemd-timesyncd",
+      "fstrim.timer",
+      "smb",
+      "nmb"
+    ]
+  }
+}
