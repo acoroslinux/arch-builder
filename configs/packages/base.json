@@ -57,7 +57,11 @@
         "xfsprogs",
         "ntfs-3g",
         "mtools",
-        "mdadm"
+        "mdadm",
+        "dbus",
+        "polkit",
+        "polkit-gnome",
+        "accountsservice"
     ],
     "dependencies": ["pacman"]
 }
