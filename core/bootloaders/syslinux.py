@@ -65,7 +65,7 @@ class SyslinuxBootloader:
 
         kernel_params = self._cfg_get(
             "boot.kernel_params",
-            "loglevel=4 quiet nouveau.modeset=1 radeon.modeset=1 i915.modeset=1 nvme_load=yes"
+            "loglevel=4 quiet nouveau.modeset=1 radeon.modeset=1 i915.modeset=1 nvme_load=yes",
         )
         # Remove splash parameter for legacy BIOS boot to avoid black screen freezes
         bios_params = " ".join([p for p in kernel_params.split() if p != "splash"])
@@ -161,16 +161,25 @@ class SyslinuxBootloader:
             shutil.copy2(splash_src, syslinux_dir / "splash.png")
             logger.info("[SYSLINUX] Copied splash.png to boot/syslinux directory.")
         else:
-            logger.warning("[SYSLINUX] splash.png not found in templates, menu will have no background.")
+            logger.warning(
+                "[SYSLINUX] splash.png not found in templates, menu will have no background."
+            )
 
         return True
 
     def _mock_binaries(self, syslinux_dir: Path):
         """Create placeholder files to allow ISO generation in mock mode."""
         for mock_file in [
-            "isolinux.bin", "ldlinux.c32", "isohdpfx.bin",
-            "vesamenu.c32", "libcom32.c32", "libutil.c32",
-            "reboot.c32", "poweroff.c32", "chain.c32", "whichsys.c32",
+            "isolinux.bin",
+            "ldlinux.c32",
+            "isohdpfx.bin",
+            "vesamenu.c32",
+            "libcom32.c32",
+            "libutil.c32",
+            "reboot.c32",
+            "poweroff.c32",
+            "chain.c32",
+            "whichsys.c32",
         ]:
             (syslinux_dir / mock_file).write_bytes(b"mock")
 

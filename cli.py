@@ -1,11 +1,9 @@
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
 
-import json
-from core.config_loader import ConfigLoader
-from core.iso_engine import Config
 from core.orchestrator import BuildOrchestrator, BuildOrchestratorError
 from core.path_utils import resolve_from_project
 
@@ -23,7 +21,9 @@ def _slugify_name(value: str, fallback: str) -> str:
     return normalized or fallback
 
 
-def _resolve_output_name(architecture: str, desktop: str = None, output: str = None) -> str:
+def _resolve_output_name(
+    architecture: str, desktop: str = None, output: str = None
+) -> str:
     if output:
         return output
 
@@ -36,7 +36,7 @@ def main():
     default_config_path = resolve_from_project("configs/global_build.json")
     defaults = {}
     try:
-        with open(default_config_path, 'r') as f:
+        with open(default_config_path, "r") as f:
             cfg = json.load(f)
             defaults = cfg.get("defaults", {})
     except Exception:
@@ -192,7 +192,9 @@ def main():
 
     args = parser.parse_args()
     if args.architecture.lower() not in ("x86_64", "x86-64"):
-        print(f"Error: Architecture '{args.architecture}' is not supported. Only x86_64 is supported.")
+        print(
+            f"Error: Architecture '{args.architecture}' is not supported. Only x86_64 is supported."
+        )
         sys.exit(1)
     args.architecture = "x86_64"
     output_name = _resolve_output_name(
@@ -204,13 +206,27 @@ def main():
     config_root = resolve_from_project("configs")
     if args.list_options:
         print("Available build selections:")
-        print(f"- architectures: {', '.join(_available_profiles(config_root, 'architectures')) or '(none)'}")
-        print(f"- desktops:      {', '.join(_available_profiles(config_root, 'desktops')) or '(none)'}")
-        print(f"- kernels:       {', '.join(_available_profiles(config_root, 'kernels')) or '(none)'}")
-        print(f"- bootloaders:   {', '.join(_available_profiles(config_root, 'bootloaders')) or '(none)'}")
-        print(f"- packages:      {', '.join(_available_profiles(config_root, 'packages')) or '(none)'}")
-        print(f"- services:      {', '.join(_available_profiles(config_root, 'services')) or '(none)'}")
-        print(f"- live-users:    {', '.join(_available_profiles(config_root, 'live-users')) or '(none)'}")
+        print(
+            f"- architectures: {', '.join(_available_profiles(config_root, 'architectures')) or '(none)'}"
+        )
+        print(
+            f"- desktops:      {', '.join(_available_profiles(config_root, 'desktops')) or '(none)'}"
+        )
+        print(
+            f"- kernels:       {', '.join(_available_profiles(config_root, 'kernels')) or '(none)'}"
+        )
+        print(
+            f"- bootloaders:   {', '.join(_available_profiles(config_root, 'bootloaders')) or '(none)'}"
+        )
+        print(
+            f"- packages:      {', '.join(_available_profiles(config_root, 'packages')) or '(none)'}"
+        )
+        print(
+            f"- services:      {', '.join(_available_profiles(config_root, 'services')) or '(none)'}"
+        )
+        print(
+            f"- live-users:    {', '.join(_available_profiles(config_root, 'live-users')) or '(none)'}"
+        )
         sys.exit(0)
 
     # Prepare paths
@@ -222,7 +238,9 @@ def main():
     # Initialize Orchestrator
     parsed_live_groups = None
     if args.live_groups:
-        parsed_live_groups = [g.strip() for g in args.live_groups.split(",") if g.strip()]
+        parsed_live_groups = [
+            g.strip() for g in args.live_groups.split(",") if g.strip()
+        ]
 
     orchestrator = BuildOrchestrator(
         arch=args.architecture,
@@ -243,7 +261,7 @@ def main():
         live_groups=parsed_live_groups,
     )
 
-    print(f"--- Arch-Builder Execution ---")
+    print("--- Arch-Builder Execution ---")
     print(f"Target Arch: {args.architecture}")
     print(f"Mode:        {args.mode}")
     print(f"Clean:       {'yes' if args.clean else 'no'}")
@@ -270,7 +288,7 @@ def main():
         print(f"Live User:  {args.live_user} (Override)")
     if parsed_live_groups:
         print(f"Live Group: {', '.join(parsed_live_groups)}")
-    print(f"------------------------------\n")
+    print("------------------------------\n")
 
     try:
         result_iso = orchestrator.run_build(output_name)

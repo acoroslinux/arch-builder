@@ -5,23 +5,20 @@ Coordinates all arch-builder components to run the complete
 ISO build process.
 """
 
-import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-from core.chroot_manager import ChrootError, ChrootManager
+from core.chroot_manager import ChrootManager
 from core.config_loader import ConfigLoader
-from core.iso_engine import Config, ISOBuilder, ISOBuilderError
+from core.iso_engine import ISOBuilder, ISOBuilderError
 from core.path_utils import resolve_from_project
 from core.toolchain import ToolchainManager
 
 
 class BuildOrchestratorError(Exception):
     """Exception raised for build orchestration failures."""
-
-    pass
 
 
 class BuildOrchestrator:
@@ -65,7 +62,9 @@ class BuildOrchestrator:
         """
         self.arch = (arch or "x86_64").lower()
         if self.arch not in ("x86_64", "x86-64"):
-            raise BuildOrchestratorError(f"Architecture '{self.arch}' is not supported. Only x86_64 is supported.")
+            raise BuildOrchestratorError(
+                f"Architecture '{self.arch}' is not supported. Only x86_64 is supported."
+            )
         self.arch = "x86_64"
         self.config_path = str(resolve_from_project(config_path))
         self.mode = mode
@@ -94,7 +93,9 @@ class BuildOrchestrator:
         """Return a writable workdir path, falling back if needed."""
         preferred = base_workdir / self.arch
         fallback = resolve_from_project(Path("arch-builder") / "fallback" / self.arch)
-        temp_fallback = Path(tempfile.gettempdir()) / "arch-builder-fallback" / self.arch
+        temp_fallback = (
+            Path(tempfile.gettempdir()) / "arch-builder-fallback" / self.arch
+        )
 
         for candidate in (preferred, fallback, temp_fallback):
             try:
@@ -103,9 +104,7 @@ class BuildOrchestrator:
                 probe.write_text("ok")
                 probe.unlink(missing_ok=True)
                 if candidate != preferred:
-                    print(
-                        f"[ORCHESTRATOR] Workdir fallback active: {candidate}"
-                    )
+                    print(f"[ORCHESTRATOR] Workdir fallback active: {candidate}")
                 return candidate
             except Exception:
                 continue
@@ -136,9 +135,7 @@ class BuildOrchestrator:
         if self.live_user:
             print(f"[ORCHESTRATOR] Live user override: {self.live_user}")
         if self.live_groups:
-            print(
-                f"[ORCHESTRATOR] Live user groups: {', '.join(self.live_groups)}"
-            )
+            print(f"[ORCHESTRATOR] Live user groups: {', '.join(self.live_groups)}")
 
         # 1. Load and validate configuration using the assembler.
         from core.config_loader import ConfigAssembler
@@ -160,7 +157,9 @@ class BuildOrchestrator:
             raise BuildOrchestratorError(f"Failed to load configuration: {e}")
 
         if not self.config:
-            raise BuildOrchestratorError("The generated configuration is null or invalid.")
+            raise BuildOrchestratorError(
+                "The generated configuration is null or invalid."
+            )
 
         # 2. Initialize the chroot manager first.
         # Use the base workdir defined in config for the target architecture.
@@ -184,14 +183,18 @@ class BuildOrchestrator:
 
         # The chroot manager uses the rootfs inside the workdir.
         chroot_path = workdir / "airootfs"
-        self.chroot = ChrootManager(chroot_path=chroot_path, mode=self.mode, arch=self.arch)
+        self.chroot = ChrootManager(
+            chroot_path=chroot_path, mode=self.mode, arch=self.arch
+        )
 
         # 3. Prepare a build toolchain (host tools or isolated Arch bootstrap in real mode).
         force_isolated = self.force_isolated_toolchain or bool(
             self.config.get("system.force_isolated_toolchain", False)
         )
         pacman_retries = int(
-            self.config.get("system.toolchain_pacman_retries", self.toolchain_pacman_retries)
+            self.config.get(
+                "system.toolchain_pacman_retries", self.toolchain_pacman_retries
+            )
         )
         diagnostics_enabled = self.toolchain_debug or bool(
             self.config.get("system.toolchain_debug", False)
@@ -236,17 +239,17 @@ class BuildOrchestrator:
         # conflicts with the toolchain packages already in the bootstrap.
         if self.mode == "real" and not getattr(self.toolchain, "use_host", True):
             toolchain_chroot = getattr(self.toolchain, "build_chroot", None)
-            iso_rootfs = Path(toolchain_chroot) / "airootfs" if toolchain_chroot else None
+            iso_rootfs = (
+                Path(toolchain_chroot) / "airootfs" if toolchain_chroot else None
+            )
             if toolchain_chroot and Path(toolchain_chroot).exists() and iso_rootfs:
-                print(
-                    f"[ORCHESTRATOR] Using isolated build host: {toolchain_chroot}"
-                )
+                print(f"[ORCHESTRATOR] Using isolated build host: {toolchain_chroot}")
                 # Ensure the ISO rootfs exists with proper structure
                 iso_rootfs.mkdir(parents=True, exist_ok=True)
                 # Create essential directories for the ISO rootfs
                 for subdir in ["etc", "var", "usr", "boot", "opt", "srv"]:
                     (iso_rootfs / subdir).mkdir(exist_ok=True)
-                
+
                 # Configure the toolchain to know about the separate ISO rootfs
                 self.toolchain.iso_rootfs_path = iso_rootfs
                 # Update the chroot manager to use the ISO rootfs and have access to toolchain
@@ -300,7 +303,9 @@ class BuildOrchestrator:
 if __name__ == "__main__":
     # Example manual execution for local testing.
     orchestrator = BuildOrchestrator(
-        arch="x86_64", config_path=str(resolve_from_project("configs/global_build.json")), mode="mock"
+        arch="x86_64",
+        config_path=str(resolve_from_project("configs/global_build.json")),
+        mode="mock",
     )
     try:
         orchestrator.run_build("my_arch_custom.iso")

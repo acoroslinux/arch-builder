@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Optional
+
 
 class Bootloader(ABC):
     """
@@ -14,17 +15,16 @@ class Bootloader(ABC):
     @abstractmethod
     def prepare_files(self, workdir: Path) -> bool:
         """Prepare the files required by the bootloader (for example, grub.cfg or isolinux.cfg)."""
-        pass
 
     @abstractmethod
-    def generate_boot_image(self, workdir: Path, chroot_path: Optional[Path] = None) -> bool:
+    def generate_boot_image(
+        self, workdir: Path, chroot_path: Optional[Path] = None
+    ) -> bool:
         """
         Generate the final boot image (for example, via grub-mkrescue).
         Includes optional chroot_path to match child class implementations.
         """
-        pass
 
     @abstractmethod
     def validate(self, workdir: Path) -> bool:
         """Validate that bootloader files were generated correctly."""
-        pass

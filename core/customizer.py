@@ -7,26 +7,24 @@ Responsible for applying customization rules that include:
 """
 
 import logging
-import shutil
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from core.chroot_manager import ChrootError, ChrootManager
-from core.path_utils import project_root, resolve_from_base, resolve_from_project
+from core.chroot_manager import ChrootManager
+from core.path_utils import project_root, resolve_from_project
 
 logger = logging.getLogger("SystemConfigurator")
+
 
 class ConfigError(Exception):
     """Exception raised for system configuration errors."""
 
-    pass
 
 class SystemAction:
     """Base class for a configuration action."""
 
     def execute(self, chroot: ChrootManager, source_base: Path):
         raise NotImplementedError()
-
 
 
 class CommandAction(SystemAction):
@@ -42,6 +40,7 @@ class CommandAction(SystemAction):
             chroot.run_command(f"bash -lc '{self.command}'")
         else:
             logger.info(f"    [Mock] Simulated command: {self.command}")
+
 
 class UserAction(SystemAction):
     """Create users and apply their related settings."""
@@ -62,12 +61,16 @@ class UserAction(SystemAction):
         if chroot.mode == "real":
             # Create groups if needed. groupadd can handle some cases, but we keep it simple.
             for group in groups:
-                chroot.run_command(f"getent group {group} >/dev/null 2>&1 || groupadd {group}")
+                chroot.run_command(
+                    f"getent group {group} >/dev/null 2>&1 || groupadd {group}"
+                )
 
             groups_str = ",".join(groups)
 
             # Create the user if not exists, otherwise update groups
-            chroot.run_command(f"id -u {name} >/dev/null 2>&1 || useradd -m -s /bin/bash {name}")
+            chroot.run_command(
+                f"id -u {name} >/dev/null 2>&1 || useradd -m -s /bin/bash {name}"
+            )
             if groups_str:
                 chroot.run_command(f"usermod -G {groups_str} {name}")
 
@@ -86,6 +89,7 @@ class UserAction(SystemAction):
                 )
         else:
             logger.info(f"    [Mock] Create user: {name} (groups: {groups})")
+
 
 class ServiceAction(SystemAction):
     """Enable systemd services."""
@@ -106,6 +110,7 @@ class ServiceAction(SystemAction):
                     )
             else:
                 logger.info(f"    [Mock] systemctl enable {srv}")
+
 
 class MkinitcpioAction(SystemAction):
     """Configure initramfs generation through mkinitcpio."""
@@ -139,6 +144,7 @@ class MkinitcpioAction(SystemAction):
                 f"    [Mock] mkinitcpio.conf generated (hooks: {', '.join(self.hooks)})"
             )
 
+
 class LocaleAction(SystemAction):
     """Configure locales, timezone, hostname, and keymap."""
 
@@ -170,26 +176,34 @@ class LocaleAction(SystemAction):
         else:
             logger.info("    [Mock] Apply locale/timezone/hostname")
 
+
 class StructuredCopyAction(SystemAction):
     """Configures structured copy of files from custom_files to rootfs."""
 
-    def __init__(self, customizations_path: str, copy_files_list: List[Dict[str, str]], architecture: str):
+    def __init__(
+        self,
+        customizations_path: str,
+        copy_files_list: List[Dict[str, str]],
+        architecture: str,
+    ):
         self.customizations_path = Path(customizations_path)
         self.copy_files_list = copy_files_list
         self.architecture = architecture
 
     def execute(self, chroot: ChrootManager, source_base: Path):
-        logger.info(f"  [StructuredCopy] Copying {len(self.copy_files_list)} structured files to rootfs...")
-        
+        logger.info(
+            f"  [StructuredCopy] Copying {len(self.copy_files_list)} structured files to rootfs..."
+        )
+
         is_arm = self.architecture.startswith(("aarch64", "arm"))
-        
+
         # Resolve python version in chroot if {python_version} is present in destinations
         py_ver = "3.12"
         if chroot.mode == "real":
             python_dirs = list(chroot.chroot_path.glob("usr/lib/python3.*"))
             if python_dirs:
                 py_ver = python_dirs[0].name.replace("python", "")
-        
+
         for entry in self.copy_files_list:
             src_rel = entry.get("source")
             dest_rel = entry.get("destination")
@@ -199,42 +213,62 @@ class StructuredCopyAction(SystemAction):
             # Apply conditional architecture filters as described in the comments
             if is_arm:
                 if "grub/themes" in src_rel:
-                    logger.info(f"  [StructuredCopy] Skipping {src_rel} (not copied on ARM architecture)")
+                    logger.info(
+                        f"  [StructuredCopy] Skipping {src_rel} (not copied on ARM architecture)"
+                    )
                     continue
 
             # Format destinations that contain python_version
             dest_rel = dest_rel.format(python_version=py_ver)
-            
+
             src_path = source_base / self.customizations_path / src_rel
             dest_path = chroot.chroot_path / dest_rel.lstrip("/")
-            
+
             logger.info(f"  [StructuredCopy] Copying: {src_rel} -> {dest_rel}")
-            
+
             if chroot.mode == "real":
                 if not src_path.exists():
-                    logger.warning(f"  [StructuredCopy] Source path does not exist: {src_path}")
+                    logger.warning(
+                        f"  [StructuredCopy] Source path does not exist: {src_path}"
+                    )
                     continue
-                
+
                 import os
                 import subprocess
-                
+
                 # Ensure destination parent directory exists
-                dest_dir = dest_path if src_path.is_dir() and not dest_rel.endswith(src_path.name) else dest_path.parent
-                dest_dir_in_chroot = Path("/") / dest_dir.relative_to(chroot.chroot_path)
-                
+                dest_dir = (
+                    dest_path
+                    if src_path.is_dir() and not dest_rel.endswith(src_path.name)
+                    else dest_path.parent
+                )
+                dest_dir_in_chroot = Path("/") / dest_dir.relative_to(
+                    chroot.chroot_path
+                )
+
                 chroot.run_command(f"mkdir -p {dest_dir_in_chroot}")
-                
+
                 # Copy file/directory preserving all attributes except ownership and merging contents (-T)
-                cmd_copy = ["cp", "-a", "--no-preserve=ownership", "-T", str(src_path), str(dest_path)]
+                cmd_copy = [
+                    "cp",
+                    "-a",
+                    "--no-preserve=ownership",
+                    "-T",
+                    str(src_path),
+                    str(dest_path),
+                ]
                 try:
                     if os.geteuid() != 0:
                         subprocess.run(["sudo"] + cmd_copy, check=True)
                     else:
                         subprocess.run(cmd_copy, check=True)
                 except Exception as e:
-                    logger.error(f"  [StructuredCopy] Failed to copy {src_path} to {dest_path}: {e}")
+                    logger.error(
+                        f"  [StructuredCopy] Failed to copy {src_path} to {dest_path}: {e}"
+                    )
             else:
                 logger.info(f"    [Mock] Copy {src_path} to {dest_path}")
+
 
 class SystemConfigurator:
     """
@@ -251,6 +285,7 @@ class SystemConfigurator:
         Load actions from the Config object, which already contains merged data
         from global_build.json, architecture.json, and other sources.
         """
+
         # Retrieve the customization block.
         # It may live under system_config or customizations.
         def _safe_get(cfg: Any, key: str, default: Any = None) -> Any:
@@ -268,8 +303,6 @@ class SystemConfigurator:
             sys_config = _safe_get(config, "system_config", {})
         else:
             return
-
-
 
         # 3. Locale / hostname
         if cust_config:
@@ -316,23 +349,32 @@ class SystemConfigurator:
             if hasattr(desktop_env, "_data"):
                 desktop_env = desktop_env._data
             if isinstance(desktop_env, dict):
-                custom_path = desktop_env.get("customizations_path", "configs/custom_files/")
+                custom_path = desktop_env.get(
+                    "customizations_path", "configs/custom_files/"
+                )
                 use_common = desktop_env.get("use_common_config", False)
                 copy_files = desktop_env.get("copy_files", []) or []
 
                 final_copy_list = []
                 if use_common:
-                    base_custom_path = resolve_from_project("configs/base_customizations.json")
+                    base_custom_path = resolve_from_project(
+                        "configs/base_customizations.json"
+                    )
                     if base_custom_path.exists():
                         try:
                             import json
+
                             with open(base_custom_path, "r", encoding="utf-8") as f:
                                 base_data = json.load(f)
                             base_list = base_data.get("base_copy_files", [])
                             final_copy_list.extend(base_list)
-                            logger.info(f"Loaded {len(base_list)} common copy entries from base_customizations.json")
+                            logger.info(
+                                f"Loaded {len(base_list)} common copy entries from base_customizations.json"
+                            )
                         except Exception as e:
-                            logger.error(f"Failed to load/parse configs/base_customizations.json: {e}")
+                            logger.error(
+                                f"Failed to load/parse configs/base_customizations.json: {e}"
+                            )
 
                 # Add desktop specific copy_files
                 for item in copy_files:
@@ -343,7 +385,9 @@ class SystemConfigurator:
 
                 if final_copy_list:
                     arch = _safe_get(config, "platform_specific.architecture", "x86_64")
-                    self.actions.append(StructuredCopyAction(custom_path, final_copy_list, arch))
+                    self.actions.append(
+                        StructuredCopyAction(custom_path, final_copy_list, arch)
+                    )
 
     def apply(self, source_base_dir: Optional[Path] = None):
         """Apply all registered actions to the chroot."""
@@ -359,12 +403,9 @@ class SystemConfigurator:
             logger.info("No pending system configuration actions to apply.")
             return
 
-        logger.info(
-            f"Applying {len(self.actions)} system configuration actions..."
-        )
+        logger.info(f"Applying {len(self.actions)} system configuration actions...")
         for action in self.actions:
             try:
                 action.execute(self.chroot, source_base_dir)
             except Exception as e:
                 logger.error(f"Failed to execute configuration action: {e}")
-

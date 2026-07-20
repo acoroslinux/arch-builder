@@ -1,12 +1,10 @@
 import subprocess
-from abc import ABC, abstractmethod
-from typing import Dict, List
+from abc import abstractmethod
+from typing import List
 
 
 class ToolchainManagerError(Exception):
     """Raised when a required tool cannot be found or executed."""
-
-    pass
 
 
 class ToolchainManager:
@@ -28,18 +26,14 @@ class ToolchainManager:
     @abstractmethod
     def setup_environment(self):
         """Prepare the simulated build-host workdir. Must be implemented by subclasses."""
-        pass
 
     @abstractmethod
     def execute_command(self, command: List[str], chroot_path: str = None) -> str:
         """Execute a command inside the controlled environment and return stdout."""
-        pass
 
     @abstractmethod
     def is_tool_available(self, tool_name: str) -> bool:
         """Check whether a specific tool is available in the environment."""
-        pass
-
 
     # --- Mock and real implementations (tests/production) ---
 
@@ -72,7 +66,9 @@ class RealToolchainManager(ToolchainManager):
         # Permission checks can be added here if needed.
 
     def setup_environment(self):
-        print(f"[REAL] Preparing the real build-host environment at: {self._workdir}...")
+        print(
+            f"[REAL] Preparing the real build-host environment at: {self._workdir}..."
+        )
         try:
             # In a real setup we would create the directory and possibly mount pseudo-filesystems.
             subprocess.run(["mkdir", "-p", self._workdir], check=True)
@@ -89,7 +85,7 @@ class RealToolchainManager(ToolchainManager):
         try:
             # In production we use subprocess.run with a chroot mount or sudo for isolation.
             if self._chroot_mode and chroot_path:
-                full_command = [f"chroot", f"{chroot_path}", "bash", "-c"] + command
+                full_command = ["chroot", str(chroot_path), "bash", "-c"] + command
                 result = subprocess.run(full_command, capture_output=True, check=True)
                 return result.stdout.decode("utf-8")
             else:
@@ -100,7 +96,9 @@ class RealToolchainManager(ToolchainManager):
                 return result.stdout
 
         except subprocess.CalledProcessError as e:
-            error_msg = f"Error while executing command '{cmd_str}'. Stderr:\n{e.stderr}"
+            error_msg = (
+                f"Error while executing command '{cmd_str}'. Stderr:\n{e.stderr}"
+            )
             print(f"[ERROR] {error_msg}")
             raise ToolchainManagerError(error_msg)
         except Exception as e:

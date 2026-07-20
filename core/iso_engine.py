@@ -7,28 +7,30 @@ Central build engine definitions.
 ``ArchBuilder`` remains as a backward-compatible alias.
 """
 
-from abc import ABC, abstractmethod
-from pathlib import Path
 import shutil
 import tempfile
+from abc import ABC, abstractmethod
+from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Dict, Iterable, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from core.config_loader import Config
 from core.bootloaders.grub2 import Grub2Bootloader
 from core.bootloaders.syslinux import SyslinuxBootloader
 from core.chroot_manager import ChrootManager
+from core.config_loader import Config
 from core.customizer import SystemConfigurator
 from core.path_utils import resolve_from_project
 
 try:
     from .logger_setup import setup_logger
 except ImportError:  # pragma: no cover
+
     def setup_logger(*_, **__):  # type: ignore
         import logging
 
         logging.basicConfig(level=logging.INFO)
         return logging.getLogger()
+
 
 logger = setup_logger(__name__)
 _ENGINE_REGISTRY: Dict[str, Type["BaseEngine"]] = {}
@@ -41,11 +43,12 @@ __all__ = [
     "ISOBuilder",
     "ISOBuilderError",
     "ISOEngine",
-    "LegacyEngine",
 ]
+
 
 class ISOBuilderError(Exception):
     """Raised when the build orchestration flow cannot proceed."""
+
 
 class ISOEngine(ABC):
     """Abstract base for architecture-specific build engines."""
@@ -60,6 +63,7 @@ class ISOEngine(ABC):
 
         return decorator
 
+
 class BaseEngine(ISOEngine):
     """Common engine behavior shared across all architecture-specific engines."""
 
@@ -67,11 +71,14 @@ class BaseEngine(ISOEngine):
         self.arch = arch
         self.config = config
         self.toolchain = toolchain
-        self.logger = getattr(toolchain, "logger", setup_logger(self.__class__.__name__))
+        self.logger = getattr(
+            toolchain, "logger", setup_logger(self.__class__.__name__)
+        )
 
     def _system_config(self) -> Dict[str, Any]:
         # Alterar para usar o novo bloco system_info em vez de system
         return self.config.get("system_info", {})
+
     def _cfg_get(self, key: str, default: Any = None) -> Any:
         """Compatibility wrapper for config.get(key[, default])."""
         try:
@@ -103,7 +110,12 @@ class BaseEngine(ISOEngine):
             fallback = resolve_from_project(
                 Path("arch-builder") / "fallback" / self.arch / "boot"
             )
-            temp_fallback = Path(tempfile.gettempdir()) / "arch-builder-fallback" / self.arch / "boot"
+            temp_fallback = (
+                Path(tempfile.gettempdir())
+                / "arch-builder-fallback"
+                / self.arch
+                / "boot"
+            )
             selected = None
             for candidate in (fallback, temp_fallback):
                 try:
@@ -133,19 +145,27 @@ class BaseEngine(ISOEngine):
                 normalized.append(str(item))
         return normalized
 
-    def _run_command(self, command: List[str], chroot_path: Optional[str] = None) -> Any:
+    def _run_command(
+        self, command: List[str], chroot_path: Optional[str] = None
+    ) -> Any:
         if hasattr(self.toolchain, "run_command"):
             return self.toolchain.run_command(command, chroot_path=chroot_path)
         if hasattr(self.toolchain, "execute_command"):
             return self.toolchain.execute_command(command, chroot_path=chroot_path)
-        raise ISOBuilderError("Toolchain does not expose run_command or execute_command.")
+        raise ISOBuilderError(
+            "Toolchain does not expose run_command or execute_command."
+        )
 
     def _package_plan(self) -> Dict[str, List[str]]:
         """Build a normalized package installation plan from legacy and new config keys."""
         legacy_packages = self._normalize_packages(self._cfg_get("packages"))
-        platform_packages = self._normalize_packages(self._cfg_get("platform_specific.packages"))
+        platform_packages = self._normalize_packages(
+            self._cfg_get("platform_specific.packages")
+        )
         legacy = list(dict.fromkeys(legacy_packages + platform_packages))
-        official = self._normalize_packages(self._cfg_get("package_sources.official", []))
+        official = self._normalize_packages(
+            self._cfg_get("package_sources.official", [])
+        )
         aur = self._normalize_packages(self._cfg_get("package_sources.aur", []))
         local_paths = self._normalize_packages(
             self._cfg_get("package_sources.local_packages", [])
@@ -182,8 +202,12 @@ class BaseEngine(ISOEngine):
         try:
             target.mkdir(parents=True, exist_ok=True)
         except PermissionError:
-            fallback = resolve_from_project(Path("arch-builder") / "fallback" / self.arch)
-            temp_fallback = Path(tempfile.gettempdir()) / "arch-builder-fallback" / self.arch
+            fallback = resolve_from_project(
+                Path("arch-builder") / "fallback" / self.arch
+            )
+            temp_fallback = (
+                Path(tempfile.gettempdir()) / "arch-builder-fallback" / self.arch
+            )
             selected = None
             for candidate in (fallback, temp_fallback):
                 try:
@@ -220,6 +244,7 @@ class BaseEngine(ISOEngine):
     def finalize_isofile(self, output_path: str) -> None:
         """Produce the final ISO file."""
 
+
 @ISOEngine.register("x86_64")
 class ArchEngine(BaseEngine):
     """Engine in charge of x86_64 builds."""
@@ -229,7 +254,9 @@ class ArchEngine(BaseEngine):
         from core.bootloaders.grub2 import Grub2Bootloader
 
         # Use the root device ID from config or a sensible default
-        root_device_id = self.config.get("system.root_device_id", "ARCHISO_UUID_PLACEHOLDER")
+        root_device_id = self.config.get(
+            "system.root_device_id", "ARCHISO_UUID_PLACEHOLDER"
+        )
         bootloader = Grub2Bootloader(self.config, root_device_id, iso_uuid=iso_uuid)
         bootloader.prepare_files(chroot_root)
 
@@ -241,12 +268,6 @@ class ArchEngine(BaseEngine):
         force_isolated = getattr(self.toolchain, "force_isolated", False) or bool(
             self.config.get("system_info.force_isolated_toolchain", False)
         )
-        pacman_retries = int(
-            getattr(self.toolchain, "pacman_retries", 3)
-        )
-        diagnostics_enabled = getattr(self.toolchain, "diagnostics_enabled", False) or bool(
-            self.config.get("system_info.toolchain_debug", False)
-        )
 
         # In isolated mode, ensure /airootfs exists inside the build chroot for package installation
         build_chroot = getattr(self.toolchain, "build_chroot", None)
@@ -255,7 +276,7 @@ class ArchEngine(BaseEngine):
             if iso_rootfs.exists():
                 shutil.rmtree(iso_rootfs, ignore_errors=True)
             (Path(build_chroot) / "airootfs").mkdir(parents=True, exist_ok=True)
-            
+
         # Ensure boot mountpoint exists
         self._boot_mountpoint()
 
@@ -289,7 +310,10 @@ class ArchEngine(BaseEngine):
         if chroot_manager and hasattr(chroot_manager, "install_packages"):
             chroot_manager.install_packages(plan)
         elif plan["official"]:
-            self._run_command(["pacman", "-S", "--noconfirm", *plan["official"]], chroot_path=self._workdir_base())
+            self._run_command(
+                ["pacman", "-S", "--noconfirm", *plan["official"]],
+                chroot_path=self._workdir_base(),
+            )
 
         if not chroot_manager and (plan["aur"] or plan["local_paths"]):
             self.logger.warning(
@@ -303,26 +327,38 @@ class ArchEngine(BaseEngine):
         Runs mksquashfs directly on the host (not inside chroot) because
         the source directory path is a host-absolute path.
         """
-        self.logger.info(f"[squashfs] Creating squashfs from {source_dir} -> {output_path}")
+        self.logger.info(
+            f"[squashfs] Creating squashfs from {source_dir} -> {output_path}"
+        )
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         is_mock = getattr(self.toolchain, "mode", "mock") == "mock"
         if is_mock:
-            self.logger.info(f"[squashfs] [MOCK] Would create squashfs: {output_path} from {source_dir}")
+            self.logger.info(
+                f"[squashfs] [MOCK] Would create squashfs: {output_path} from {source_dir}"
+            )
             output_path.write_text("mock-squashfs-content")
             return
 
         # Exclude virtual filesystems and unnecessary directories
         exclude_dirs = [
-            "proc/*", "sys/*", "dev/*", "run/*", "tmp/*",
-            "mnt/*", "lost+found", ".cache",
+            "proc/*",
+            "sys/*",
+            "dev/*",
+            "run/*",
+            "tmp/*",
+            "mnt/*",
+            "lost+found",
+            ".cache",
         ]
         command = [
             "mksquashfs",
             str(source_dir),
             str(output_path),
-            "-comp", "zstd",
-            "-b", "1M",
+            "-comp",
+            "zstd",
+            "-b",
+            "1M",
             "-noappend",
         ]
         for ex in exclude_dirs:
@@ -336,7 +372,9 @@ class ArchEngine(BaseEngine):
             raise
         self.logger.info(f"[squashfs] Created: {output_path}")
 
-    def _generate_grub_boot_images(self, staging_dir: Path, effective_root: Path, iso_uuid: str = "") -> None:
+    def _generate_grub_boot_images(
+        self, staging_dir: Path, effective_root: Path, iso_uuid: str = ""
+    ) -> None:
         """Generate GRUB BIOS boot image (boot.img) and EFI binary (BOOT*.EFI) using the chroot."""
         grub_dir = staging_dir / "boot" / "grub"
         grub_dir.mkdir(parents=True, exist_ok=True)
@@ -356,7 +394,9 @@ class ArchEngine(BaseEngine):
 
         is_mock = getattr(self.toolchain, "mode", "mock") == "mock"
         if is_mock:
-            self.logger.info("[grub] [MOCK] Would generate GRUB BIOS and EFI boot images")
+            self.logger.info(
+                "[grub] [MOCK] Would generate GRUB BIOS and EFI boot images"
+            )
             (grub_dir / "boot.img").write_bytes(b"\x00" * 512)
             (efi_dir / efi_filename).write_bytes(b"")
             return
@@ -371,9 +411,12 @@ class ArchEngine(BaseEngine):
             self.logger.info("[grub] Generating GRUB BIOS boot image in chroot...")
             try:
                 cmd = [
-                    "chroot", str(effective_root), "bash", "-c",
+                    "chroot",
+                    str(effective_root),
+                    "bash",
+                    "-c",
                     "grub-mkimage -d /usr/lib/grub/i386-pc -o /tmp/boot.img -O i386-pc -p /boot/grub "
-                    "biosdisk iso9660 part_msdos part_gpt ext2 fat ntfs search_fs_uuid search_label"
+                    "biosdisk iso9660 part_msdos part_gpt ext2 fat ntfs search_fs_uuid search_label",
                 ]
                 self._run_command(cmd)
                 shutil.copy2(effective_root / "tmp" / "boot.img", boot_img_dest)
@@ -383,7 +426,9 @@ class ArchEngine(BaseEngine):
                 self.logger.warning(f"[grub] Failed to create BIOS boot image: {e}")
                 boot_img_dest.write_bytes(b"\x00" * 512)
         else:
-            self.logger.warning(f"[grub] GRUB BIOS modules not found at {chroot_bios_modules}")
+            self.logger.warning(
+                f"[grub] GRUB BIOS modules not found at {chroot_bios_modules}"
+            )
             boot_img_dest.write_bytes(b"\x00" * 512)
 
         # 2. --- Generate GRUB EFI binary (BOOT*.EFI) ---
@@ -393,7 +438,11 @@ class ArchEngine(BaseEngine):
             try:
                 # Build the grub-embed.cfg using the same logic as mkarchiso:
                 # search by the UUID file /boot/<iso_uuid>.uuid, then configfile grub.cfg
-                iso_label = self.config.get("system.iso_label") or self.config.get("build_environment.iso_label") or "ARCH-MODERN"
+                iso_label = (
+                    self.config.get("system.iso_label")
+                    or self.config.get("build_environment.iso_label")
+                    or "ARCH-MODERN"
+                )
                 search_filename = f"/boot/{iso_uuid}.uuid" if iso_uuid else ""
                 if search_filename:
                     embed_cfg = (
@@ -411,27 +460,34 @@ class ArchEngine(BaseEngine):
 
                 # Compile the standalone EFI image inside the chroot
                 cmd = [
-                    "chroot", str(effective_root), "bash", "-c",
+                    "chroot",
+                    str(effective_root),
+                    "bash",
+                    "-c",
                     f"grub-mkimage -d /usr/lib/grub/{grub_target} -o /tmp/{efi_filename} -O {grub_target} "
                     "-c /tmp/grub-embed.cfg -p /boot/grub "
                     "efifwsetup efinet efi_uga fat iso9660 part_gpt part_msdos search_fs_uuid search_label "
-                    "normal boot configfile linux loopback chain"
+                    "normal boot configfile linux loopback chain",
                 ]
                 self._run_command(cmd)
                 shutil.copy2(effective_root / "tmp" / efi_filename, efi_binary_dest)
-                
+
                 # Cleanup
                 (effective_root / "tmp" / efi_filename).unlink(missing_ok=True)
                 (effective_root / "tmp" / "grub-embed.cfg").unlink(missing_ok=True)
                 self.logger.info(f"[grub] Created EFI binary: {efi_binary_dest}")
             except Exception as e:
-                self.logger.warning(f"[grub] Failed to create EFI binary in chroot: {e}")
+                self.logger.warning(
+                    f"[grub] Failed to create EFI binary in chroot: {e}"
+                )
                 # Clean up any leftover temp files
                 (effective_root / "tmp" / efi_filename).unlink(missing_ok=True)
                 (effective_root / "tmp" / "grub-embed.cfg").unlink(missing_ok=True)
                 efi_binary_dest.write_bytes(b"")
         else:
-            self.logger.warning(f"[grub] GRUB EFI modules not found at {chroot_efi_modules}")
+            self.logger.warning(
+                f"[grub] GRUB EFI modules not found at {chroot_efi_modules}"
+            )
             efi_binary_dest.write_bytes(b"")
 
     def build_bootloaders(self, mountpoint: str) -> None:
@@ -463,6 +519,7 @@ class ArchEngine(BaseEngine):
         # mkarchiso creates /boot/<iso_uuid>.uuid on the ISO so the archiso hook
         # can find the ISO device by scanning all block devices for that file.
         import datetime
+
         iso_uuid = datetime.datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-00")
 
         # Generate GRUB configuration (grub.cfg) inside the airootfs
@@ -479,7 +536,6 @@ class ArchEngine(BaseEngine):
         (iso_staging / "EFI" / "BOOT").mkdir(parents=True, exist_ok=True)
         (iso_staging / "loader" / "entries").mkdir(parents=True, exist_ok=True)
 
-        search_filename = f"/boot/{iso_uuid}.uuid"
         # Create the empty UUID marker file (critical for archiso hook to find the device)
         (iso_boot / f"{iso_uuid}.uuid").touch()
         self.logger.info(f"[boot] Created ISO UUID marker: boot/{iso_uuid}.uuid")
@@ -489,9 +545,11 @@ class ArchEngine(BaseEngine):
         # i.e.: arch/boot/x86_64/vmlinuz-linux
         source_boot = effective_root / "boot"
         kernel_name = self.config.get("platform_specific.base_kernel", "vmlinuz-linux")
-        initramfs_name = self.config.get("platform_specific.initramfs", "initramfs-linux.img")
+        initramfs_name = self.config.get(
+            "platform_specific.initramfs", "initramfs-linux.img"
+        )
         install_dir = "arch"
-        
+
         # Create target directory: arch/boot/x86_64/
         iso_kernel_dir = iso_staging / install_dir / "boot" / self.arch
         iso_kernel_dir.mkdir(parents=True, exist_ok=True)
@@ -500,7 +558,9 @@ class ArchEngine(BaseEngine):
             kernel_src = source_boot / kernel_name
             if kernel_src.exists():
                 shutil.copy2(kernel_src, iso_kernel_dir / kernel_name)
-                self.logger.info(f"[boot] Copied kernel to {install_dir}/boot/{self.arch}/{kernel_name}")
+                self.logger.info(
+                    f"[boot] Copied kernel to {install_dir}/boot/{self.arch}/{kernel_name}"
+                )
             else:
                 self.logger.warning(f"[boot] Kernel not found at {kernel_src}")
 
@@ -514,7 +574,9 @@ class ArchEngine(BaseEngine):
             initramfs_src = source_boot / initramfs_name
             if initramfs_src.exists():
                 shutil.copy2(initramfs_src, iso_kernel_dir / initramfs_name)
-                self.logger.info(f"[boot] Copied initramfs to {install_dir}/boot/{self.arch}/{initramfs_name}")
+                self.logger.info(
+                    f"[boot] Copied initramfs to {install_dir}/boot/{self.arch}/{initramfs_name}"
+                )
             else:
                 self.logger.warning(f"[boot] Initramfs not found at {initramfs_src}")
 
@@ -527,7 +589,9 @@ class ArchEngine(BaseEngine):
             # Copy themes and fonts directories for GRUB theme support
             grub_themes_src = source_boot / "grub" / "themes"
             if grub_themes_src.exists():
-                shutil.copytree(grub_themes_src, iso_boot / "grub" / "themes", dirs_exist_ok=True)
+                shutil.copytree(
+                    grub_themes_src, iso_boot / "grub" / "themes", dirs_exist_ok=True
+                )
                 self.logger.info("[boot] Copied GRUB themes")
 
             # Ensure the unicode font is present on the ISO for graphical terminal menu rendering
@@ -537,23 +601,35 @@ class ArchEngine(BaseEngine):
 
             # 1. Try copying from chroot /boot/grub/fonts
             if (source_boot / "grub" / "fonts" / "unicode.pf2").exists():
-                shutil.copy2(source_boot / "grub" / "fonts" / "unicode.pf2", iso_fonts_dir / "unicode.pf2")
+                shutil.copy2(
+                    source_boot / "grub" / "fonts" / "unicode.pf2",
+                    iso_fonts_dir / "unicode.pf2",
+                )
                 copied_font = True
             # 2. Try copying from chroot /usr/share/grub/unicode.pf2
             elif (effective_root / "usr" / "share" / "grub" / "unicode.pf2").exists():
-                shutil.copy2(effective_root / "usr" / "share" / "grub" / "unicode.pf2", iso_fonts_dir / "unicode.pf2")
+                shutil.copy2(
+                    effective_root / "usr" / "share" / "grub" / "unicode.pf2",
+                    iso_fonts_dir / "unicode.pf2",
+                )
                 copied_font = True
             # 3. Try copying from host /usr/share/grub/unicode.pf2
             elif Path("/usr/share/grub/unicode.pf2").exists():
-                shutil.copy2("/usr/share/grub/unicode.pf2", iso_fonts_dir / "unicode.pf2")
+                shutil.copy2(
+                    "/usr/share/grub/unicode.pf2", iso_fonts_dir / "unicode.pf2"
+                )
                 copied_font = True
 
             if copied_font:
                 self.logger.info("[boot] Copied GRUB unicode font to ISO boot tree")
             else:
-                self.logger.warning("[boot] GRUB unicode font could not be located on chroot or host")
+                self.logger.warning(
+                    "[boot] GRUB unicode font could not be located on chroot or host"
+                )
         else:
-            self.logger.warning(f"[boot] Source boot directory not found at {source_boot}")
+            self.logger.warning(
+                f"[boot] Source boot directory not found at {source_boot}"
+            )
 
         # --- Generate Syslinux boot files for legacy BIOS ---
         syslinux_loader = SyslinuxBootloader(self.config)
@@ -571,27 +647,37 @@ class ArchEngine(BaseEngine):
         arch_dir = iso_staging / "arch" / self.arch
         arch_dir.mkdir(parents=True, exist_ok=True)
         squashfs_path = arch_dir / "airootfs.sfs"
-        
+
         # Clean the chroot to drastically reduce ISO size
         self._clean_airootfs(effective_root)
-        
+
         self._create_squashfs(effective_root, squashfs_path)
 
         # --- Create systemd-boot loader config from template ---
-        iso_label = self.config.get("system.iso_label") or self.config.get("build_environment.iso_label") or "ARCH-MODERN"
+        iso_label = (
+            self.config.get("system.iso_label")
+            or self.config.get("build_environment.iso_label")
+            or "ARCH-MODERN"
+        )
         kernel_params = self.config.get("boot.kernel_params", "loglevel=4 quiet")
         cmdline = f"{kernel_params} rw systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
 
-        _loader_conf_tmpl = resolve_from_project("configs/templates/efiboot/loader/loader.conf")
+        _loader_conf_tmpl = resolve_from_project(
+            "configs/templates/efiboot/loader/loader.conf"
+        )
         if _loader_conf_tmpl.exists():
             shutil.copy2(_loader_conf_tmpl, iso_staging / "loader" / "loader.conf")
         else:
-            (iso_staging / "loader" / "loader.conf").write_text("timeout 15\ndefault arch-live.conf\n")
+            (iso_staging / "loader" / "loader.conf").write_text(
+                "timeout 15\ndefault arch-live.conf\n"
+            )
 
         # --- Create systemd-boot entry from template ---
         # Use archisosearchuuid (matching mkarchiso) so the hook finds the ISO by the
         # UUID marker file /boot/<iso_uuid>.uuid rather than by volume label alone.
-        _entry_tmpl = resolve_from_project("configs/templates/efiboot/loader/entries/arch-live.conf")
+        _entry_tmpl = resolve_from_project(
+            "configs/templates/efiboot/loader/entries/arch-live.conf"
+        )
         if _entry_tmpl.exists():
             _entry_content = _entry_tmpl.read_text()
             _replacements = {
@@ -606,7 +692,9 @@ class ArchEngine(BaseEngine):
             }
             for _k, _v in _replacements.items():
                 _entry_content = _entry_content.replace(_k, _v)
-            (iso_staging / "loader" / "entries" / "arch-live.conf").write_text(_entry_content)
+            (iso_staging / "loader" / "entries" / "arch-live.conf").write_text(
+                _entry_content
+            )
         else:
             entry_content = (
                 f"title    Arch Modern ({self.arch}, UEFI)\n"
@@ -615,7 +703,9 @@ class ArchEngine(BaseEngine):
                 f"initrd   /{install_dir}/boot/{self.arch}/{initramfs_name}\n"
                 f"options  archisobasedir={install_dir} archisosearchuuid={iso_uuid} {cmdline}\n"
             )
-            (iso_staging / "loader" / "entries" / "arch-live.conf").write_text(entry_content)
+            (iso_staging / "loader" / "entries" / "arch-live.conf").write_text(
+                entry_content
+            )
 
         # Store the ISO staging path for finalize_isofile
         self._iso_staging = iso_staging
@@ -644,45 +734,69 @@ class ArchEngine(BaseEngine):
 
         # Check if we're in mock mode - skip actual execution
         is_mock = getattr(self.toolchain, "mode", "mock") == "mock"
-        
-        iso_label = self.config.get("system.iso_label") or self.config.get("build_environment.iso_label") or "ARCH-MODERN"
+
+        iso_label = (
+            self.config.get("system.iso_label")
+            or self.config.get("build_environment.iso_label")
+            or "ARCH-MODERN"
+        )
         command = [
             "xorriso",
-            "-as", "mkisofs",
-            "-iso-level", "3",
+            "-as",
+            "mkisofs",
+            "-iso-level",
+            "3",
             "-full-iso9660-filenames",
             "-joliet",
             "-joliet-long",
             "-rational-rock",
-            "-volid", iso_label,
-            "-appid", "Arch Modern Live",
-            "-publisher", "acoroslinux",
-            "-preparer", "arch-builder",
+            "-volid",
+            iso_label,
+            "-appid",
+            "Arch Modern Live",
+            "-publisher",
+            "acoroslinux",
+            "-preparer",
+            "arch-builder",
             # BIOS syslinux parameters (archiso official layout: boot/syslinux/)
-            "-eltorito-boot", "boot/syslinux/isolinux.bin",
-            "-eltorito-catalog", "boot/syslinux/boot.cat",
+            "-eltorito-boot",
+            "boot/syslinux/isolinux.bin",
+            "-eltorito-catalog",
+            "boot/syslinux/boot.cat",
             "-no-emul-boot",
-            "-boot-load-size", "4",
+            "-boot-load-size",
+            "4",
             "-boot-info-table",
-            "-isohybrid-mbr", str(iso_source / "boot" / "syslinux" / "isohdpfx.bin"),
+            "-isohybrid-mbr",
+            str(iso_source / "boot" / "syslinux" / "isohdpfx.bin"),
             "--mbr-force-bootable",
-            "-partition_offset", "16",
+            "-partition_offset",
+            "16",
             # UEFI parameters
-            "-append_partition", "2", "C12A7328-F81F-11D2-BA4B-00A0C93EC93B", str(iso_source / "EFI" / "efiboot.img"),
+            "-append_partition",
+            "2",
+            "C12A7328-F81F-11D2-BA4B-00A0C93EC93B",
+            str(iso_source / "EFI" / "efiboot.img"),
             "-isohybrid-gpt-basdat",
             "-eltorito-alt-boot",
-            "-e", "--interval:appended_partition_2:all::",
+            "-e",
+            "--interval:appended_partition_2:all::",
             "-no-emul-boot",
-            "-output", output_abs,
-            str(iso_source)
+            "-output",
+            output_abs,
+            str(iso_source),
         ]
 
         if is_mock:
-            self.logger.info(f"[finalize] [MOCK] Would create ISO: {output_abs} from {iso_source}")
+            self.logger.info(
+                f"[finalize] [MOCK] Would create ISO: {output_abs} from {iso_source}"
+            )
             self.logger.info(f"[finalize] [MOCK] Command: {' '.join(command)}")
             return
 
-        self.logger.info(f"[finalize] Creating bootable hybrid ISO with xorriso: {output_abs}")
+        self.logger.info(
+            f"[finalize] Creating bootable hybrid ISO with xorriso: {output_abs}"
+        )
         self.logger.info(f"[finalize] Command: {' '.join(command)}")
 
         try:
@@ -722,17 +836,17 @@ class ArchEngine(BaseEngine):
                 if item.is_file():
                     item.unlink(missing_ok=True)
             shutil.rmtree(pacman_lib / "sync", ignore_errors=True)
-        
+
         shutil.rmtree(airootfs / "var" / "cache" / "pacman" / "pkg", ignore_errors=True)
 
         # Clean logs and tmp
         shutil.rmtree(airootfs / "var" / "log", ignore_errors=True)
         (airootfs / "var" / "log").mkdir(parents=True, exist_ok=True)
-        
+
         shutil.rmtree(airootfs / "var" / "tmp", ignore_errors=True)
         (airootfs / "var" / "tmp").mkdir(parents=True, exist_ok=True)
         (airootfs / "tmp").mkdir(parents=True, exist_ok=True)
-        
+
         for item in (airootfs / "tmp").iterdir():
             if item.is_file():
                 item.unlink(missing_ok=True)
@@ -740,9 +854,12 @@ class ArchEngine(BaseEngine):
                 shutil.rmtree(item, ignore_errors=True)
 
         # Delete pacman package related files
-        for p in airootfs.rglob("*.pacnew"): p.unlink(missing_ok=True)
-        for p in airootfs.rglob("*.pacsave"): p.unlink(missing_ok=True)
-        for p in airootfs.rglob("*.pacorig"): p.unlink(missing_ok=True)
+        for p in airootfs.rglob("*.pacnew"):
+            p.unlink(missing_ok=True)
+        for p in airootfs.rglob("*.pacsave"):
+            p.unlink(missing_ok=True)
+        for p in airootfs.rglob("*.pacorig"):
+            p.unlink(missing_ok=True)
 
         # Uninitialize machine-id
         machine_id = airootfs / "etc" / "machine-id"
@@ -778,8 +895,9 @@ class ArchEngine(BaseEngine):
         airootfs_path = Path(run_path) / "airootfs"
 
         # Mount required filesystems inside airootfs for mkinitcpio
-        import subprocess
         import os
+        import subprocess
+
         def _sudo_run(cmd, check=True):
             full = cmd if os.geteuid() == 0 else ["sudo", *cmd]
             return subprocess.run(full, check=check, capture_output=True, text=True)
@@ -794,7 +912,11 @@ class ArchEngine(BaseEngine):
             dst.mkdir(parents=True, exist_ok=True)
             try:
                 with open("/proc/mounts", "r") as f:
-                    mounted_paths = [line.split()[1] for line in f.readlines() if len(line.split()) > 1]
+                    mounted_paths = [
+                        line.split()[1]
+                        for line in f.readlines()
+                        if len(line.split()) > 1
+                    ]
                 if os.path.abspath(str(dst)) in mounted_paths:
                     self.logger.debug(f"{dst} is already mounted, skipping.")
                     continue
@@ -804,24 +926,34 @@ class ArchEngine(BaseEngine):
 
         try:
             # Determine which kernel preset to use
-            kernel_name = self.config.get("platform_specific.base_kernel", "vmlinuz-linux")
+            kernel_name = self.config.get(
+                "platform_specific.base_kernel", "vmlinuz-linux"
+            )
             kernel_preset = kernel_name.replace("vmlinuz-", "")
 
             # Run mkinitcpio inside the airootfs chroot
-            self.logger.info(f"[initramfs] Running mkinitcpio -p {kernel_preset} in airootfs...")
+            self.logger.info(
+                f"[initramfs] Running mkinitcpio -p {kernel_preset} in airootfs..."
+            )
             chroot_manager.run_command(
                 ["chroot", "/airootfs", "mkinitcpio", "-p", kernel_preset],
                 chroot_path=run_path,
             )
-            self.logger.info(f"[initramfs] Generated initramfs for kernel: {kernel_preset}")
+            self.logger.info(
+                f"[initramfs] Generated initramfs for kernel: {kernel_preset}"
+            )
 
             # Verify kernel and initramfs exist
             kernel_file = airootfs_path / "boot" / kernel_name
             initramfs_file = airootfs_path / "boot" / f"initramfs-{kernel_preset}.img"
             if kernel_file.exists():
-                self.logger.info(f"[initramfs] Kernel found: {kernel_file} ({kernel_file.stat().st_size} bytes)")
+                self.logger.info(
+                    f"[initramfs] Kernel found: {kernel_file} ({kernel_file.stat().st_size} bytes)"
+                )
             if initramfs_file.exists():
-                self.logger.info(f"[initramfs] Initramfs found: {initramfs_file} ({initramfs_file.stat().st_size} bytes)")
+                self.logger.info(
+                    f"[initramfs] Initramfs found: {initramfs_file} ({initramfs_file.stat().st_size} bytes)"
+                )
 
         except Exception as e:
             self.logger.error(f"[initramfs] Failed to generate initramfs: {e}")
@@ -859,7 +991,6 @@ class ArchEngine(BaseEngine):
             self.logger.info(f"Service '{service}' enabled.")
 
 
-
 class ISOBuilder:
     """Canonical high-level build orchestrator used by the project."""
 
@@ -886,7 +1017,9 @@ class ISOBuilder:
         if not hasattr(toolchain, "logger"):
             toolchain.logger = setup_logger("ISOBuilder")
 
-        if not hasattr(toolchain, "run_command") and hasattr(toolchain, "execute_command"):
+        if not hasattr(toolchain, "run_command") and hasattr(
+            toolchain, "execute_command"
+        ):
             toolchain.run_command = toolchain.execute_command
 
         if not hasattr(toolchain, "run_command"):
@@ -895,7 +1028,9 @@ class ISOBuilder:
         if chroot_manager is not None:
             toolchain.chroot_manager = chroot_manager
         elif not hasattr(toolchain, "chroot_manager"):
-            toolchain.chroot_manager = ChrootManager(workdir=self._default_chroot_path())
+            toolchain.chroot_manager = ChrootManager(
+                workdir=self._default_chroot_path()
+            )
 
         return toolchain
 
@@ -913,10 +1048,14 @@ class ISOBuilder:
         try:
             engine_class = _ENGINE_REGISTRY[self.arch]
         except KeyError as exc:
-            raise NotImplementedError(f"Architecture '{self.arch}' is not supported.") from exc
+            raise NotImplementedError(
+                f"Architecture '{self.arch}' is not supported."
+            ) from exc
         return engine_class(self.arch, self.config, self.toolchain)
 
-    def build(self, output_path: Union[str, Path], workdir: Optional[Union[str, Path]] = None) -> Path:
+    def build(
+        self, output_path: Union[str, Path], workdir: Optional[Union[str, Path]] = None
+    ) -> Path:
         output_path = Path(output_path)
         try:
             workdir_path = self.engine.setup_workdir(workdir)
@@ -934,12 +1073,13 @@ class ISOBuilder:
     def build_iso(self, output_path: Union[str, Path]) -> Path:
         return self.build(output_path)
 
+
 class ArchBuilder(ISOBuilder):
     """Backward-compatible alias for the historic builder name."""
 
     def __init__(self, arch_name: str, config: Config, toolchain: Optional[Any] = None):
         super().__init__(arch_name, config, toolchain=toolchain)
 
+
 if __name__ == "__main__":
     pass
-

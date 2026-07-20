@@ -31,18 +31,17 @@ except ImportError:  # pragma: no cover
         logging.basicConfig(level=logging.INFO)
         return logging.getLogger()
 
+
 # ----------------------------------------------------------------------
 # Mock filesystem handler – simulates file operations for tests
 # ----------------------------------------------------------------------
 class ChrootManagerError(Exception):
     """Raised when chroot lifecycle or command execution fails."""
 
-    pass
 
 class ChrootError(ChrootManagerError):
     """Backward-compatible alias for older imports."""
 
-    pass
 
 class MockFSHandler:
     """Simulates a minimal filesystem inside the chroot directory."""
@@ -77,6 +76,7 @@ class MockFSHandler:
             return ["/dev/sda1", "swap"]
         return ["file1.conf", "subdir/", "readme.txt"]
 
+
 # ----------------------------------------------------------------------
 # Main ChrootManager – controls mock/real mode and command execution
 # ----------------------------------------------------------------------
@@ -109,7 +109,9 @@ class ChrootManager:
         self.toolchain = toolchain
         self.arch = (arch or "x86_64").lower()
         if self.arch not in ("x86_64", "x86-64"):
-            raise ChrootManagerError(f"Architecture '{self.arch}' is not supported. Only x86_64 is supported.")
+            raise ChrootManagerError(
+                f"Architecture '{self.arch}' is not supported. Only x86_64 is supported."
+            )
         self.arch = "x86_64"
 
         # Each manager gets its own logger (useful for debugging)
@@ -184,7 +186,7 @@ class ChrootManager:
                 host_resolv = Path("/etc/resolv.conf")
                 target_resolv = Path(effective_chroot) / "etc" / "resolv.conf"
                 copied_resolv = False
-                
+
                 # Copy host resolv.conf if not already present in the chroot
                 if host_resolv.exists() and not target_resolv.exists():
                     try:
@@ -192,7 +194,9 @@ class ChrootManager:
                         shutil.copy2(host_resolv, target_resolv)
                         copied_resolv = True
                     except Exception as e:
-                        logging.getLogger("chroot").warning(f"Could not copy resolv.conf to chroot: {e}")
+                        logging.getLogger("chroot").warning(
+                            f"Could not copy resolv.conf to chroot: {e}"
+                        )
 
                 try:
                     # Execute directly through chroot with argument-safe process invocation.
@@ -224,7 +228,11 @@ class ChrootManager:
                 output_details.append(f"STDOUT:\n{e.stdout.strip()}")
             if e.stderr and e.stderr.strip():
                 output_details.append(f"STDERR:\n{e.stderr.strip()}")
-            details_str = "\n".join(output_details) if output_details else "No output details available."
+            details_str = (
+                "\n".join(output_details)
+                if output_details
+                else "No output details available."
+            )
             error_msg = f"Failed to execute command '{command_list[0]}'. Error status:\n{details_str}"
             logging.getLogger("chroot").error(error_msg)
             raise ChrootManagerError(error_msg)
@@ -285,11 +293,17 @@ class ChrootManager:
                 raise ChrootManagerError(f"Host pacman -U failed: {e.stderr}")
             return
 
-        run_path = self.toolchain.build_chroot if self.toolchain and getattr(self.toolchain, "build_chroot", None) else self._workdir
+        run_path = (
+            self.toolchain.build_chroot
+            if self.toolchain and getattr(self.toolchain, "build_chroot", None)
+            else self._workdir
+        )
         staging_host_dir = Path(run_path) / "tmp" / "custom-packages"
         staging_host_dir.mkdir(parents=True, exist_ok=True)
 
-        iso_rootfs = getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
+        iso_rootfs = (
+            getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
+        )
         root_flag = ["--root", "/airootfs"] if iso_rootfs else []
 
         staged_targets: List[str] = []
@@ -320,20 +334,41 @@ class ChrootManager:
                     "Host pacman is unavailable. Enable an isolated toolchain or install pacman on the host."
                 )
             # Prepare build prerequisites on host
-            subprocess.run(["sudo", "pacman", "-S", "--needed", "--noconfirm", "git", "base-devel"], check=True)
-            
+            subprocess.run(
+                [
+                    "sudo",
+                    "pacman",
+                    "-S",
+                    "--needed",
+                    "--noconfirm",
+                    "git",
+                    "base-devel",
+                ],
+                check=True,
+            )
+
             build_user = os.environ.get("SUDO_USER")
             if not build_user or build_user == "root":
-                if subprocess.run(["id", "-u", "aurbuilder"], capture_output=True).returncode != 0:
+                if (
+                    subprocess.run(
+                        ["id", "-u", "aurbuilder"], capture_output=True
+                    ).returncode
+                    != 0
+                ):
                     subprocess.run(["sudo", "useradd", "-m", "aurbuilder"], check=True)
                 build_user = "aurbuilder"
 
             # Grant passwordless sudo to aurbuilder on host
             if build_user == "aurbuilder":
-                subprocess.run([
-                    "sudo", "sh", "-c",
-                    "mkdir -p /etc/sudoers.d && echo 'aurbuilder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/aurbuilder"
-                ], check=True)
+                subprocess.run(
+                    [
+                        "sudo",
+                        "sh",
+                        "-c",
+                        "mkdir -p /etc/sudoers.d && echo 'aurbuilder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/aurbuilder",
+                    ],
+                    check=True,
+                )
 
             for pkg in aur_packages:
                 if not re.match(r"^[a-zA-Z0-9@._+-]+$", pkg):
@@ -344,8 +379,17 @@ class ChrootManager:
                 if build_dir.exists():
                     shutil.rmtree(build_dir, ignore_errors=True)
                 build_dir.mkdir(parents=True, exist_ok=True)
-                
-                subprocess.run(["sudo", "chown", "-R", f"{build_user}:{build_user}", "/tmp/aur-build"], check=True)
+
+                subprocess.run(
+                    [
+                        "sudo",
+                        "chown",
+                        "-R",
+                        f"{build_user}:{build_user}",
+                        "/tmp/aur-build",
+                    ],
+                    check=True,
+                )
 
                 build_cmd = (
                     "set -e; "
@@ -353,11 +397,13 @@ class ChrootManager:
                     f"git clone https://aur.archlinux.org/{pkg}.git; "
                     f"cd {pkg}; makepkg -s --noconfirm --needed"
                 )
-                
+
                 # Run the build command as the build_user
                 subprocess.run(
                     ["runuser", "-u", build_user, "--", "bash", "-lc", build_cmd],
-                    check=True, capture_output=True, text=True
+                    check=True,
+                    capture_output=True,
+                    text=True,
                 )
 
                 # Find the built packages
@@ -373,7 +419,9 @@ class ChrootManager:
                     "--noconfirm",
                     "--needed",
                 ] + [str(pf) for pf in pkg_files]
-                self.logger.info(f"[host] Installing dependency on host: {' '.join(host_cmd)}")
+                self.logger.info(
+                    f"[host] Installing dependency on host: {' '.join(host_cmd)}"
+                )
                 subprocess.run(host_cmd, check=True, capture_output=True, text=True)
 
                 # Step 3: Install into the target rootfs using pacman -U on host as root
@@ -386,14 +434,22 @@ class ChrootManager:
                     "--root",
                     str(self._workdir),
                 ] + [str(pf) for pf in pkg_files]
-                self.logger.info(f"[host] Installing package in target rootfs: {' '.join(target_cmd)}")
+                self.logger.info(
+                    f"[host] Installing package in target rootfs: {' '.join(target_cmd)}"
+                )
                 subprocess.run(target_cmd, check=True, capture_output=True, text=True)
             return
 
         # Isolated mode
-        run_path = self.toolchain.build_chroot if self.toolchain and getattr(self.toolchain, "build_chroot", None) else self._workdir
+        run_path = (
+            self.toolchain.build_chroot
+            if self.toolchain and getattr(self.toolchain, "build_chroot", None)
+            else self._workdir
+        )
 
-        iso_rootfs = getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
+        iso_rootfs = (
+            getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
+        )
         root_flag = ["--root", "/airootfs"] if iso_rootfs else []
 
         # Prepare build prerequisites and non-root builder account.
@@ -459,7 +515,9 @@ class ChrootManager:
 
     def _init_airootfs_pacman(self, run_path: str) -> None:
         """Initialize pacman database and required directories inside airootfs."""
-        iso_rootfs = getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
+        iso_rootfs = (
+            getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
+        )
         if not iso_rootfs:
             return
 
@@ -480,16 +538,20 @@ class ChrootManager:
         # Ensure the target architecture and mirrors are correctly configured in the target configs
         pacman_conf_dst = airootfs_path / "etc" / "pacman.conf"
         mirrorlist_dst = airootfs_path / "etc" / "pacman.d" / "mirrorlist"
-        
+
         if pacman_conf_dst.exists():
             content = pacman_conf_dst.read_text(encoding="utf-8")
             # Ensure Architecture is set correctly
             expected_arch_line = f"Architecture = {self.arch}"
             if expected_arch_line not in content:
                 if re.search(r"(?m)^\s*Architecture\s*=", content):
-                    content = re.sub(r"(?m)^\s*Architecture\s*=.*$", expected_arch_line, content)
+                    content = re.sub(
+                        r"(?m)^\s*Architecture\s*=.*$", expected_arch_line, content
+                    )
                 elif "[options]" in content:
-                    content = content.replace("[options]", f"[options]\n{expected_arch_line}", 1)
+                    content = content.replace(
+                        "[options]", f"[options]\n{expected_arch_line}", 1
+                    )
             pacman_conf_dst.write_text(content, encoding="utf-8")
 
         # Copy the target's mirrorlist to the build host chroot's /etc/pacman.d/mirrorlist as well
@@ -501,7 +563,9 @@ class ChrootManager:
         # Initialize the pacman keyring and database inside airootfs.
         # In isolated mode, the build host has pacman and pacman-key, while the
         # target airootfs only receives the generated keyring directories.
-        self.logger.info("[airootfs] Initializing pacman keyring and database in airootfs...")
+        self.logger.info(
+            "[airootfs] Initializing pacman keyring and database in airootfs..."
+        )
         try:
             # Use pacman-key from the build host to initialize the gpg directory inside airootfs.
             self.run_command(
@@ -544,9 +608,13 @@ class ChrootManager:
                 chroot_path=str(run_path),
             )
         except ChrootManagerError as e:
-            self.logger.warning(f"[airootfs] pacman initialization in airootfs failed (may be ok): {e}")
+            self.logger.warning(
+                f"[airootfs] pacman initialization in airootfs failed (may be ok): {e}"
+            )
 
-    def _install_official_packages_real(self, official_packages: List[str], attempts: int = 3) -> None:
+    def _install_official_packages_real(
+        self, official_packages: List[str], attempts: int = 3
+    ) -> None:
         if not official_packages:
             return
 
@@ -558,22 +626,34 @@ class ChrootManager:
                 raise ChrootManagerError(
                     "Host pacman is unavailable. Enable an isolated toolchain or install pacman on the host."
                 )
-            
+
             # Ensure pacman database directory exists in the target rootfs
             target_path = Path(self._workdir)
             for d in ["var/lib/pacman", "var/cache/pacman/pkg"]:
                 (target_path / d).mkdir(parents=True, exist_ok=True)
 
             # Host mode: run pacman directly on the host targeting the chroot using --root
-            
+
             # Always ensure archlinux-keyring is up to date before installing other packages
             try:
                 subprocess.run(
-                    ["sudo", "pacman", "-S", "--needed", "--noconfirm", "--root", str(self._workdir), "archlinux-keyring"],
-                    check=True, capture_output=True
+                    [
+                        "sudo",
+                        "pacman",
+                        "-S",
+                        "--needed",
+                        "--noconfirm",
+                        "--root",
+                        str(self._workdir),
+                        "archlinux-keyring",
+                    ],
+                    check=True,
+                    capture_output=True,
                 )
             except Exception as e:
-                self.logger.warning(f"Failed to update archlinux-keyring on host (may be ok): {e}")
+                self.logger.warning(
+                    f"Failed to update archlinux-keyring on host (may be ok): {e}"
+                )
 
             for attempt in range(1, max(1, attempts) + 1):
                 try:
@@ -599,8 +679,16 @@ class ChrootManager:
                     if attempt < attempts:
                         try:
                             subprocess.run(
-                                ["sudo", "pacman", "-Syy", "--noconfirm", "--root", str(self._workdir)],
-                                check=True, capture_output=True
+                                [
+                                    "sudo",
+                                    "pacman",
+                                    "-Syy",
+                                    "--noconfirm",
+                                    "--root",
+                                    str(self._workdir),
+                                ],
+                                check=True,
+                                capture_output=True,
                             )
                         except Exception:
                             pass
@@ -609,12 +697,18 @@ class ChrootManager:
             return
 
         # Isolated mode
-        run_path = self.toolchain.build_chroot if self.toolchain and getattr(self.toolchain, "build_chroot", None) else self._workdir
+        run_path = (
+            self.toolchain.build_chroot
+            if self.toolchain and getattr(self.toolchain, "build_chroot", None)
+            else self._workdir
+        )
 
         # Determine if we need to target a separate ISO rootfs (airootfs) instead of
         # the build chroot root. This prevents ISO packages from conflicting with
         # the toolchain packages already installed in the build host.
-        iso_rootfs = getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
+        iso_rootfs = (
+            getattr(self.toolchain, "iso_rootfs_path", None) if self.toolchain else None
+        )
         if iso_rootfs:
             root_flag = ["--root", "/airootfs", "--config", "/airootfs/etc/pacman.conf"]
         else:
@@ -626,7 +720,14 @@ class ChrootManager:
 
         # Always ensure archlinux-keyring is up to date before installing other packages
         try:
-            keyring_cmd = ["pacman", "-S", "--needed", "--noconfirm", *root_flag, "archlinux-keyring"]
+            keyring_cmd = [
+                "pacman",
+                "-S",
+                "--needed",
+                "--noconfirm",
+                *root_flag,
+                "archlinux-keyring",
+            ]
             self.run_command(keyring_cmd, chroot_path=str(run_path))
         except Exception as e:
             self.logger.warning(f"Failed to update archlinux-keyring (may be ok): {e}")
@@ -686,16 +787,18 @@ class ChrootManager:
 
     def _mount_essential_filesystems(self) -> None:
         """Mount /proc, /sys, and /dev inside the chroot path."""
-        import subprocess
         import os
-        
-        self.logger.info("[chroot] Mounting essential filesystems (/proc, /sys, /dev)...")
+        import subprocess
+
+        self.logger.info(
+            "[chroot] Mounting essential filesystems (/proc, /sys, /dev)..."
+        )
         mounts = [
             ("/proc", self.chroot_path / "proc", "--bind"),
             ("/sys", self.chroot_path / "sys", "--bind"),
             ("/dev", self.chroot_path / "dev", "--bind"),
         ]
-        
+
         def _sudo_run(cmd, check=True):
             full = cmd if os.geteuid() == 0 else ["sudo", *cmd]
             return subprocess.run(full, check=check, capture_output=True, text=True)
@@ -705,7 +808,11 @@ class ChrootManager:
             try:
                 # Check if already mounted
                 with open("/proc/mounts", "r") as f:
-                    mounted_paths = [line.split()[1] for line in f.readlines() if len(line.split()) > 1]
+                    mounted_paths = [
+                        line.split()[1]
+                        for line in f.readlines()
+                        if len(line.split()) > 1
+                    ]
                 if os.path.abspath(str(dst)) in mounted_paths:
                     self.logger.debug(f"{dst} is already mounted, skipping.")
                     continue
@@ -720,9 +827,9 @@ class ChrootManager:
 
     def _unmount_essential_filesystems(self) -> None:
         """Unmount /proc, /sys, and /dev from the chroot path."""
-        import subprocess
         import os
-        
+        import subprocess
+
         self.logger.info("[chroot] Unmounting essential filesystems...")
         mounts = [
             self.chroot_path / "dev" / "shm",
@@ -730,7 +837,7 @@ class ChrootManager:
             self.chroot_path / "sys",
             self.chroot_path / "dev",
         ]
-        
+
         def _sudo_run(cmd, check=True):
             full = cmd if os.geteuid() == 0 else ["sudo", *cmd]
             return subprocess.run(full, check=check, capture_output=True, text=True)
@@ -749,10 +856,6 @@ class ChrootManager:
             # In mock we just simulate the process
             self.fs_handler.create_file("etc/apk/keys", "MOCK-KEY-DATA")
             logging.getLogger("chroot").debug("[MOCK FS] Simulated keys installed.")
-            output = (
-                "Packages installed virtually. "
-                f"official={plan['official']} aur={plan['aur']} local={plan['local_paths']}\n"
-            )
         else:
             # Real mode – install official packages from repos.
             try:
@@ -764,7 +867,6 @@ class ChrootManager:
 
                 # Install AUR packages through makepkg in a dedicated non-root user.
                 self._install_aur_packages_real(plan["aur"])
-                output = "Package plan applied successfully."
             except ChrootManagerError as e:
                 raise RuntimeError(
                     f"Fatal package installation failure in real chroot: {e}"
@@ -800,4 +902,3 @@ class ChrootManager:
             return f"[REAL] /etc/fstab created at {fstab_path}"
         except Exception as e:
             raise ChrootManagerError(f"Failed to generate real fstab: {e}")
-

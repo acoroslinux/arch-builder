@@ -1,7 +1,5 @@
 import json
 import logging
-import os
-import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -14,8 +12,6 @@ logger = logging.getLogger("ConfigLoader")
 
 class ConfigValidationError(Exception):
     """Exception raised for configuration validation errors."""
-
-    pass
 
 
 class Config:
@@ -104,7 +100,9 @@ class ConfigAssembler:
             logger.error(f"Error reading {path}: {e}")
             return {}
 
-    def _load_optional_profile(self, category: str, profile_name: str) -> Dict[str, Any]:
+    def _load_optional_profile(
+        self, category: str, profile_name: str
+    ) -> Dict[str, Any]:
         """Load a profile JSON from configs/<category>/<profile_name>.json if it exists."""
         profile_path = self.config_root / category / f"{profile_name}.json"
         if not profile_path.exists():
@@ -118,7 +116,11 @@ class ConfigAssembler:
         """Set selected kernel and align related fields in platform_specific."""
         platform = self.master_config.setdefault("platform_specific", {})
         # Convert kernel package name to kernel filename (e.g., "linux" -> "vmlinuz-linux")
-        base_kernel = kernel_name if kernel_name.startswith("vmlinuz-") else f"vmlinuz-{kernel_name}"
+        base_kernel = (
+            kernel_name
+            if kernel_name.startswith("vmlinuz-")
+            else f"vmlinuz-{kernel_name}"
+        )
         platform["base_kernel"] = base_kernel
 
         # Keep initramfs naming coherent with selected kernel.
@@ -250,9 +252,7 @@ class ConfigAssembler:
         # 1. Global manifest
         global_path = self.config_root / "global_build.json"
         if not global_path.exists():
-            raise ConfigValidationError(
-                f"Global manifest not found at {global_path}"
-            )
+            raise ConfigValidationError(f"Global manifest not found at {global_path}")
 
         self.master_config = self._load_json_file(global_path)
 
@@ -263,9 +263,7 @@ class ConfigAssembler:
             arch_data = self._load_json_file(arch_config_path)
             self._deep_merge(self.master_config, arch_data)
         else:
-            logger.warning(
-                f"No architecture-specific file found at {arch_config_path}"
-            )
+            logger.warning(f"No architecture-specific file found at {arch_config_path}")
 
         # 3. Desktop profile (if requested)
         if target_desktop:
@@ -286,7 +284,9 @@ class ConfigAssembler:
             self._apply_kernel_override(target_kernel)
 
         if target_bootloader:
-            bootloader_data = self._load_optional_profile("bootloaders", target_bootloader)
+            bootloader_data = self._load_optional_profile(
+                "bootloaders", target_bootloader
+            )
             if bootloader_data:
                 self._deep_merge(self.master_config, bootloader_data)
 
@@ -308,7 +308,9 @@ class ConfigAssembler:
                 self._deep_merge(self.master_config, services_data)
 
         if target_live_profile:
-            live_profile_data = self._load_optional_profile("live-users", target_live_profile)
+            live_profile_data = self._load_optional_profile(
+                "live-users", target_live_profile
+            )
             if live_profile_data:
                 self._deep_merge(self.master_config, live_profile_data)
 

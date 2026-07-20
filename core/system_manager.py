@@ -8,7 +8,7 @@ output and persistent audit trails.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, List
 
 from core.toolchain_manager import ToolchainManager
 
@@ -43,7 +43,7 @@ class SystemManager:
     post‑install configuration steps.
     """
 
-    def __init__(self, config: "Config", toolchain: ToolchainManager):
+    def __init__(self, config: Any, toolchain: ToolchainManager):
         """
         Initialise the SystemManager with a configuration object and a
         ToolchainManager instance.
@@ -147,7 +147,9 @@ class SystemManager:
             # collect modules and hooks based on the installed kernel packages.
             command = ["makepkg", "-c", "--components=base"]
             self.toolchain.run_command(command, chroot_path="/mnt/build-chroot")
-            self.logger.info("Initramfs generated successfully and ready for the bootloader.")
+            self.logger.info(
+                "Initramfs generated successfully and ready for the bootloader."
+            )
         except Exception as e:
             self.logger.critical(
                 f"Failed to generate initramfs on system {self.config.system.get('workdir_base')}: {type(e).__name__}: {str(e)}"

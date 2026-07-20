@@ -18,6 +18,7 @@ from typing import Optional
 
 logger = logging.getLogger("Toolchain")
 
+
 class ToolchainManager:
     def __init__(
         self,
@@ -36,7 +37,9 @@ class ToolchainManager:
         self.diagnostics_enabled = diagnostics_enabled
         self.diagnostics_log_path = diagnostics_log_path
         self.toolchain_dir = workdir_base / "build_host"
-        default_cache = self.toolchain_dir.parent.parent.parent / "cache" / "pacman" / "pkg"
+        default_cache = (
+            self.toolchain_dir.parent.parent.parent / "cache" / "pacman" / "pkg"
+        )
         self.pacman_cache_dir = pacman_cache_dir or default_cache
         self._is_ready = False
         self.use_host = True
@@ -51,7 +54,9 @@ class ToolchainManager:
         if not self.diagnostics_enabled:
             return
 
-        log_path = self.diagnostics_log_path or (self.toolchain_dir / "toolchain-debug.log")
+        log_path = self.diagnostics_log_path or (
+            self.toolchain_dir / "toolchain-debug.log"
+        )
         timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds") + "Z"
         line = f"[{timestamp}] {message}\n"
 
@@ -138,7 +143,9 @@ class ToolchainManager:
             tarball.unlink()
 
         if not tarball.exists():
-            logger.info(f"[TOOLCHAIN] Downloading Arch Linux bootstrap: {bootstrap_url}")
+            logger.info(
+                f"[TOOLCHAIN] Downloading Arch Linux bootstrap: {bootstrap_url}"
+            )
             self._diag(f"download bootstrap {bootstrap_url} -> {tarball}")
             subprocess.run(
                 ["curl", "-L", "-o", str(tarball), bootstrap_url], check=True
@@ -148,11 +155,14 @@ class ToolchainManager:
         if rootfs_dir.exists():
             # Unmount project root and other mounts first to prevent recursive deletion of host project files!
             from core.path_utils import project_root
+
             proj_root = project_root().resolve()
             chroot_proj_root = rootfs_dir / proj_root.relative_to("/")
             if chroot_proj_root.exists():
                 try:
-                    self._run_privileged(["umount", "-l", str(chroot_proj_root)], check=False)
+                    self._run_privileged(
+                        ["umount", "-l", str(chroot_proj_root)], check=False
+                    )
                 except Exception:
                     pass
 
@@ -160,7 +170,9 @@ class ToolchainManager:
                 target = rootfs_dir / mount_name
                 if target.exists():
                     try:
-                        self._run_privileged(["umount", "-R", "-l", str(target)], check=False)
+                        self._run_privileged(
+                            ["umount", "-R", "-l", str(target)], check=False
+                        )
                     except Exception:
                         pass
 
@@ -206,7 +218,9 @@ class ToolchainManager:
             custom_pacman_dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(custom_pacman_src, custom_pacman_dst)
         else:
-            self._diag(f"Custom pacman.conf not found at {custom_pacman_src}, using existing one.")
+            self._diag(
+                f"Custom pacman.conf not found at {custom_pacman_src}, using existing one."
+            )
         if host_resolv.exists():
             chroot_resolv.parent.mkdir(parents=True, exist_ok=True)
             if chroot_resolv.exists() or chroot_resolv.is_symlink():
@@ -218,7 +232,9 @@ class ToolchainManager:
         self._prepare_pacman_config()
 
         logger.info("[TOOLCHAIN] Initializing pacman-key in the build host...")
-        self._run_tool_with_retry(["pacman-key", "--init"], attempts=self.pacman_retries)
+        self._run_tool_with_retry(
+            ["pacman-key", "--init"], attempts=self.pacman_retries
+        )
         self._run_tool_with_retry(
             ["pacman-key", "--populate", "archlinux"],
             attempts=self.pacman_retries,
@@ -301,8 +317,7 @@ class ToolchainManager:
             content = (
                 "[options]\n"
                 "CacheDir = /var/cache/pacman/pkg\n\n"
-                "DisableDownloadTimeout\n\n"
-                + content
+                "DisableDownloadTimeout\n\n" + content
             )
 
         # Normalize blank lines left by directive removal.
@@ -310,7 +325,9 @@ class ToolchainManager:
         pacman_conf_path.write_text(content, encoding="utf-8")
         self._diag("pacman.conf patched: CacheDir set and CheckSpace disabled")
 
-    def _run_tool_with_retry(self, command: list, attempts: int) -> subprocess.CompletedProcess:
+    def _run_tool_with_retry(
+        self, command: list, attempts: int
+    ) -> subprocess.CompletedProcess:
         last_error: Optional[Exception] = None
         for attempt in range(1, attempts + 1):
             try:
@@ -350,7 +367,11 @@ class ToolchainManager:
         def is_mounted(path: Path) -> bool:
             try:
                 with open("/proc/mounts", "r") as f:
-                    mounted_paths = [line.split()[1] for line in f.readlines() if len(line.split()) > 1]
+                    mounted_paths = [
+                        line.split()[1]
+                        for line in f.readlines()
+                        if len(line.split()) > 1
+                    ]
                 return os.path.abspath(str(path)) in mounted_paths
             except Exception:
                 return False
@@ -365,11 +386,14 @@ class ToolchainManager:
 
         # Mount the project root directory inside the build chroot.
         from core.path_utils import project_root
+
         proj_root = project_root().resolve()
         chroot_proj_root = self.build_chroot / proj_root.relative_to("/")
         chroot_proj_root.mkdir(parents=True, exist_ok=True)
         if not is_mounted(chroot_proj_root):
-            self._run_privileged(["mount", "--bind", str(proj_root), str(chroot_proj_root)])
+            self._run_privileged(
+                ["mount", "--bind", str(proj_root), str(chroot_proj_root)]
+            )
 
         self._mounted = True
 
@@ -387,13 +411,19 @@ class ToolchainManager:
         def is_mounted(path: Path) -> bool:
             try:
                 with open("/proc/mounts", "r") as f:
-                    mounted_paths = [line.split()[1] for line in f.readlines() if len(line.split()) > 1]
+                    mounted_paths = [
+                        line.split()[1]
+                        for line in f.readlines()
+                        if len(line.split()) > 1
+                    ]
                 return os.path.abspath(str(path)) in mounted_paths
             except Exception:
                 return False
 
         if not is_mounted(chroot_cache):
-            self._run_privileged(["mount", "--bind", str(host_cache), str(chroot_cache)])
+            self._run_privileged(
+                ["mount", "--bind", str(host_cache), str(chroot_cache)]
+            )
         self._cache_mounted = True
         self._diag(f"pacman cache bind-mounted host={host_cache} chroot={chroot_cache}")
 
@@ -411,6 +441,7 @@ class ToolchainManager:
 
         # Unmount project root
         from core.path_utils import project_root
+
         proj_root = project_root().resolve()
         chroot_proj_root = self.build_chroot / proj_root.relative_to("/")
         try:
@@ -426,7 +457,9 @@ class ToolchainManager:
                 pass
         self._mounted = False
 
-    def _run_privileged(self, command: list, check: bool = True) -> subprocess.CompletedProcess:
+    def _run_privileged(
+        self, command: list, check: bool = True
+    ) -> subprocess.CompletedProcess:
         """Execute commands that require root, using sudo when needed."""
         full_command = command if os.geteuid() == 0 else ["sudo", *command]
         self._diag(f"privileged command: {' '.join(full_command)}")
@@ -510,4 +543,3 @@ class ToolchainManager:
         """Release mounts created for isolated build hosts."""
         if self.mode == "real" and not self.use_host:
             self._umount_chroot()
-

@@ -117,9 +117,13 @@ class Grub2Bootloader:
 
     def generate_embed_cfg(self, workdir: Path, dest_path: Path) -> bool:
         """Generate the grub-embed.cfg from template, applying placeholder substitutions."""
-        embed_template = resolve_from_project("configs/templates/grub/grub-embed.cfg.in")
+        embed_template = resolve_from_project(
+            "configs/templates/grub/grub-embed.cfg.in"
+        )
         if not embed_template.exists():
-            logger.warning("[GRUB2] grub-embed.cfg.in not found, skipping embed cfg generation")
+            logger.warning(
+                "[GRUB2] grub-embed.cfg.in not found, skipping embed cfg generation"
+            )
             return False
 
         content = embed_template.read_text()
@@ -160,9 +164,6 @@ class Grub2Bootloader:
         efi_binary = workdir / "EFI" / "BOOT" / efi_filename
         efi_binary.parent.mkdir(parents=True, exist_ok=True)
 
-        iso_label = self._cfg_get("system.iso_label", "ARCH-MODERN")
-        kernel_name = self._cfg_get("platform_specific.base_kernel", "vmlinuz-linux")
-        initramfs_name = self._cfg_get("platform_specific.initramfs", "initramfs-linux.img")
         arch = self._cfg_get("platform_specific.architecture", "x86_64")
 
         has_real_chroot = bool(
@@ -174,10 +175,14 @@ class Grub2Bootloader:
         if not has_real_chroot:
             # Mock mode: no isolated system available — write a zeroed placeholder FAT image
             # (32 MiB of zeros is enough for xorriso to embed it, even though it won't boot)
-            logger.info("[GRUB2] [MOCK] No real chroot — writing placeholder efiboot.img")
+            logger.info(
+                "[GRUB2] [MOCK] No real chroot — writing placeholder efiboot.img"
+            )
             efi_binary.write_bytes(b"\x00" * 512)
             efi_img_path.write_bytes(b"\x00" * (32 * 1024 * 1024))
-            logger.warning("[GRUB2] [MOCK] efiboot.img is a placeholder — build a real ISO with a live chroot")
+            logger.warning(
+                "[GRUB2] [MOCK] efiboot.img is a placeholder — build a real ISO with a live chroot"
+            )
             return True
 
         chroot = Path(chroot_path)
@@ -188,7 +193,7 @@ class Grub2Bootloader:
 
         # Subdirectories that mirror what will go into the FAT image
         (stage / "EFI" / "BOOT").mkdir(parents=True, exist_ok=True)
-        (stage / f"arch" / "boot" / arch).mkdir(parents=True, exist_ok=True)
+        (stage / "arch" / "boot" / arch).mkdir(parents=True, exist_ok=True)
         (stage / "loader" / "entries").mkdir(parents=True, exist_ok=True)
 
         # ── Step 1: Generate grub-embed.cfg and create BOOT*.EFI ─────────────
@@ -212,19 +217,25 @@ class Grub2Bootloader:
 
         try:
             cmd_grub = [
-                *chroot_cmd, str(chroot), "bash", "-c",
+                *chroot_cmd,
+                str(chroot),
+                "bash",
+                "-c",
                 f"grub-mkstandalone -O {grub_target} "
-                f"--modules=\"{grub_modules}\" "
-                f"--locales=\"en@quot\" "
-                f"--themes=\"\" "
+                f'--modules="{grub_modules}" '
+                f'--locales="en@quot" '
+                f'--themes="" '
                 f"-o {stage_rel}/EFI/BOOT/{efi_filename} "
-                f"boot/grub/grub.cfg={stage_rel}/grub-embed.cfg"
+                f"boot/grub/grub.cfg={stage_rel}/grub-embed.cfg",
             ]
             result = subprocess.run(cmd_grub, capture_output=True, timeout=180)
             if result.returncode != 0:
-                raise subprocess.CalledProcessError(result.returncode, cmd_grub,
-                                                    result.stdout, result.stderr)
-            logger.info(f"[GRUB2] {efi_filename} created via grub-mkstandalone in chroot")
+                raise subprocess.CalledProcessError(
+                    result.returncode, cmd_grub, result.stdout, result.stderr
+                )
+            logger.info(
+                f"[GRUB2] {efi_filename} created via grub-mkstandalone in chroot"
+            )
         except Exception as e:
             # Captures errors of execution (ex: command inexistente, permissão negada em tempo real)
             error_output = f"Failed to execute the command '{cmd_grub[0]}'. Error:\n{e}"
@@ -244,7 +255,9 @@ class Grub2Bootloader:
         loader_src = workdir / "loader"
         if loader_src.exists():
             if (loader_src / "loader.conf").exists():
-                shutil.copy2(loader_src / "loader.conf", stage / "loader" / "loader.conf")
+                shutil.copy2(
+                    loader_src / "loader.conf", stage / "loader" / "loader.conf"
+                )
             entries_src = loader_src / "entries"
             if entries_src.exists():
                 for entry in entries_src.glob("*"):
@@ -260,23 +273,37 @@ class Grub2Bootloader:
         grub_themes_src = workdir / "boot" / "grub" / "themes"
         if grub_themes_src.exists():
             try:
-                shutil.copytree(grub_themes_src, stage / "boot" / "grub" / "themes", dirs_exist_ok=True)
-                logger.info(f"[GRUB2] Copied GRUB themes into efiboot stage: {grub_themes_src}")
+                shutil.copytree(
+                    grub_themes_src,
+                    stage / "boot" / "grub" / "themes",
+                    dirs_exist_ok=True,
+                )
+                logger.info(
+                    f"[GRUB2] Copied GRUB themes into efiboot stage: {grub_themes_src}"
+                )
             except Exception as e:
-                logger.warning(f"[GRUB2] Failed to copy GRUB themes into efiboot stage: {e}")
+                logger.warning(
+                    f"[GRUB2] Failed to copy GRUB themes into efiboot stage: {e}"
+                )
 
         grub_fonts_src = workdir / "boot" / "grub" / "fonts"
         if grub_fonts_src.exists():
             try:
-                shutil.copytree(grub_fonts_src, stage / "boot" / "grub" / "fonts", dirs_exist_ok=True)
-                logger.info(f"[GRUB2] Copied GRUB fonts into efiboot stage: {grub_fonts_src}")
+                shutil.copytree(
+                    grub_fonts_src,
+                    stage / "boot" / "grub" / "fonts",
+                    dirs_exist_ok=True,
+                )
+                logger.info(
+                    f"[GRUB2] Copied GRUB fonts into efiboot stage: {grub_fonts_src}"
+                )
             except Exception as e:
-                logger.warning(f"[GRUB2] Failed to copy GRUB fonts into efiboot stage: {e}")
+                logger.warning(
+                    f"[GRUB2] Failed to copy GRUB fonts into efiboot stage: {e}"
+                )
 
         # ── Step 3: Calculate FAT image size and build it inside the chroot ────
-        total_bytes = sum(
-            f.stat().st_size for f in stage.rglob("*") if f.is_file()
-        )
+        total_bytes = sum(f.stat().st_size for f in stage.rglob("*") if f.is_file())
         size_mib = max(64, (total_bytes // (1024 * 1024)) + 16)
 
         efi_img_chroot = "/tmp/efiboot.img"  # path inside the chroot
@@ -326,10 +353,14 @@ class Grub2Bootloader:
                     for i in range(1, len(parts) + 1):
                         dirs_to_create.add("::/" + "/".join(parts[:i]))
             # Also ensure base dirs exist even if empty
-            dirs_to_create.update([
-                "::/boot", "::/boot/grub",
-                "::/boot/grub/themes", "::/boot/grub/fonts",
-            ])
+            dirs_to_create.update(
+                [
+                    "::/boot",
+                    "::/boot/grub",
+                    "::/boot/grub/themes",
+                    "::/boot/grub/fonts",
+                ]
+            )
             # Sort by depth so parent dirs are created before children
             sorted_dirs = sorted(dirs_to_create, key=lambda d: (d.count("/"), d))
             fat_cmds.append(f"mmd -i {efi_img_chroot} {' '.join(sorted_dirs)}")
@@ -348,12 +379,13 @@ class Grub2Bootloader:
             cmd_fat = [*chroot_cmd, str(chroot), "bash", "-c", " && ".join(fat_cmds)]
             result = subprocess.run(cmd_fat, capture_output=True, timeout=300)
             if result.returncode != 0:
-                stderr_text = result.stderr.decode(errors="replace")
                 raise subprocess.CalledProcessError(
                     result.returncode, cmd_fat, result.stdout, result.stderr
                 )
             shutil.copy2(efi_img_host, efi_img_path)
-            logger.info(f"[GRUB2] efiboot.img created ({size_mib} MiB) via chroot mtools: {efi_img_path}")
+            logger.info(
+                f"[GRUB2] efiboot.img created ({size_mib} MiB) via chroot mtools: {efi_img_path}"
+            )
             return True
 
         except subprocess.CalledProcessError as e:
@@ -362,7 +394,9 @@ class Grub2Bootloader:
             logger.error(error_output)
             raise Grub2BootloaderError(error_output)
         except Exception as e:
-            raise Grub2BootloaderError(f"Unexpected error during efiboot.img creation: {type(e).__name__}: {str(e)}")
+            raise Grub2BootloaderError(
+                f"Unexpected error during efiboot.img creation: {type(e).__name__}: {str(e)}"
+            )
         finally:
             # Clean up staging area and tmp img inside chroot
             shutil.rmtree(stage, ignore_errors=True)
