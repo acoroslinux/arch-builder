@@ -49,6 +49,10 @@
       {
         "source": "desktops/xfce/etc/skel",
         "destination": "/etc/skel"
+      },
+      {
+        "source": "desktops/xfce/etc/xdg",
+        "destination": "/etc/xdg"
       }
     ]
   }
