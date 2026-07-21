@@ -87,6 +87,9 @@
         "name": "grub"
       },
       {
+        "name": "syslinux"
+      },
+      {
         "name": "efibootmgr"
       },
       {
