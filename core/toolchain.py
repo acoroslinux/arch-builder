@@ -212,7 +212,7 @@ class ToolchainManager:
         host_resolv = Path("/etc/resolv.conf")
         chroot_resolv = self.build_chroot / "etc" / "resolv.conf"
         # Ensure the custom pacman.conf is present inside the build chroot before any pacman operations.
-        custom_pacman_src = Path("configs/custom_files/common/etc/pacman.conf")
+        custom_pacman_src = Path("configs/custom_files/etc/pacman.conf")
         custom_pacman_dst = self.build_chroot / "etc" / "pacman.conf"
         if custom_pacman_src.exists():
             custom_pacman_dst.parent.mkdir(parents=True, exist_ok=True)

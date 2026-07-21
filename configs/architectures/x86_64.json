@@ -162,12 +162,12 @@
     ],
     "files": [
       {
-        "src": "configs/custom_files/common/etc/vconsole.conf",
+        "src": "configs/custom_files/etc/vconsole.conf",
         "dest": "/etc/vconsole.conf",
         "mode": "0644"
       },
       {
-        "src": "configs/custom_files/common/etc/sudoers.d/99-live-user",
+        "src": "configs/custom_files/sudoers.d/99-live-user",
         "dest": "/etc/sudoers.d/99-live-user",
         "mode": "0440"
       }

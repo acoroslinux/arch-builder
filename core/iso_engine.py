@@ -588,11 +588,17 @@ class ArchEngine(BaseEngine):
 
             # Copy themes and fonts directories for GRUB theme support
             grub_themes_src = source_boot / "grub" / "themes"
+            alt_themes_src = effective_root / "usr" / "share" / "grub" / "themes"
             if grub_themes_src.exists():
                 shutil.copytree(
                     grub_themes_src, iso_boot / "grub" / "themes", dirs_exist_ok=True
                 )
-                self.logger.info("[boot] Copied GRUB themes")
+                self.logger.info("[boot] Copied GRUB themes from boot")
+            elif alt_themes_src.exists():
+                shutil.copytree(
+                    alt_themes_src, iso_boot / "grub" / "themes", dirs_exist_ok=True
+                )
+                self.logger.info("[boot] Copied GRUB themes from /usr/share/grub")
 
             # Ensure the unicode font is present on the ISO for graphical terminal menu rendering
             iso_fonts_dir = iso_boot / "grub" / "fonts"

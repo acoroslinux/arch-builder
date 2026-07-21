@@ -191,7 +191,7 @@ class ChrootBuilder:
 
         # 3. Copy custom files – ensure pacman.conf is in place first
         pacman_rule = {
-            "src": "configs/custom_files/common/etc/pacman.conf",
+            "src": "configs/custom_files/etc/pacman.conf",
             "dest": "/etc/pacman.conf",
             "type": "file",
         }
