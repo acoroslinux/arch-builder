@@ -293,6 +293,25 @@ def main():
     try:
         result_iso = orchestrator.run_build(output_name)
         print(f"\n✅ Success! ISO created at: {result_iso}")
+        if result_iso and Path(result_iso).exists():
+            import hashlib
+            print("🔒 Generating ISO Verification Checksums...")
+            sha256_hash = hashlib.sha256()
+            md5_hash = hashlib.md5()
+            with open(result_iso, "rb") as f:
+                for chunk in iter(lambda: f.read(65536), b""):
+                    sha256_hash.update(chunk)
+                    md5_hash.update(chunk)
+            sha256_val = sha256_hash.hexdigest()
+            md5_val = md5_hash.hexdigest()
+
+            sha256_file = Path(str(result_iso) + ".sha256")
+            md5_file = Path(str(result_iso) + ".md5")
+            sha256_file.write_text(f"{sha256_val}  {Path(result_iso).name}\n")
+            md5_file.write_text(f"{md5_val}  {Path(result_iso).name}\n")
+
+            print(f"   SHA256: {sha256_val} -> {sha256_file.name}")
+            print(f"   MD5:    {md5_val} -> {md5_file.name}")
     except BuildOrchestratorError as e:
         print(f"\n❌ Build Orchestration Error: {e}")
         sys.exit(1)

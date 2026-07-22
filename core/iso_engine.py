@@ -513,7 +513,9 @@ class ArchEngine(BaseEngine):
                 └── x86_64/
                     └── airootfs.sfs    # Squashfs root filesystem
         """
-        effective_root = Path(mountpoint).parent
+        mp = Path(mountpoint)
+        # If mountpoint is a boot directory (ends with "boot"), effective_root is its parent
+        effective_root = mp.parent if mp.name == "boot" else mp
 
         # --- Generate ISO UUID (matches mkarchiso: TZ=UTC date +%F-%H-%M-%S-00) ---
         # mkarchiso creates /boot/<iso_uuid>.uuid on the ISO so the archiso hook
@@ -826,14 +828,7 @@ class ArchEngine(BaseEngine):
         self.logger.info("[cleanup] Cleaning up airootfs before squashing...")
         import shutil
 
-        # Delete all files in /boot
-        boot_dir = airootfs / "boot"
-        if boot_dir.exists():
-            for item in boot_dir.iterdir():
-                if item.is_file():
-                    item.unlink(missing_ok=True)
-                elif item.is_dir():
-                    shutil.rmtree(item, ignore_errors=True)
+        # Clean pacman databases, cache, and sync data (do not wipe /boot to keep generated configs)
 
         # Delete pacman databases, cache, and sync data
         pacman_lib = airootfs / "var" / "lib" / "pacman"

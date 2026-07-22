@@ -95,21 +95,20 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">shutil</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">from</span> <span class="nn">core.chroot_manager</span> <span class="kn">import</span> <span class="n">ChrootError</span><span class="p">,</span> <span class="n">ChrootManager</span>
-<span class="kn">from</span> <span class="nn">core.path_utils</span> <span class="kn">import</span> <span class="n">project_root</span><span class="p">,</span> <span class="n">resolve_from_base</span><span class="p">,</span> <span class="n">resolve_from_project</span>
+<span class="kn">from</span> <span class="nn">core.chroot_manager</span> <span class="kn">import</span> <span class="n">ChrootManager</span>
+<span class="kn">from</span> <span class="nn">core.path_utils</span> <span class="kn">import</span> <span class="n">project_root</span><span class="p">,</span> <span class="n">resolve_from_project</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;SystemConfigurator&quot;</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="ConfigError">
 <a class="viewcode-back" href="../../api.html#core.customizer.ConfigError">[docs]</a>
 <span class="k">class</span> <span class="nc">ConfigError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception raised for system configuration errors.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception raised for system configuration errors.&quot;&quot;&quot;</span></div>
 
-    <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="SystemAction">
@@ -123,140 +122,6 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 </div>
 
-
-<div class="viewcode-block" id="OverlayAction">
-<a class="viewcode-back" href="../../api.html#core.customizer.OverlayAction">[docs]</a>
-<span class="k">class</span> <span class="nc">OverlayAction</span><span class="p">(</span><span class="n">SystemAction</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Copy a full overlay directory onto the chroot (like airootfs).&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">overlay_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">overlay_dir</span> <span class="o">=</span> <span class="n">overlay_dir</span>
-
-<div class="viewcode-block" id="OverlayAction.execute">
-<a class="viewcode-back" href="../../api.html#core.customizer.OverlayAction.execute">[docs]</a>
-    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">ChrootManager</span><span class="p">,</span> <span class="n">source_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
-        <span class="n">overlay_path</span> <span class="o">=</span> <span class="n">resolve_from_base</span><span class="p">(</span><span class="n">source_base</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">overlay_dir</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">overlay_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;[Overlay] Overlay directory not found: </span><span class="si">{</span><span class="n">overlay_path</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
-            <span class="k">return</span>
-
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Overlay] Applying overlay from </span><span class="si">{</span><span class="n">overlay_path</span><span class="si">}</span><span class="s2"> to rootfs...&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
-            <span class="c1"># Use cp or rsync from the toolchain to copy the overlay.</span>
-            <span class="n">chroot_path</span> <span class="o">=</span> <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span>
-            <span class="c1"># To copy the directory contents, overlay_path/* would be enough,</span>
-            <span class="c1"># but cp -a behaves poorly with an empty wildcard, so rsync or cp -aT is safer.</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="c1"># Ideally this would use shutil.copytree locally when possible,</span>
-                <span class="c1"># or defer to the chroot manager / toolchain.</span>
-                <span class="kn">import</span> <span class="nn">subprocess</span>
-                <span class="kn">import</span> <span class="nn">os</span>
-
-                <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cp&quot;</span><span class="p">,</span> <span class="s2">&quot;-aT&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">overlay_path</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_path</span><span class="p">)]</span>
-                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">geteuid</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sudo&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">cmd</span>
-
-                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                
-                <span class="c1"># Fix ownership of copied system directories to be owned by root (0:0)</span>
-                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;chown -R 0:0 /etc 2&gt;/dev/null || true&quot;</span><span class="p">)</span>
-                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;chown -R 0:0 /usr 2&gt;/dev/null || true&quot;</span><span class="p">)</span>
-                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;chown -R 0:0 /boot 2&gt;/dev/null || true&quot;</span><span class="p">)</span>
-                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;chown -R 0:0 /opt 2&gt;/dev/null || true&quot;</span><span class="p">)</span>
-                
-                <span class="c1"># Fix directory permissions to 755 (rwxr-xr-x) to avoid pacman warnings</span>
-                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;find /etc /usr /boot /opt -type d -exec chmod 755 </span><span class="si">{}</span><span class="s2"> + 2&gt;/dev/null || true&quot;</span><span class="p">)</span>
-                
-                <span class="c1"># Ensure sudo has the correct setuid permissions</span>
-                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="s2">&quot;chmod 4755 /usr/bin/sudo 2&gt;/dev/null || true&quot;</span><span class="p">)</span>
-
-                <span class="c1"># Dynamically patch architecture in Calamares unpackfs.conf if present in the target rootfs</span>
-                <span class="n">unpackfs_path</span> <span class="o">=</span> <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;etc&quot;</span> <span class="o">/</span> <span class="s2">&quot;calamares&quot;</span> <span class="o">/</span> <span class="s2">&quot;modules&quot;</span> <span class="o">/</span> <span class="s2">&quot;unpackfs.conf&quot;</span>
-                <span class="k">if</span> <span class="n">unpackfs_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-                    <span class="k">try</span><span class="p">:</span>
-                        <span class="n">content</span> <span class="o">=</span> <span class="n">unpackfs_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="s2">&quot;/x86_64/&quot;</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
-                            <span class="n">new_content</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;/x86_64/&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">chroot</span><span class="o">.</span><span class="n">arch</span><span class="si">}</span><span class="s2">/&quot;</span><span class="p">)</span>
-                            <span class="n">unpackfs_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">new_content</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Overlay] Patched Calamares unpackfs.conf source path to use target architecture: </span><span class="si">{</span><span class="n">chroot</span><span class="o">.</span><span class="n">arch</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">patch_err</span><span class="p">:</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Overlay] Failed to patch Calamares unpackfs.conf: </span><span class="si">{</span><span class="n">patch_err</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Overlay] Failed to copy overlay: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] Simulated overlay: cp -aT </span><span class="si">{</span><span class="n">overlay_path</span><span class="si">}</span><span class="s2"> /&quot;</span><span class="p">)</span></div>
-</div>
-
-
-<div class="viewcode-block" id="FileAction">
-<a class="viewcode-back" href="../../api.html#core.customizer.FileAction">[docs]</a>
-<span class="k">class</span> <span class="nc">FileAction</span><span class="p">(</span><span class="n">SystemAction</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Copy one file from a source path to a destination inside the chroot.&quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">src</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">dest</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">src</span> <span class="o">=</span> <span class="n">src</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dest</span> <span class="o">=</span> <span class="n">dest</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
-
-<div class="viewcode-block" id="FileAction.execute">
-<a class="viewcode-back" href="../../api.html#core.customizer.FileAction.execute">[docs]</a>
-    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">ChrootManager</span><span class="p">,</span> <span class="n">source_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
-        <span class="n">src_full</span> <span class="o">=</span> <span class="n">resolve_from_base</span><span class="p">(</span><span class="n">source_base</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src</span><span class="p">)</span>
-        <span class="n">dest_full</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">src_full</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Config] Source not found: </span><span class="si">{</span><span class="n">src_full</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">return</span>
-
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [File] </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">src</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
-            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mkdir -p </span><span class="si">{</span><span class="n">dest_full</span><span class="o">.</span><span class="n">parent</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="c1"># For scripts, avoid routing through the toolchain because files may live outside it.</span>
-            <span class="c1"># Copy them into place and then adjust permissions.</span>
-            <span class="n">host_dest</span> <span class="o">=</span> <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
-            
-            <span class="kn">import</span> <span class="nn">os</span>
-            <span class="kn">import</span> <span class="nn">subprocess</span>
-            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">geteuid</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;sudo&quot;</span><span class="p">,</span> <span class="s2">&quot;mkdir&quot;</span><span class="p">,</span> <span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">host_dest</span><span class="o">.</span><span class="n">parent</span><span class="p">)],</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;sudo&quot;</span><span class="p">,</span> <span class="s2">&quot;cp&quot;</span><span class="p">,</span> <span class="s2">&quot;-a&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">src_full</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">host_dest</span><span class="p">)],</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">host_dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">src_full</span><span class="p">,</span> <span class="n">host_dest</span><span class="p">)</span>
-
-            <span class="c1"># Ensure the copied file is owned by root if inside system paths</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">&quot;/etc/&quot;</span><span class="p">,</span> <span class="s2">&quot;/usr/&quot;</span><span class="p">,</span> <span class="s2">&quot;/boot/&quot;</span><span class="p">)):</span>
-                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;chown 0:0 </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">:</span>
-                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;chmod </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Mirror to existing users home directories if destination is in /etc/skel/</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/etc/skel/&quot;</span><span class="p">):</span>
-                <span class="n">relative_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="s2">&quot;/etc/skel/&quot;</span><span class="p">):]</span>
-                <span class="n">chroot_home</span> <span class="o">=</span> <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;home&quot;</span>
-                <span class="k">if</span> <span class="n">chroot_home</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-                    <span class="k">for</span> <span class="n">user_dir</span> <span class="ow">in</span> <span class="n">chroot_home</span><span class="o">.</span><span class="n">iterdir</span><span class="p">():</span>
-                        <span class="k">if</span> <span class="n">user_dir</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="n">user_dir</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;lost+found&quot;</span><span class="p">,</span> <span class="s2">&quot;aurbuilder&quot;</span><span class="p">]:</span>
-                            <span class="n">user_dest</span> <span class="o">=</span> <span class="n">user_dir</span> <span class="o">/</span> <span class="n">relative_path</span>
-                            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">geteuid</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;sudo&quot;</span><span class="p">,</span> <span class="s2">&quot;mkdir&quot;</span><span class="p">,</span> <span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">user_dest</span><span class="o">.</span><span class="n">parent</span><span class="p">)],</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;sudo&quot;</span><span class="p">,</span> <span class="s2">&quot;cp&quot;</span><span class="p">,</span> <span class="s2">&quot;-a&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">src_full</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">user_dest</span><span class="p">)],</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                            <span class="k">else</span><span class="p">:</span>
-                                <span class="n">user_dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                                <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">src_full</span><span class="p">,</span> <span class="n">user_dest</span><span class="p">)</span>
-                            
-                            <span class="c1"># Set correct ownership for the user home subdirectory</span>
-                            <span class="n">first_subpart</span> <span class="o">=</span> <span class="n">relative_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-                            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;chown -R </span><span class="si">{</span><span class="n">user_dir</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">user_dir</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> /home/</span><span class="si">{</span><span class="n">user_dir</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">first_subpart</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">:</span>
-                                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;chmod </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2"> /home/</span><span class="si">{</span><span class="n">user_dir</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">relative_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] Virtual copy from </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">src</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
-</div>
 
 
 <div class="viewcode-block" id="CommandAction">
@@ -277,6 +142,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] Simulated command: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">command</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
+
 
 
 <div class="viewcode-block" id="UserAction">
@@ -302,12 +168,16 @@
         <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
             <span class="c1"># Create groups if needed. groupadd can handle some cases, but we keep it simple.</span>
             <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span><span class="p">:</span>
-                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;getent group </span><span class="si">{</span><span class="n">group</span><span class="si">}</span><span class="s2"> &gt;/dev/null 2&gt;&amp;1 || groupadd </span><span class="si">{</span><span class="n">group</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;getent group </span><span class="si">{</span><span class="n">group</span><span class="si">}</span><span class="s2"> &gt;/dev/null 2&gt;&amp;1 || groupadd </span><span class="si">{</span><span class="n">group</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
 
             <span class="n">groups_str</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">groups</span><span class="p">)</span>
 
             <span class="c1"># Create the user if not exists, otherwise update groups</span>
-            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;id -u </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> &gt;/dev/null 2&gt;&amp;1 || useradd -m -s /bin/bash </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;id -u </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> &gt;/dev/null 2&gt;&amp;1 || useradd -m -s /bin/bash </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">groups_str</span><span class="p">:</span>
                 <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;usermod -G </span><span class="si">{</span><span class="n">groups_str</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -327,6 +197,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] Create user: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> (groups: </span><span class="si">{</span><span class="n">groups</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
 </div>
+
 
 
 <div class="viewcode-block" id="ServiceAction">
@@ -353,6 +224,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] systemctl enable </span><span class="si">{</span><span class="n">srv</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
+
 
 
 <div class="viewcode-block" id="MkinitcpioAction">
@@ -393,6 +265,51 @@
 </div>
 
 
+
+<div class="viewcode-block" id="FileAction">
+<a class="viewcode-back" href="../../api.html#core.customizer.FileAction">[docs]</a>
+<span class="k">class</span> <span class="nc">FileAction</span><span class="p">(</span><span class="n">SystemAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Copy an individual file from source_base to target destination in rootfs.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_rule</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">src</span> <span class="o">=</span> <span class="n">file_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">file_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dest</span> <span class="o">=</span> <span class="n">file_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">file_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">file_rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FileAction.execute">
+<a class="viewcode-back" href="../../api.html#core.customizer.FileAction.execute">[docs]</a>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">ChrootManager</span><span class="p">,</span> <span class="n">source_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">src</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [File] Copying file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">src</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">src_path</span> <span class="o">=</span> <span class="n">source_base</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">src</span>
+        <span class="n">dest_path</span> <span class="o">=</span> <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">src_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [File] Source file does not exist: </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="n">dest_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="kn">import</span> <span class="nn">shutil</span>
+            <span class="kn">import</span> <span class="nn">os</span>
+            <span class="kn">import</span> <span class="nn">subprocess</span>
+
+            <span class="n">cmd_copy</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cp&quot;</span><span class="p">,</span> <span class="s2">&quot;-a&quot;</span><span class="p">,</span> <span class="s2">&quot;--no-preserve=ownership&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">src_path</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">dest_path</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">geteuid</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;sudo&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">cmd_copy</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd_copy</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">:</span>
+                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;chmod </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2"> &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] Copy file </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">dest_path</span><span class="si">}</span><span class="s2"> (mode: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="LocaleAction">
 <a class="viewcode-back" href="../../api.html#core.customizer.LocaleAction">[docs]</a>
 <span class="k">class</span> <span class="nc">LocaleAction</span><span class="p">(</span><span class="n">SystemAction</span><span class="p">):</span>
@@ -430,6 +347,106 @@
 </div>
 
 
+
+<div class="viewcode-block" id="StructuredCopyAction">
+<a class="viewcode-back" href="../../api.html#core.customizer.StructuredCopyAction">[docs]</a>
+<span class="k">class</span> <span class="nc">StructuredCopyAction</span><span class="p">(</span><span class="n">SystemAction</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Configures structured copy of files from custom_files to rootfs.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">customizations_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">copy_files_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
+        <span class="n">architecture</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">customizations_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">customizations_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copy_files_list</span> <span class="o">=</span> <span class="n">copy_files_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">architecture</span> <span class="o">=</span> <span class="n">architecture</span>
+
+<div class="viewcode-block" id="StructuredCopyAction.execute">
+<a class="viewcode-back" href="../../api.html#core.customizer.StructuredCopyAction.execute">[docs]</a>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">:</span> <span class="n">ChrootManager</span><span class="p">,</span> <span class="n">source_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;  [StructuredCopy] Copying </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">copy_files_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> structured files to rootfs...&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">is_arm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">architecture</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s2">&quot;aarch64&quot;</span><span class="p">,</span> <span class="s2">&quot;arm&quot;</span><span class="p">))</span>
+
+        <span class="c1"># Resolve python version in chroot if {python_version} is present in destinations</span>
+        <span class="n">py_ver</span> <span class="o">=</span> <span class="s2">&quot;3.12&quot;</span>
+        <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
+            <span class="n">python_dirs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;usr/lib/python3.*&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">python_dirs</span><span class="p">:</span>
+                <span class="n">py_ver</span> <span class="o">=</span> <span class="n">python_dirs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;python&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">copy_files_list</span><span class="p">:</span>
+            <span class="n">src_rel</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">)</span>
+            <span class="n">dest_rel</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;destination&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">src_rel</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">dest_rel</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Apply conditional architecture filters as described in the comments</span>
+            <span class="k">if</span> <span class="n">is_arm</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s2">&quot;grub/themes&quot;</span> <span class="ow">in</span> <span class="n">src_rel</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;  [StructuredCopy] Skipping </span><span class="si">{</span><span class="n">src_rel</span><span class="si">}</span><span class="s2"> (not copied on ARM architecture)&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
+            <span class="c1"># Format destinations that contain python_version</span>
+            <span class="n">dest_rel</span> <span class="o">=</span> <span class="n">dest_rel</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">python_version</span><span class="o">=</span><span class="n">py_ver</span><span class="p">)</span>
+
+            <span class="n">src_path</span> <span class="o">=</span> <span class="n">source_base</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">customizations_path</span> <span class="o">/</span> <span class="n">src_rel</span>
+            <span class="n">dest_path</span> <span class="o">=</span> <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="n">dest_rel</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [StructuredCopy] Copying: </span><span class="si">{</span><span class="n">src_rel</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">dest_rel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">src_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;  [StructuredCopy] Source path does not exist: </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">continue</span>
+
+                <span class="kn">import</span> <span class="nn">os</span>
+                <span class="kn">import</span> <span class="nn">subprocess</span>
+
+                <span class="c1"># Ensure destination parent directory exists</span>
+                <span class="n">dest_dir</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">dest_path</span>
+                    <span class="k">if</span> <span class="n">src_path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dest_rel</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">src_path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="n">dest_path</span><span class="o">.</span><span class="n">parent</span>
+                <span class="p">)</span>
+                <span class="n">dest_dir_in_chroot</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="n">dest_dir</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span>
+                    <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span>
+                <span class="p">)</span>
+
+                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mkdir -p </span><span class="si">{</span><span class="n">dest_dir_in_chroot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Copy file/directory preserving all attributes except ownership and merging contents (-T)</span>
+                <span class="n">cmd_copy</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="s2">&quot;cp&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;-a&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;--no-preserve=ownership&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;-T&quot;</span><span class="p">,</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">src_path</span><span class="p">),</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">dest_path</span><span class="p">),</span>
+                <span class="p">]</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">geteuid</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;sudo&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">cmd_copy</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd_copy</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;  [StructuredCopy] Failed to copy </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">dest_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] Copy </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">dest_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="SystemConfigurator">
 <a class="viewcode-back" href="../../api.html#core.customizer.SystemConfigurator">[docs]</a>
 <span class="k">class</span> <span class="nc">SystemConfigurator</span><span class="p">:</span>
@@ -449,6 +466,7 @@
 <span class="sd">        Load actions from the Config object, which already contains merged data</span>
 <span class="sd">        from global_build.json, architecture.json, and other sources.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="c1"># Retrieve the customization block.</span>
         <span class="c1"># It may live under system_config or customizations.</span>
         <span class="k">def</span> <span class="nf">_safe_get</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
@@ -466,21 +484,6 @@
             <span class="n">sys_config</span> <span class="o">=</span> <span class="n">_safe_get</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;system_config&quot;</span><span class="p">,</span> <span class="p">{})</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span>
-
-        <span class="c1"># 1. Overlay</span>
-        <span class="n">overlay_dir</span> <span class="o">=</span> <span class="n">cust_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overlay_dir&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overlay_dir&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">overlay_dir</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">OverlayAction</span><span class="p">(</span><span class="n">overlay_dir</span><span class="p">))</span>
-
-        <span class="c1"># 2. Standalone files (less common when overlay is used; moved earlier to populate skel before useradd)</span>
-        <span class="n">files</span> <span class="o">=</span> <span class="n">cust_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="p">[])</span>
-        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;get&quot;</span><span class="p">):</span>
-                <span class="n">src</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">)</span>
-                <span class="n">dest</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest&quot;</span><span class="p">)</span>
-                <span class="n">mode</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">src</span> <span class="ow">and</span> <span class="n">dest</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">FileAction</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">mode</span><span class="p">))</span>
 
         <span class="c1"># 3. Locale / hostname</span>
         <span class="k">if</span> <span class="n">cust_config</span><span class="p">:</span>
@@ -519,7 +522,61 @@
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">initramfs</span><span class="p">,</span> <span class="s2">&quot;_data&quot;</span><span class="p">):</span>
                 <span class="n">initramfs</span> <span class="o">=</span> <span class="n">initramfs</span><span class="o">.</span><span class="n">_data</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">initramfs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MkinitcpioAction</span><span class="p">(</span><span class="n">initramfs</span><span class="p">))</span></div>
+                <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MkinitcpioAction</span><span class="p">(</span><span class="n">initramfs</span><span class="p">))</span>
+
+        <span class="c1"># 7b. Explicit files (system_config.files / customizations.files)</span>
+        <span class="n">files_list</span> <span class="o">=</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="n">cust_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">for</span> <span class="n">f_rule</span> <span class="ow">in</span> <span class="n">files_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">f_rule</span><span class="p">,</span> <span class="s2">&quot;_data&quot;</span><span class="p">):</span>
+                <span class="n">f_rule</span> <span class="o">=</span> <span class="n">f_rule</span><span class="o">.</span><span class="n">_data</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f_rule</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">FileAction</span><span class="p">(</span><span class="n">f_rule</span><span class="p">))</span>
+
+        <span class="c1"># 8. Structured Copy (Desktop-environment file copying)</span>
+        <span class="n">desktop_env</span> <span class="o">=</span> <span class="n">_safe_get</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;desktop_environment&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">desktop_env</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">desktop_env</span><span class="p">,</span> <span class="s2">&quot;_data&quot;</span><span class="p">):</span>
+                <span class="n">desktop_env</span> <span class="o">=</span> <span class="n">desktop_env</span><span class="o">.</span><span class="n">_data</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">desktop_env</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">custom_path</span> <span class="o">=</span> <span class="n">desktop_env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s2">&quot;customizations_path&quot;</span><span class="p">,</span> <span class="s2">&quot;configs/custom_files/&quot;</span>
+                <span class="p">)</span>
+                <span class="n">use_common</span> <span class="o">=</span> <span class="n">desktop_env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_common_config&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+                <span class="n">copy_files</span> <span class="o">=</span> <span class="n">desktop_env</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;copy_files&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]</span>
+
+                <span class="n">final_copy_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">if</span> <span class="n">use_common</span><span class="p">:</span>
+                    <span class="n">base_custom_path</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span>
+                        <span class="s2">&quot;configs/base_customizations.json&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">base_custom_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="kn">import</span> <span class="nn">json</span>
+
+                            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">base_custom_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                                <span class="n">base_data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                            <span class="n">base_list</span> <span class="o">=</span> <span class="n">base_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;base_copy_files&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                            <span class="n">final_copy_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">base_list</span><span class="p">)</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">base_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> common copy entries from base_customizations.json&quot;</span>
+                            <span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s2">&quot;Failed to load/parse configs/base_customizations.json: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                            <span class="p">)</span>
+
+                <span class="c1"># Add desktop specific copy_files</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">copy_files</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;_data&quot;</span><span class="p">):</span>
+                        <span class="n">item</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">_data</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="n">final_copy_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">final_copy_list</span><span class="p">:</span>
+                    <span class="n">arch</span> <span class="o">=</span> <span class="n">_safe_get</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;platform_specific.architecture&quot;</span><span class="p">,</span> <span class="s2">&quot;x86_64&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="n">StructuredCopyAction</span><span class="p">(</span><span class="n">custom_path</span><span class="p">,</span> <span class="n">final_copy_list</span><span class="p">,</span> <span class="n">arch</span><span class="p">)</span>
+                    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SystemConfigurator.apply">
@@ -538,16 +595,13 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No pending system configuration actions to apply.&quot;</span><span class="p">)</span>
             <span class="k">return</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Applying </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">)</span><span class="si">}</span><span class="s2"> system configuration actions...&quot;</span>
-        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Applying </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">)</span><span class="si">}</span><span class="s2"> system configuration actions...&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">action</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chroot</span><span class="p">,</span> <span class="n">source_base_dir</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to execute configuration action: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
-
 
 </pre></div>
 

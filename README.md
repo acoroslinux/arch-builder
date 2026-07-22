@@ -20,7 +20,9 @@ The project supports two execution modes:
 ## Highlights
 
 - Profile-driven builds for architecture, desktop, kernel, bootloader, packages, services, and live-user presets.
-- Real isolated build-host bootstrap for running on non-Arch Linux distributions.
+- Calamares offline graphic installer profile (`calamares-installer`).
+- Real isolated build-host bootstrap for running on non-Arch Linux distributions with parallel pacman downloads.
+- Automatic SHA256 and MD5 verification checksum generation (`.sha256` and `.md5`).
 - Workspace-local build tree and reusable pacman cache.
 - Dynamic output naming based on desktop and architecture.
 - Test suite covering configuration assembly and real-like orchestration behavior.

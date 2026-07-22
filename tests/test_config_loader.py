@@ -90,9 +90,9 @@ class TestGlobalConfigLoader(unittest.TestCase):
         user_names = [u.get("name") for u in users if isinstance(u, dict)]
         self.assertIn("live", user_names)
 
-        file_rules = config.get("system_config.files", [])
-        copied_dests = [r.get("dest") for r in file_rules if isinstance(r, dict)]
-        self.assertIn("/etc/lightdm/lightdm.conf", copied_dests)
+        copy_files = config.get("desktop_environment.copy_files", [])
+        copied_dests = [r.get("destination") for r in copy_files if isinstance(r, dict)]
+        self.assertIn("/etc/lightdm", copied_dests)
 
     def test_live_user_and_groups_override_updates_autologin_commands(self):
         assembler = ConfigAssembler("configs")

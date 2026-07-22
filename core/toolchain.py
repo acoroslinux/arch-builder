@@ -310,13 +310,15 @@ class ToolchainManager:
         if "[options]" in content:
             content = content.replace(
                 "[options]",
-                "[options]\nCacheDir = /var/cache/pacman/pkg\nDisableDownloadTimeout",
+                "[options]\nCacheDir = /var/cache/pacman/pkg\nParallelDownloads = 5\nILoveCandy\nDisableDownloadTimeout",
                 1,
             )
         else:
             content = (
                 "[options]\n"
-                "CacheDir = /var/cache/pacman/pkg\n\n"
+                "CacheDir = /var/cache/pacman/pkg\n"
+                "ParallelDownloads = 5\n"
+                "ILoveCandy\n"
                 "DisableDownloadTimeout\n\n" + content
             )
 

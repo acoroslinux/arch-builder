@@ -145,6 +145,44 @@ class MkinitcpioAction(SystemAction):
             )
 
 
+class FileAction(SystemAction):
+    """Copy an individual file from source_base to target destination in rootfs."""
+
+    def __init__(self, file_rule: Dict[str, Any]):
+        self.src = file_rule.get("src") or file_rule.get("source")
+        self.dest = file_rule.get("dest") or file_rule.get("destination")
+        self.mode = file_rule.get("mode")
+
+    def execute(self, chroot: ChrootManager, source_base: Path):
+        if not self.src or not self.dest:
+            return
+
+        logger.info(f"  [File] Copying file: {self.src} -> {self.dest}")
+        src_path = source_base / self.src
+        dest_path = chroot.chroot_path / str(self.dest).lstrip("/")
+
+        if chroot.mode == "real":
+            if not src_path.exists():
+                logger.warning(f"  [File] Source file does not exist: {src_path}")
+                return
+
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            import shutil
+            import os
+            import subprocess
+
+            cmd_copy = ["cp", "-a", "--no-preserve=ownership", str(src_path), str(dest_path)]
+            if os.geteuid() != 0:
+                subprocess.run(["sudo"] + cmd_copy, check=True)
+            else:
+                subprocess.run(cmd_copy, check=True)
+
+            if self.mode:
+                chroot.run_command(f"chmod {self.mode} '{self.dest}'")
+        else:
+            logger.info(f"    [Mock] Copy file {src_path} -> {dest_path} (mode: {self.mode})")
+
+
 class LocaleAction(SystemAction):
     """Configure locales, timezone, hostname, and keymap."""
 
@@ -342,6 +380,14 @@ class SystemConfigurator:
                 initramfs = initramfs._data
             if isinstance(initramfs, dict):
                 self.actions.append(MkinitcpioAction(initramfs))
+
+        # 7b. Explicit files (system_config.files / customizations.files)
+        files_list = sys_config.get("files", []) or cust_config.get("files", [])
+        for f_rule in files_list:
+            if hasattr(f_rule, "_data"):
+                f_rule = f_rule._data
+            if isinstance(f_rule, dict):
+                self.actions.append(FileAction(f_rule))
 
         # 8. Structured Copy (Desktop-environment file copying)
         desktop_env = _safe_get(config, "desktop_environment")
