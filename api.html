@@ -170,6 +170,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#core.customizer.MkinitcpioAction.execute"><code class="docutils literal notranslate"><span class="pre">MkinitcpioAction.execute()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#core.customizer.FileAction"><code class="docutils literal notranslate"><span class="pre">FileAction</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.customizer.FileAction.execute"><code class="docutils literal notranslate"><span class="pre">FileAction.execute()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#core.customizer.LocaleAction"><code class="docutils literal notranslate"><span class="pre">LocaleAction</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#core.customizer.LocaleAction.execute"><code class="docutils literal notranslate"><span class="pre">LocaleAction.execute()</span></code></a></li>
 </ul>
@@ -1047,6 +1051,31 @@ It handles all the complexity of:
 <dl class="py method">
 <dt class="sig sig-object py" id="core.customizer.MkinitcpioAction.execute">
 <span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#MkinitcpioAction.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.MkinitcpioAction.execute" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.customizer.FileAction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">FileAction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_rule</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#FileAction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.FileAction" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.customizer.SystemAction" title="core.customizer.SystemAction"><code class="xref py py-class docutils literal notranslate"><span class="pre">SystemAction</span></code></a></p>
+<p>Copy an individual file from source_base to target destination in rootfs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_rule</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em>)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.customizer.FileAction.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#FileAction.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.FileAction.execute" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

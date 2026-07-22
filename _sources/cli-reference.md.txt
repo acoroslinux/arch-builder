@@ -46,7 +46,7 @@ python3 cli.py [architecture] [options]
 
 - `-o, --output PATH`: explicit ISO output path.
 
-When omitted, the output name is generated automatically using desktop and architecture.
+When omitted, the output name is generated automatically using desktop and architecture (`arch-builder-<desktop>-<architecture>.iso`). Upon build completion, SHA256 (`.sha256`) and MD5 (`.md5`) checksum files are automatically generated alongside the final ISO image.
 
 ## Example commands
 

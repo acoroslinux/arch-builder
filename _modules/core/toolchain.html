@@ -106,6 +106,7 @@
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;Toolchain&quot;</span><span class="p">)</span>
 
+
 <div class="viewcode-block" id="ToolchainManager">
 <a class="viewcode-back" href="../../api.html#core.toolchain.ToolchainManager">[docs]</a>
 <span class="k">class</span> <span class="nc">ToolchainManager</span><span class="p">:</span>
@@ -126,7 +127,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">diagnostics_enabled</span> <span class="o">=</span> <span class="n">diagnostics_enabled</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">diagnostics_log_path</span> <span class="o">=</span> <span class="n">diagnostics_log_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">toolchain_dir</span> <span class="o">=</span> <span class="n">workdir_base</span> <span class="o">/</span> <span class="s2">&quot;build_host&quot;</span>
-        <span class="n">default_cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolchain_dir</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;cache&quot;</span> <span class="o">/</span> <span class="s2">&quot;pacman&quot;</span> <span class="o">/</span> <span class="s2">&quot;pkg&quot;</span>
+        <span class="n">default_cache</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">toolchain_dir</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;cache&quot;</span> <span class="o">/</span> <span class="s2">&quot;pacman&quot;</span> <span class="o">/</span> <span class="s2">&quot;pkg&quot;</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pacman_cache_dir</span> <span class="o">=</span> <span class="n">pacman_cache_dir</span> <span class="ow">or</span> <span class="n">default_cache</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_ready</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_host</span> <span class="o">=</span> <span class="kc">True</span>
@@ -141,7 +144,9 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">diagnostics_enabled</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="n">log_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">diagnostics_log_path</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toolchain_dir</span> <span class="o">/</span> <span class="s2">&quot;toolchain-debug.log&quot;</span><span class="p">)</span>
+        <span class="n">log_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">diagnostics_log_path</span> <span class="ow">or</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">toolchain_dir</span> <span class="o">/</span> <span class="s2">&quot;toolchain-debug.log&quot;</span>
+        <span class="p">)</span>
         <span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="n">timespec</span><span class="o">=</span><span class="s2">&quot;seconds&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;Z&quot;</span>
         <span class="n">line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">timestamp</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
 
@@ -231,7 +236,9 @@
             <span class="n">tarball</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">tarball</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[TOOLCHAIN] Downloading Arch Linux bootstrap: </span><span class="si">{</span><span class="n">bootstrap_url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;[TOOLCHAIN] Downloading Arch Linux bootstrap: </span><span class="si">{</span><span class="n">bootstrap_url</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_diag</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;download bootstrap </span><span class="si">{</span><span class="n">bootstrap_url</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">tarball</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
                 <span class="p">[</span><span class="s2">&quot;curl&quot;</span><span class="p">,</span> <span class="s2">&quot;-L&quot;</span><span class="p">,</span> <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">tarball</span><span class="p">),</span> <span class="n">bootstrap_url</span><span class="p">],</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span>
@@ -241,11 +248,14 @@
         <span class="k">if</span> <span class="n">rootfs_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="c1"># Unmount project root and other mounts first to prevent recursive deletion of host project files!</span>
             <span class="kn">from</span> <span class="nn">core.path_utils</span> <span class="kn">import</span> <span class="n">project_root</span>
+
             <span class="n">proj_root</span> <span class="o">=</span> <span class="n">project_root</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
             <span class="n">chroot_proj_root</span> <span class="o">=</span> <span class="n">rootfs_dir</span> <span class="o">/</span> <span class="n">proj_root</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">chroot_proj_root</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;umount&quot;</span><span class="p">,</span> <span class="s2">&quot;-l&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_proj_root</span><span class="p">)],</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">(</span>
+                        <span class="p">[</span><span class="s2">&quot;umount&quot;</span><span class="p">,</span> <span class="s2">&quot;-l&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_proj_root</span><span class="p">)],</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span>
+                    <span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="k">pass</span>
 
@@ -253,7 +263,9 @@
                 <span class="n">target</span> <span class="o">=</span> <span class="n">rootfs_dir</span> <span class="o">/</span> <span class="n">mount_name</span>
                 <span class="k">if</span> <span class="n">target</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;umount&quot;</span><span class="p">,</span> <span class="s2">&quot;-R&quot;</span><span class="p">,</span> <span class="s2">&quot;-l&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">target</span><span class="p">)],</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">(</span>
+                            <span class="p">[</span><span class="s2">&quot;umount&quot;</span><span class="p">,</span> <span class="s2">&quot;-R&quot;</span><span class="p">,</span> <span class="s2">&quot;-l&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">target</span><span class="p">)],</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span>
+                        <span class="p">)</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                         <span class="k">pass</span>
 
@@ -293,13 +305,15 @@
         <span class="n">host_resolv</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/etc/resolv.conf&quot;</span><span class="p">)</span>
         <span class="n">chroot_resolv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span> <span class="o">/</span> <span class="s2">&quot;etc&quot;</span> <span class="o">/</span> <span class="s2">&quot;resolv.conf&quot;</span>
         <span class="c1"># Ensure the custom pacman.conf is present inside the build chroot before any pacman operations.</span>
-        <span class="n">custom_pacman_src</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;configs/custom_files/common/etc/pacman.conf&quot;</span><span class="p">)</span>
+        <span class="n">custom_pacman_src</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;configs/custom_files/etc/pacman.conf&quot;</span><span class="p">)</span>
         <span class="n">custom_pacman_dst</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span> <span class="o">/</span> <span class="s2">&quot;etc&quot;</span> <span class="o">/</span> <span class="s2">&quot;pacman.conf&quot;</span>
         <span class="k">if</span> <span class="n">custom_pacman_src</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="n">custom_pacman_dst</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">custom_pacman_src</span><span class="p">,</span> <span class="n">custom_pacman_dst</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_diag</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom pacman.conf not found at </span><span class="si">{</span><span class="n">custom_pacman_src</span><span class="si">}</span><span class="s2">, using existing one.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_diag</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Custom pacman.conf not found at </span><span class="si">{</span><span class="n">custom_pacman_src</span><span class="si">}</span><span class="s2">, using existing one.&quot;</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="n">host_resolv</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="n">chroot_resolv</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">chroot_resolv</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="n">chroot_resolv</span><span class="o">.</span><span class="n">is_symlink</span><span class="p">():</span>
@@ -311,7 +325,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_pacman_config</span><span class="p">()</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[TOOLCHAIN] Initializing pacman-key in the build host...&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_run_tool_with_retry</span><span class="p">([</span><span class="s2">&quot;pacman-key&quot;</span><span class="p">,</span> <span class="s2">&quot;--init&quot;</span><span class="p">],</span> <span class="n">attempts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pacman_retries</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_tool_with_retry</span><span class="p">(</span>
+            <span class="p">[</span><span class="s2">&quot;pacman-key&quot;</span><span class="p">,</span> <span class="s2">&quot;--init&quot;</span><span class="p">],</span> <span class="n">attempts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pacman_retries</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_run_tool_with_retry</span><span class="p">(</span>
             <span class="p">[</span><span class="s2">&quot;pacman-key&quot;</span><span class="p">,</span> <span class="s2">&quot;--populate&quot;</span><span class="p">,</span> <span class="s2">&quot;archlinux&quot;</span><span class="p">],</span>
             <span class="n">attempts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pacman_retries</span><span class="p">,</span>
@@ -387,15 +403,16 @@
         <span class="k">if</span> <span class="s2">&quot;[options]&quot;</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
             <span class="n">content</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
                 <span class="s2">&quot;[options]&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;[options]</span><span class="se">\n</span><span class="s2">CacheDir = /var/cache/pacman/pkg</span><span class="se">\n</span><span class="s2">DisableDownloadTimeout&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;[options]</span><span class="se">\n</span><span class="s2">CacheDir = /var/cache/pacman/pkg</span><span class="se">\n</span><span class="s2">ParallelDownloads = 5</span><span class="se">\n</span><span class="s2">ILoveCandy</span><span class="se">\n</span><span class="s2">DisableDownloadTimeout&quot;</span><span class="p">,</span>
                 <span class="mi">1</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">content</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="s2">&quot;[options]</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;CacheDir = /var/cache/pacman/pkg</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;DisableDownloadTimeout</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="o">+</span> <span class="n">content</span>
+                <span class="s2">&quot;CacheDir = /var/cache/pacman/pkg</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;ParallelDownloads = 5</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;ILoveCandy</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;DisableDownloadTimeout</span><span class="se">\n\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">content</span>
             <span class="p">)</span>
 
         <span class="c1"># Normalize blank lines left by directive removal.</span>
@@ -403,7 +420,9 @@
         <span class="n">pacman_conf_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_diag</span><span class="p">(</span><span class="s2">&quot;pacman.conf patched: CacheDir set and CheckSpace disabled&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_run_tool_with_retry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">attempts</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CompletedProcess</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_run_tool_with_retry</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">attempts</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CompletedProcess</span><span class="p">:</span>
         <span class="n">last_error</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="ne">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">attempts</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
@@ -443,7 +462,11 @@
         <span class="k">def</span> <span class="nf">is_mounted</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;/proc/mounts&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                    <span class="n">mounted_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+                    <span class="n">mounted_paths</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span>
+                    <span class="p">]</span>
                 <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span> <span class="ow">in</span> <span class="n">mounted_paths</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">False</span>
@@ -458,11 +481,14 @@
 
         <span class="c1"># Mount the project root directory inside the build chroot.</span>
         <span class="kn">from</span> <span class="nn">core.path_utils</span> <span class="kn">import</span> <span class="n">project_root</span>
+
         <span class="n">proj_root</span> <span class="o">=</span> <span class="n">project_root</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
         <span class="n">chroot_proj_root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span> <span class="o">/</span> <span class="n">proj_root</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
         <span class="n">chroot_proj_root</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">is_mounted</span><span class="p">(</span><span class="n">chroot_proj_root</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="s2">&quot;--bind&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">proj_root</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_proj_root</span><span class="p">)])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">(</span>
+                <span class="p">[</span><span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="s2">&quot;--bind&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">proj_root</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_proj_root</span><span class="p">)]</span>
+            <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_mounted</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -480,13 +506,19 @@
         <span class="k">def</span> <span class="nf">is_mounted</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;/proc/mounts&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                    <span class="n">mounted_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">]</span>
+                    <span class="n">mounted_paths</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span>
+                    <span class="p">]</span>
                 <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span> <span class="ow">in</span> <span class="n">mounted_paths</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">False</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">is_mounted</span><span class="p">(</span><span class="n">chroot_cache</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">([</span><span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="s2">&quot;--bind&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">host_cache</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_cache</span><span class="p">)])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_run_privileged</span><span class="p">(</span>
+                <span class="p">[</span><span class="s2">&quot;mount&quot;</span><span class="p">,</span> <span class="s2">&quot;--bind&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">host_cache</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_cache</span><span class="p">)]</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cache_mounted</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_diag</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pacman cache bind-mounted host=</span><span class="si">{</span><span class="n">host_cache</span><span class="si">}</span><span class="s2"> chroot=</span><span class="si">{</span><span class="n">chroot_cache</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -504,6 +536,7 @@
 
         <span class="c1"># Unmount project root</span>
         <span class="kn">from</span> <span class="nn">core.path_utils</span> <span class="kn">import</span> <span class="n">project_root</span>
+
         <span class="n">proj_root</span> <span class="o">=</span> <span class="n">project_root</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
         <span class="n">chroot_proj_root</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span> <span class="o">/</span> <span class="n">proj_root</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
@@ -519,7 +552,9 @@
                 <span class="k">pass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mounted</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="k">def</span> <span class="nf">_run_privileged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">check</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CompletedProcess</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_run_privileged</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">check</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CompletedProcess</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute commands that require root, using sudo when needed.&quot;&quot;&quot;</span>
         <span class="n">full_command</span> <span class="o">=</span> <span class="n">command</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">geteuid</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">[</span><span class="s2">&quot;sudo&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">command</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_diag</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;privileged command: </span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">full_command</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -615,7 +650,6 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_host</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_umount_chroot</span><span class="p">()</span></div>
 </div>
-
 
 </pre></div>
 
