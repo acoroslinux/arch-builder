@@ -72,18 +72,27 @@ class Grub2Bootloader:
         )
         iso_label = self._cfg_get("system.iso_label", "ARCH-MODERN")
         arch = self._cfg_get("platform_specific.architecture", "x86_64")
+        desktop = str(self._cfg_get("desktop", "")).upper()
         kernel_params = self._cfg_get("boot.kernel_params", "loglevel=4 quiet splash")
         cmdline = f"{kernel_params} rw systemd.setenv=SYSTEMD_SULOGIN_FORCE=1"
         install_dir = "arch"
 
         return {
             "@@BOOT_TITLE@@": "Arch Modern",
+            "@@DISTRO_NAME@@": "Arch Modern",
+            "@@DESKTOP@@": desktop,
             "@@ARCH@@": arch,
             "@@KERNEL_FILE@@": kernel_file,
             "@@INITRAMFS_FILE@@": initramfs_file,
             "@@ISO_LABEL@@": iso_label,
+            "@@VOL_ID@@": iso_label,
             "@@ARCHISO_UUID@@": self.iso_uuid or iso_label,
             "@@BOOT_CMDLINE@@": cmdline,
+            "@@KERNEL_PARAMS@@": cmdline,
+            "@@KEYMAP@@": self._cfg_get("keymap", "us"),
+            "@@LOCALE@@": self._cfg_get("locale", "en_US.UTF-8"),
+            "@@LIVE_USER@@": self._cfg_get("live_user", "liveuser"),
+            "@@SPLASHIMAGE@@": "splash.png",
             "@@INSTALL_DIR@@": install_dir,
         }
 
@@ -97,7 +106,9 @@ class Grub2Bootloader:
         grub_cfg_dest.parent.mkdir(parents=True, exist_ok=True)
 
         # 1. Load grub.cfg.in template
-        template_path = resolve_from_project("configs/templates/grub/grub.cfg.in")
+        template_path = resolve_from_project("configs/bootloaders/templates/grub.cfg.in")
+        if not template_path.exists():
+            template_path = resolve_from_project("configs/templates/grub/grub.cfg.in")
         if not template_path.exists():
             logger.error(f"[GRUB2] Template file not found: {template_path}")
             return False
@@ -107,11 +118,28 @@ class Grub2Bootloader:
 
         # 2. Apply replacements
         for placeholder, value in replacements.items():
-            template_content = template_content.replace(placeholder, value)
+            template_content = template_content.replace(placeholder, str(value))
 
         # 3. Write final grub.cfg
         grub_cfg_dest.write_text(template_content)
         logger.info(f"[GRUB2] grub.cfg generated successfully at {grub_cfg_dest}")
+
+        # 4. Also write config.cfg and loopback.cfg if templates exist
+        config_template = resolve_from_project("configs/bootloaders/templates/config.cfg.in")
+        if config_template.exists():
+            config_text = config_template.read_text()
+            for k, v in replacements.items():
+                config_text = config_text.replace(k, str(v))
+            (workdir / "boot" / "grub" / "config.cfg").write_text(config_text)
+
+        loopback_template = resolve_from_project("configs/bootloaders/templates/loopback.cfg.in")
+        if not loopback_template.exists():
+            loopback_template = resolve_from_project("configs/templates/grub/loopback.cfg.in")
+        if loopback_template.exists():
+            loopback_text = loopback_template.read_text()
+            for k, v in replacements.items():
+                loopback_text = loopback_text.replace(k, str(v))
+            (workdir / "boot" / "grub" / "loopback.cfg").write_text(loopback_text)
 
         return True
 

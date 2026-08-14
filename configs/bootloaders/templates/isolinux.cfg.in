@@ -1,0 +1,50 @@
+UI vesamenu.c32
+PROMPT 0
+TIMEOUT 150
+ONTIMEOUT arch-live
+
+MENU TABMSG Press ENTER to boot or TAB to edit a menu entry
+MENU AUTOBOOT BIOS default device boot in # second{,s}...
+MENU TITLE @@BOOT_TITLE@@ @@DESKTOP@@ (@@ARCH@@)
+MENU BACKGROUND /isolinux/splash.png
+MENU RESOLUTION 640 480
+MENU WIDTH 78
+MENU MARGIN 1
+MENU ROWS 12
+MENU VSHIFT 2
+MENU TIMEOUTROW 13
+MENU TABMSGROW 2
+MENU CMDLINEROW 16
+MENU HELPMSGROW 20
+
+MENU COLOR title        * #FF5255FF *
+MENU COLOR border       * #00000000 #00000000 none
+MENU COLOR sel          * #ffffffff #FF5255FF *
+
+LABEL arch-live
+  MENU LABEL @@BOOT_TITLE@@ @@DESKTOP@@ (Standard Live)
+  KERNEL /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@
+  APPEND initrd=/@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisosearchuuid=@@ARCHISO_UUID@@ @@BOOT_CMDLINE@@ quiet splash
+
+LABEL arch-ram
+  MENU LABEL @@BOOT_TITLE@@ @@DESKTOP@@ (Copy to RAM)
+  KERNEL /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@
+  APPEND initrd=/@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisosearchuuid=@@ARCHISO_UUID@@ copytoram=y @@BOOT_CMDLINE@@ quiet splash
+
+LABEL arch-rescue
+  MENU LABEL @@BOOT_TITLE@@ @@DESKTOP@@ (Safe Graphics)
+  KERNEL /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@
+  APPEND initrd=/@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisosearchuuid=@@ARCHISO_UUID@@ nomodeset vga=normal @@BOOT_CMDLINE@@
+
+LABEL c
+  MENU LABEL Boot first HD found by BIOS
+  COM32 chain.c32
+  APPEND hd0
+
+LABEL reboot
+  MENU LABEL Reboot
+  COM32 reboot.c32
+
+LABEL poweroff
+  MENU LABEL Power Off
+  COM32 poweroff.c32

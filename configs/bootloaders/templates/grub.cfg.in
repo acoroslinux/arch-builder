@@ -1,0 +1,82 @@
+# Load partition table and file system modules
+insmod part_gpt
+insmod part_msdos
+insmod fat
+insmod iso9660
+insmod ntfs
+insmod exfat
+insmod udf
+
+# Set prefix to the correct path on the ISO
+set prefix="(${root})/boot/grub"
+
+# Use graphics-mode output
+if loadfont "${prefix}/fonts/unicode.pf2" ; then
+    insmod all_video
+    insmod gfxmenu
+    insmod png
+    set gfxmode="auto"
+    terminal_input console
+    terminal_output gfxterm
+
+    # Load modern theme if available
+    if [ -f "${prefix}/themes/modern/theme.txt" ]; then
+        set theme="${prefix}/themes/modern/theme.txt"
+        export theme
+    fi
+fi
+
+# Get a human readable platform identifier
+if [ "${grub_platform}" == 'efi' ]; then
+    archiso_platform='UEFI'
+elif [ "${grub_platform}" == 'pc' ]; then
+    archiso_platform='BIOS'
+else
+    archiso_platform="${grub_cpu}-${grub_platform}"
+fi
+
+# Set default menu entry
+default=arch-live
+timeout=15
+timeout_style=menu
+
+# Main Live Boot Entries
+menuentry "@@BOOT_TITLE@@ @@DESKTOP@@ (@@ARCH@@, ${archiso_platform})" --class arch --class gnu-linux --class gnu --class os --id 'arch-live' --hotkey=l {
+    set gfxpayload=keep
+    echo "Loading Kernel..."
+    linux /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisosearchuuid=@@ARCHISO_UUID@@ @@BOOT_CMDLINE@@ quiet splash
+    echo "Loading Initramfs... Please wait..."
+    initrd /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
+}
+
+menuentry "@@BOOT_TITLE@@ @@DESKTOP@@ (@@ARCH@@, ${archiso_platform}) - Copy to RAM" --class arch --class gnu-linux --class gnu --class os --id 'arch-ram' --hotkey=r {
+    set gfxpayload=keep
+    echo "Loading Kernel (Copy to RAM)..."
+    linux /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisosearchuuid=@@ARCHISO_UUID@@ copytoram=y @@BOOT_CMDLINE@@ quiet splash
+    echo "Loading Initramfs... Please wait..."
+    initrd /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
+}
+
+menuentry "@@BOOT_TITLE@@ @@DESKTOP@@ (@@ARCH@@, ${archiso_platform}) - Safe Graphics" --hotkey=f --class arch --class gnu-linux --class gnu --class os --id 'arch-rescue' {
+    set gfxpayload=keep
+    echo "Loading Kernel (Safe Graphics)..."
+    linux /@@INSTALL_DIR@@/boot/@@ARCH@@/@@KERNEL_FILE@@ archisobasedir=@@INSTALL_DIR@@ archisosearchuuid=@@ARCHISO_UUID@@ nomodeset vga=normal @@BOOT_CMDLINE@@
+    echo "Loading Initramfs... Please wait..."
+    initrd /@@INSTALL_DIR@@/boot/@@ARCH@@/@@INITRAMFS_FILE@@
+}
+
+if [ "${grub_platform}" == 'efi' ]; then
+    menuentry 'UEFI Firmware Settings' --id 'uefi-firmware' {
+        fwsetup
+    }
+fi
+
+menuentry 'System restart' --class reboot --class restart {
+    echo 'System rebooting...'
+    reboot
+}
+
+menuentry 'System shutdown' --class shutdown --class poweroff {
+    echo 'System shutting down...'
+    halt
+}
