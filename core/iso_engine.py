@@ -766,6 +766,9 @@ class ArchEngine(BaseEngine):
             "acoroslinux",
             "-preparer",
             "arch-builder",
+            "-pad",
+            "-padding",
+            "300k",
             # BIOS syslinux parameters (archiso official layout: boot/syslinux/)
             "-eltorito-boot",
             "boot/syslinux/isolinux.bin",
