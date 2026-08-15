@@ -824,15 +824,6 @@ class ArchEngine(BaseEngine):
 
         self.logger.info(f"[finalize] Bootable ISO created: {output_abs}")
 
-        # Pad ISO with 2MB of zero sectors to prevent ATAPI/IDE CD-ROM readahead timeouts (sr0 / ata2.00)
-        try:
-            out_p = Path(output_abs)
-            if out_p.exists():
-                with open(out_p, "ab") as f:
-                    f.write(b"\x00" * (2 * 1024 * 1024))
-        except Exception as e:
-            self.logger.warning(f"Could not append zero padding to ISO: {e}")
-
     def _clean_airootfs(self, airootfs: Path) -> None:
         """Perform cleanup on the airootfs before squashfs generation to reduce ISO size."""
         self.logger.info("[cleanup] Cleaning up airootfs before squashing...")
