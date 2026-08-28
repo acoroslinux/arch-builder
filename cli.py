@@ -21,6 +21,22 @@ def _slugify_name(value: str, fallback: str) -> str:
     return normalized or fallback
 
 
+def _parse_list_arg(arg_value):
+    if not arg_value:
+        return []
+    items = []
+    if isinstance(arg_value, list):
+        for val in arg_value:
+            if isinstance(val, list):
+                for inner in val:
+                    items.extend([x.strip() for x in inner.split(",") if x.strip()])
+            elif isinstance(val, str):
+                items.extend([x.strip() for x in val.split(",") if x.strip()])
+    elif isinstance(arg_value, str):
+        items.extend([x.strip() for x in arg_value.split(",") if x.strip()])
+    return items
+
+
 def _resolve_output_name(
     architecture: str, desktop: str = None, output: str = None
 ) -> str:
@@ -139,17 +155,23 @@ def main():
     parser.add_argument(
         "-p",
         "--package-profile",
+        "--packages",
+        "--package",
+        nargs="+",
         action="append",
         default=defaults.get("package_profiles", []),
-        help="Package profile from configs/packages. Can be provided multiple times.",
+        help="Package profile from configs/packages. Can be provided multiple times, space or comma separated.",
     )
 
     parser.add_argument(
         "-s",
         "--service-profile",
+        "--services",
+        "--service",
+        nargs="+",
         action="append",
         default=defaults.get("service_profiles", []),
-        help="Common services profile from configs/services. Can be provided multiple times.",
+        help="Common services profile from configs/services. Can be provided multiple times, space or comma separated.",
     )
 
     parser.add_argument(
@@ -242,6 +264,9 @@ def main():
             g.strip() for g in args.live_groups.split(",") if g.strip()
         ]
 
+    parsed_package_profiles = _parse_list_arg(args.package_profile)
+    parsed_service_profiles = _parse_list_arg(args.service_profile)
+
     orchestrator = BuildOrchestrator(
         arch=args.architecture,
         config_path=str(config_path),
@@ -254,8 +279,8 @@ def main():
         desktop=args.desktop,
         kernel=args.kernel,
         bootloader=args.bootloader,
-        package_profiles=args.package_profile,
-        service_profiles=args.service_profile,
+        package_profiles=parsed_package_profiles,
+        service_profiles=parsed_service_profiles,
         live_profile=args.live_profile,
         live_user=args.live_user,
         live_groups=parsed_live_groups,
@@ -278,10 +303,10 @@ def main():
         print(f"Desktop:    {args.desktop} (Override)")
     if args.bootloader:
         print(f"Bootloader: {args.bootloader} (Override)")
-    if args.package_profile:
-        print(f"Profiles:   {', '.join(args.package_profile)}")
-    if args.service_profile:
-        print(f"Services:   {', '.join(args.service_profile)}")
+    if parsed_package_profiles:
+        print(f"Profiles:   {', '.join(parsed_package_profiles)}")
+    if parsed_service_profiles:
+        print(f"Services:   {', '.join(parsed_service_profiles)}")
     if args.live_profile:
         print(f"Live Prof.: {args.live_profile}")
     if args.live_user:

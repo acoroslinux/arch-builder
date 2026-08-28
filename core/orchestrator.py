@@ -1,3 +1,4 @@
+from core.path_utils import unmount_all_under, resolve_from_project
 """
 Build Orchestrator - The Build Workflow Conductor
 =================================================
@@ -172,17 +173,13 @@ class BuildOrchestrator:
 
         # Clean previous build artifacts before starting a new build.
         # Keep persistent caches managed outside these folders.
-        if self.clean:
-            # Clean both legacy paths (airootfs) and toolchain paths (build_host/*)
-            stale_paths = [
-                workdir / "airootfs",
-                workdir / "mnt",
-                workdir / "build-output",
-                workdir / "build_host",
-            ]
-            for stale_dir in stale_paths:
-                if stale_dir.exists():
-                    shutil.rmtree(stale_dir, ignore_errors=True)
+
+        if self.clean and self.mode != "mock":
+            if os.geteuid() == 0:
+                unmount_all_under(resolve_from_project("arch-builder/workdir"))
+            if workdir.exists():
+                import shutil
+                shutil.rmtree(workdir, ignore_errors=True)
 
         # The chroot manager uses the rootfs inside the workdir.
         chroot_path = workdir / "airootfs"
@@ -319,6 +316,13 @@ class BuildOrchestrator:
             raise BuildOrchestratorError(f"Pipeline failed: {e}")
 
         finally:
+            if self.clean and self.mode != "mock":
+                if os.geteuid() == 0:
+                    unmount_all_under(resolve_from_project("arch-builder/workdir"))
+                if hasattr(self, 'workdir') and self.workdir and self.workdir.exists():
+                    import shutil
+                    shutil.rmtree(self.workdir, ignore_errors=True)
+
             if self.chroot:
                 self.chroot.cleanup()
             if self.toolchain:
