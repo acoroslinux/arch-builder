@@ -35,6 +35,8 @@ class BuildOrchestrator:
         mode: str = "mock",
         output_format: str = "iso",
         clean: bool = True,
+        fast_mode: bool = False,
+        use_tmpfs: bool = False,
         force_isolated_toolchain: bool = False,
         toolchain_debug: bool = False,
         toolchain_debug_log: Optional[str] = None,
@@ -73,6 +75,8 @@ class BuildOrchestrator:
         self.mode = mode
         self.output_format = output_format
         self.clean = clean
+        self.fast_mode = fast_mode
+        self.use_tmpfs = use_tmpfs
         self.force_isolated_toolchain = force_isolated_toolchain
         self.toolchain_debug = toolchain_debug
         self.toolchain_debug_log = toolchain_debug_log
@@ -180,6 +184,41 @@ class BuildOrchestrator:
             if workdir.exists():
                 import shutil
                 shutil.rmtree(workdir, ignore_errors=True)
+
+        if getattr(self, "use_tmpfs", False):
+            if getattr(self, "mode", "real") == "real" and os.geteuid() == 0:
+                # Compute safe tmpfs size based on available RAM + Swap (default 16G, up to 75% of total memory)
+                tmpfs_size = "16G"
+                try:
+                    total_kb = 0
+                    with open("/proc/meminfo", "r") as f:
+                        for line in f:
+                            if line.startswith("MemTotal:") or line.startswith("SwapTotal:"):
+                                total_kb += int(line.split()[1])
+                    total_gb = total_kb / (1024 * 1024)
+                    safe_gb = max(4, min(16, int(total_gb * 0.75)))
+                    tmpfs_size = f"{safe_gb}G"
+                except Exception:
+                    pass
+
+                # Check if workdir is already a mountpoint from an interrupted previous run
+                try:
+                    resolved_workdir = str(workdir.resolve())
+                    with open("/proc/mounts", "r") as f:
+                        if any(len(line.split()) >= 2 and line.split()[1] == resolved_workdir for line in f):
+                            import subprocess
+                            subprocess.run(["umount", "-f", resolved_workdir], check=False)
+                except Exception:
+                    pass
+
+                print(f"[ORCHESTRATOR] 🚀 Mounting tmpfs ({tmpfs_size} RAM disk) on {workdir}...")
+                workdir.mkdir(parents=True, exist_ok=True)
+                import subprocess
+                subprocess.run(["mount", "-t", "tmpfs", "-o", f"size={tmpfs_size},mode=0755", "tmpfs", str(workdir)], check=True)
+                self._tmpfs_mounted = True
+            else:
+                print(f"[ORCHESTRATOR] 🚀 [MOCK/SIM] Fast RAM staging enabled for {workdir}")
+
 
         # The chroot manager uses the rootfs inside the workdir.
         chroot_path = workdir / "airootfs"

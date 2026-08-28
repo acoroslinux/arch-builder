@@ -212,6 +212,21 @@ def main():
         "-v", "--verbose", action="store_true", help="Enable verbose logging."
     )
 
+    
+    parser.add_argument(
+        "--fast",
+        "--quick",
+        dest="fast_mode",
+        action="store_true",
+        help="Enable ultra-fast build mode (multi-threaded zstd level 3, fast block sizes, and optimized staging).",
+    )
+
+    parser.add_argument(
+        "--tmpfs",
+        action="store_true",
+        help="Mount working directory as tmpfs in RAM for extreme build speed.",
+    )
+
     args = parser.parse_args()
     if args.architecture.lower() not in ("x86_64", "x86-64"):
         print(
@@ -284,7 +299,8 @@ def main():
         live_profile=args.live_profile,
         live_user=args.live_user,
         live_groups=parsed_live_groups,
-    )
+        fast_mode=getattr(args, "fast_mode", False),
+        use_tmpfs=getattr(args, "tmpfs", False),)
 
     print("--- Arch-Builder Execution ---")
     print(f"Target Arch: {args.architecture}")
