@@ -32,6 +32,7 @@ class BuildOrchestrator:
         arch: str,
         config_path: str,
         mode: str = "mock",
+        output_format: str = "iso",
         clean: bool = True,
         force_isolated_toolchain: bool = False,
         toolchain_debug: bool = False,
@@ -51,6 +52,7 @@ class BuildOrchestrator:
             arch: Target architecture (for example, 'x86_64').
             config_path: Path to the configuration file (for example, 'configs/global_build.json').
             mode: 'mock' or 'real' execution mode for the ChrootManager.
+            output_format: Output format, 'iso' or 'img' or others.
             desktop: Desktop profile to load (for example, 'gnome').
             kernel: Kernel profile or package name to apply.
             bootloader: Bootloader profile name to apply.
@@ -68,6 +70,7 @@ class BuildOrchestrator:
         self.arch = "x86_64"
         self.config_path = str(resolve_from_project(config_path))
         self.mode = mode
+        self.output_format = output_format
         self.clean = clean
         self.force_isolated_toolchain = force_isolated_toolchain
         self.toolchain_debug = toolchain_debug
@@ -281,13 +284,35 @@ class BuildOrchestrator:
 
             print("\n[STEP 1/1] Running build pipeline through the engine...")
             output_path = Path(output_iso)
-            # ISOBuilder orchestrates the chroot and ISO creation internally.
-            result_iso = self.builder.build(output_path, str(self.workdir))
-
-            print("\n✅ BUILD SUCCEEDED!")
-            print(f"ISO generated at: {result_iso}")
-
-            return result_iso
+            
+            if self.output_format == "iso":
+                # ISOBuilder orchestrates the chroot and ISO creation internally.
+                result_iso = self.builder.build(output_path, str(self.workdir))
+                print("\n✅ BUILD SUCCEEDED!")
+                print(f"ISO generated at: {result_iso}")
+                return result_iso
+            else:
+                from core.disk_engine import DiskEngine
+                
+                # Do the required setup steps that build() does before ISO generation
+                workdir_path = self.builder.engine.setup_workdir(str(self.workdir))
+                self.builder.engine.setup_chroot(str(workdir_path))
+                self.builder.engine.install_packages()
+                self.builder.engine.post_install_configure()
+                
+                target_root = workdir_path / "airootfs"
+                disk_engine = DiskEngine(
+                    workdir=workdir_path,
+                    target_root=target_root,
+                    output_name=output_path.stem.replace(".tar", ""),
+                    config=self.config,
+                    mode=self.mode,
+                    toolchain=self.toolchain
+                )
+                result_iso = disk_engine.build_disk_image(self.output_format)
+                print("\n✅ BUILD SUCCEEDED!")
+                print(f"Disk generated at: {result_iso}")
+                return result_iso
 
         except Exception as e:
             print(f"\n❌ CRITICAL BUILD ERROR: {e}")
