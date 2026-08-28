@@ -68,6 +68,7 @@ def main():
         "architecture",
         nargs="?",
         default="x86_64",
+        choices=["x86_64", "aarch64", "riscv64", "ppc64le", "s390x"],
         help="Target architecture (e.g., x86_64, arm64). Default: x86_64",
     )
 
@@ -84,7 +85,15 @@ def main():
         "--mode",
         choices=["mock", "real"],
         default="mock",
-        help="Execution mode: 'mock' (simulation, no root required) or 'real' (actual build, requires root/chroot). Default: mock",
+        help="Execution mode: 'mock' (simulation, no root required)
+
+    parser.add_argument(
+        "--format",
+        choices=["iso", "img", "raw", "qcow2", "vmdk", "vhd", "vhdx", "vdi", "tarball", "container"],
+        default="iso",
+        help="Build artifact format: iso, img, raw, qcow2, vmdk, vhd, vhdx, vdi, tarball, container. Default: iso",
+    )
+ or 'real' (actual build, requires root/chroot). Default: mock",
     )
 
     clean_group = parser.add_mutually_exclusive_group()

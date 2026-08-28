@@ -827,6 +827,26 @@ class ChrootManager:
             if qemu_src:
                 dest = self.chroot_path / "usr" / "bin" / qemu_bin
                 os.makedirs(dest.parent, exist_ok=True)
+                cmd = ["sudo", "cp", qemu_src, str(dest)] if os.geteuid() != 0 else ["cp", qemu_src, str(dest)]
+                subprocess.run(cmd, check=False)
+    import platform
+    import shutil
+
+    if hasattr(self, 'arch') and self.arch:
+        host_arch = platform.machine().lower()
+        if self.arch.lower() != host_arch:
+            qemu_arch = self.arch.lower()
+            if qemu_arch == 'arm64': qemu_arch = 'aarch64'
+            if qemu_arch == 'amd64': qemu_arch = 'x86_64'
+            
+            qemu_bin = f"qemu-{qemu_arch}-static"
+            qemu_src = shutil.which(qemu_bin)
+            if not qemu_src and os.path.exists(f"/usr/bin/{qemu_bin}"):
+                qemu_src = f"/usr/bin/{qemu_bin}"
+            
+            if qemu_src:
+                dest = self.chroot_path / "usr" / "bin" / qemu_bin
+                os.makedirs(dest.parent, exist_ok=True)
                 # Need to use sudo if necessary, but we can just use _sudo_run
                 # wait, _sudo_run is defined inside the method later. We should define it earlier or just use subprocess.
                 cmd = ["sudo", "cp", qemu_src, str(dest)] if os.geteuid() != 0 else ["cp", qemu_src, str(dest)]
@@ -890,6 +910,17 @@ class ChrootManager:
                 _sudo_run(["umount", "-l", str(dst)], check=False)
 
     def install_packages(self, packages: Union[List[str], Dict[str, Any]]) -> None:
+
+        # Optimize pacman for speed
+        pacman_conf = self.chroot_dir / "etc" / "pacman.conf"
+        if pacman_conf.exists():
+            conf_data = pacman_conf.read_text()
+            if "ParallelDownloads = 10" not in conf_data:
+                conf_data = re.sub(r'#?ParallelDownloads\s*=\s*\d+', 'ParallelDownloads = 10', conf_data)
+                if 'ParallelDownloads = 10' not in conf_data:
+                    conf_data = conf_data.replace('[options]', '[options]\nParallelDownloads = 10')
+                pacman_conf.write_text(conf_data)
+
         """Install official, local and AUR packages inside the chroot (mock or real)."""
         self.logger.info("Starting package installation with cache management.")
         plan = self._normalize_package_plan(packages)
@@ -924,7 +955,7 @@ class ChrootManager:
     def generate_fstab(self) -> str:
         """Generate a simple /etc/fstab and persist it inside the chroot."""
         if self.is_mock:
-            content = "/dev/sda1  /   ext4    defaults    0 1\n/dev/sda2  swap   swap    defaults    0 0\n"
+            content = "/dev/sda1  /   ext4    defaults,noatime,commit=60    0 1\n/dev/sda2  swap   swap    defaults,noatime,commit=60    0 0\n"
             self.fs_handler.create_file("etc/fstab", content)
             logging.getLogger("chroot").info(
                 "[MOCK FS] /etc/fstab simulated successfully, content:\n" + content
@@ -938,7 +969,7 @@ class ChrootManager:
             if not fstab_dir.exists():
                 fstab_dir.mkdir(parents=True, exist_ok=True)
 
-            content = "/dev/sda1  /   ext4    defaults    0 1\n/dev/sda2  swap   swap    defaults    0 0\n"
+            content = "/dev/sda1  /   ext4    defaults,noatime,commit=60    0 1\n/dev/sda2  swap   swap    defaults,noatime,commit=60    0 0\n"
             fstab_path.write_text(content, encoding="utf-8")
             self.logger.info("[REAL] /etc/fstab created successfully.")
             return f"[REAL] /etc/fstab created at {fstab_path}"
