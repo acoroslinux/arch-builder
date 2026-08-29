@@ -789,69 +789,23 @@ class ChrootManager:
         """Mount /proc, /sys, and /dev inside the chroot path."""
         import os
         import subprocess
-    import platform
-    import shutil
-
-    if hasattr(self, 'arch') and self.arch:
-        host_arch = platform.machine().lower()
-        if self.arch.lower() != host_arch:
-            qemu_arch = self.arch.lower()
-            if qemu_arch == 'arm64': qemu_arch = 'aarch64'
-            if qemu_arch == 'amd64': qemu_arch = 'x86_64'
-            
-            qemu_bin = f"qemu-{qemu_arch}-static"
-            qemu_src = shutil.which(qemu_bin)
-            if not qemu_src and os.path.exists(f"/usr/bin/{qemu_bin}"):
-                qemu_src = f"/usr/bin/{qemu_bin}"
-            
-            if qemu_src:
-                dest = self.chroot_path / "usr" / "bin" / qemu_bin
-                os.makedirs(dest.parent, exist_ok=True)
-                cmd = ["sudo", "cp", qemu_src, str(dest)] if os.geteuid() != 0 else ["cp", qemu_src, str(dest)]
-                subprocess.run(cmd, check=False)
-    import platform
-    import shutil
-
-    if hasattr(self, 'arch') and self.arch:
-        host_arch = platform.machine().lower()
-        if self.arch.lower() != host_arch:
-            qemu_arch = self.arch.lower()
-            if qemu_arch == 'arm64': qemu_arch = 'aarch64'
-            if qemu_arch == 'amd64': qemu_arch = 'x86_64'
-            
-            qemu_bin = f"qemu-{qemu_arch}-static"
-            qemu_src = shutil.which(qemu_bin)
-            if not qemu_src and os.path.exists(f"/usr/bin/{qemu_bin}"):
-                qemu_src = f"/usr/bin/{qemu_bin}"
-            
-            if qemu_src:
-                dest = self.chroot_path / "usr" / "bin" / qemu_bin
-                os.makedirs(dest.parent, exist_ok=True)
-                cmd = ["sudo", "cp", qemu_src, str(dest)] if os.geteuid() != 0 else ["cp", qemu_src, str(dest)]
-                subprocess.run(cmd, check=False)
-    import platform
-    import shutil
-
-    if hasattr(self, 'arch') and self.arch:
-        host_arch = platform.machine().lower()
-        if self.arch.lower() != host_arch:
-            qemu_arch = self.arch.lower()
-            if qemu_arch == 'arm64': qemu_arch = 'aarch64'
-            if qemu_arch == 'amd64': qemu_arch = 'x86_64'
-            
-            qemu_bin = f"qemu-{qemu_arch}-static"
-            qemu_src = shutil.which(qemu_bin)
-            if not qemu_src and os.path.exists(f"/usr/bin/{qemu_bin}"):
-                qemu_src = f"/usr/bin/{qemu_bin}"
-            
-            if qemu_src:
-                dest = self.chroot_path / "usr" / "bin" / qemu_bin
-                os.makedirs(dest.parent, exist_ok=True)
-                # Need to use sudo if necessary, but we can just use _sudo_run
-                # wait, _sudo_run is defined inside the method later. We should define it earlier or just use subprocess.
-                cmd = ["sudo", "cp", qemu_src, str(dest)] if os.geteuid() != 0 else ["cp", qemu_src, str(dest)]
-                subprocess.run(cmd, check=False)
-
+        import platform
+        import shutil
+        if hasattr(self, "arch") and self.arch:
+            host_arch = platform.machine().lower()
+            if self.arch.lower() != host_arch:
+                qemu_arch = self.arch.lower()
+                if qemu_arch == "arm64": qemu_arch = "aarch64"
+                if qemu_arch == "amd64": qemu_arch = "x86_64"
+                qemu_bin = f"qemu-{qemu_arch}-static"
+                qemu_src = shutil.which(qemu_bin)
+                if not qemu_src and os.path.exists(f"/usr/bin/{qemu_bin}"):
+                    qemu_src = f"/usr/bin/{qemu_bin}"
+                if qemu_src:
+                    dest = self.chroot_path / "usr" / "bin" / qemu_bin
+                    os.makedirs(dest.parent, exist_ok=True)
+                    cmd = ["sudo", "cp", qemu_src, str(dest)] if os.geteuid() != 0 else ["cp", qemu_src, str(dest)]
+                    subprocess.run(cmd, check=False)
         self.logger.info(
             "[chroot] Mounting essential filesystems (/proc, /sys, /dev)..."
         )
@@ -912,14 +866,20 @@ class ChrootManager:
     def install_packages(self, packages: Union[List[str], Dict[str, Any]]) -> None:
 
         # Optimize pacman for speed
-        pacman_conf = self.chroot_dir / "etc" / "pacman.conf"
+        pacman_conf = self.chroot_path / "etc" / "pacman.conf"
         if pacman_conf.exists():
-            conf_data = pacman_conf.read_text()
+            try:
+                conf_data = pacman_conf.read_text()
+            except FileNotFoundError:
+                conf_data = ""
             if "ParallelDownloads = 10" not in conf_data:
                 conf_data = re.sub(r'#?ParallelDownloads\s*=\s*\d+', 'ParallelDownloads = 10', conf_data)
                 if 'ParallelDownloads = 10' not in conf_data:
                     conf_data = conf_data.replace('[options]', '[options]\nParallelDownloads = 10')
+            try:
                 pacman_conf.write_text(conf_data)
+            except FileNotFoundError:
+                pass
 
         """Install official, local and AUR packages inside the chroot (mock or real)."""
         self.logger.info("Starting package installation with cache management.")

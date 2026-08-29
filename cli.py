@@ -85,15 +85,14 @@ def main():
         "--mode",
         choices=["mock", "real"],
         default="mock",
-        help="Execution mode: 'mock' (simulation, no root required)
+        help="Execution mode: 'mock' (simulation, no root required) or 'real' (actual build, requires root/chroot). Default: mock",
+    )
 
     parser.add_argument(
         "--format",
         choices=["iso", "img", "raw", "qcow2", "vmdk", "vhd", "vhdx", "vdi", "tarball", "container"],
         default="iso",
         help="Build artifact format: iso, img, raw, qcow2, vmdk, vhd, vhdx, vdi, tarball, container. Default: iso",
-    )
- or 'real' (actual build, requires root/chroot). Default: mock",
     )
 
     clean_group = parser.add_mutually_exclusive_group()
@@ -237,12 +236,8 @@ def main():
     )
 
     args = parser.parse_args()
-    if args.architecture.lower() not in ("x86_64", "x86-64"):
-        print(
-            f"Error: Architecture '{args.architecture}' is not supported. Only x86_64 is supported."
-        )
-        sys.exit(1)
-    args.architecture = "x86_64"
+    if args.architecture.lower() == "x86-64":
+        args.architecture = "x86_64"
     output_name = _resolve_output_name(
         architecture=args.architecture,
         desktop=args.desktop,
