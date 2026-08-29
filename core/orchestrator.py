@@ -31,15 +31,7 @@ class BuildOrchestrator:
 
     def __init__(
         self,
-        arch,
-        sbom,
-        cloud_init,
-        sbom,
-        cloud_init: bool = False
-    ): bool = False
-    ): bool = False
-    ): bool = False
-    ): str,
+        arch: str,
         config_path: str,
         mode: str = "mock",
         output_format: str = "iso",

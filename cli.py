@@ -241,20 +241,6 @@ def main():
         help="Mount working directory as tmpfs in RAM for extreme build speed.",
     )
 
-    
-    parser.add_argument(
-        "--sbom",
-        action="store_true",
-        help="Generate a Software Bill of Materials (SBOM) JSON manifest",
-    )
-
-    
-    parser.add_argument(
-        "--cloud-init",
-        action="store_true",
-        help="Include cloud-init for cloud deployments",
-    )
-
     args = parser.parse_args()
 
     # ── Handle Device Profile ───────────────────────────────────────────────────
@@ -334,10 +320,7 @@ def main():
 
     orchestrator = BuildOrchestrator(
         arch=args.architecture,
-        config_path=str(config_path,
-        sbom=getattr(args, "sbom", False,
-        cloud_init=getattr(args, "cloud_init", False,
-        sbom=getattr(args, "sbom", False),,,,
+        config_path=str(config_path),
         mode=args.mode,
         clean=args.clean,
         force_isolated_toolchain=args.force_isolated_toolchain,
