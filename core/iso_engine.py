@@ -158,7 +158,7 @@ class BaseEngine(ISOEngine):
 
     def _package_plan(self) -> Dict[str, List[str]]:
         """Build a normalized package installation plan from legacy and new config keys."""
-        legacy_packages = self._normalize_packages(self._cfg_get("packages"))
+        legacy_packages = self._normalize_packages(self._cfg_get("software"))
         platform_packages = self._normalize_packages(
             self._cfg_get("platform_specific.packages")
         )

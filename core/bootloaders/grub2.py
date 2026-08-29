@@ -106,7 +106,7 @@ class Grub2Bootloader:
         grub_cfg_dest.parent.mkdir(parents=True, exist_ok=True)
 
         # 1. Load grub.cfg.in template
-        template_path = resolve_from_project("configs/bootloaders/templates/grub.cfg.in")
+        template_path = resolve_from_project("configs/boot/templates/grub.cfg.in")
         if not template_path.exists():
             template_path = resolve_from_project("configs/templates/grub/grub.cfg.in")
         if not template_path.exists():
@@ -125,14 +125,14 @@ class Grub2Bootloader:
         logger.info(f"[GRUB2] grub.cfg generated successfully at {grub_cfg_dest}")
 
         # 4. Also write config.cfg and loopback.cfg if templates exist
-        config_template = resolve_from_project("configs/bootloaders/templates/config.cfg.in")
+        config_template = resolve_from_project("configs/boot/templates/config.cfg.in")
         if config_template.exists():
             config_text = config_template.read_text()
             for k, v in replacements.items():
                 config_text = config_text.replace(k, str(v))
             (workdir / "boot" / "grub" / "config.cfg").write_text(config_text)
 
-        loopback_template = resolve_from_project("configs/bootloaders/templates/loopback.cfg.in")
+        loopback_template = resolve_from_project("configs/boot/templates/loopback.cfg.in")
         if not loopback_template.exists():
             loopback_template = resolve_from_project("configs/templates/grub/loopback.cfg.in")
         if loopback_template.exists():

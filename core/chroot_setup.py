@@ -202,7 +202,7 @@ class ChrootBuilder:
         self.copy_custom_files(file_rules)
 
         # 1. Install packages.
-        self.install_packages(packages_config.get("packages"), arch)
+        self.install_packages(packages_config.get("software"), arch)
 
         # 2. Apply profile configuration (desktop, and so on).
         if desktop_config:

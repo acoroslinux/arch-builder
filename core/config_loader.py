@@ -146,11 +146,11 @@ class ConfigAssembler:
                     pkg_list.append(kernel_name)
             return replaced
 
-        platform_pkgs = platform.get("packages")
+        platform_pkgs = platform.get("software")
         if isinstance(platform_pkgs, list):
             replace_kernel_in_list(platform_pkgs)
 
-        root_pkgs = self.master_config.get("packages")
+        root_pkgs = self.master_config.get("software")
         if isinstance(root_pkgs, list):
             replace_kernel_in_list(root_pkgs)
 
@@ -278,7 +278,7 @@ class ConfigAssembler:
 
         # 4. Optional profile selections
         if target_kernel:
-            kernel_data = self._load_optional_profile("kernels", target_kernel)
+            kernel_data = self._load_optional_profile("system", target_kernel)
             if kernel_data:
                 self._deep_merge(self.master_config, kernel_data)
             self._apply_kernel_override(target_kernel)
@@ -287,19 +287,19 @@ class ConfigAssembler:
             if isinstance(target_bootloader, dict):
                 self._deep_merge(self.master_config, {"bootloader": target_bootloader})
             else:
-                bootloader_data = self._load_optional_profile("bootloaders", target_bootloader)
+                bootloader_data = self._load_optional_profile("boot", target_bootloader)
                 if bootloader_data:
                     self._deep_merge(self.master_config, bootloader_data)
 
         # Always load the base package profile as it is common to all builds.
-        base_package_data = self._load_optional_profile("packages", "base")
+        base_package_data = self._load_optional_profile("software", "base")
         if base_package_data:
             self._deep_merge(self.master_config, base_package_data)
 
         for profile_name in package_profiles or []:
             if profile_name == "base":
                 continue
-            package_data = self._load_optional_profile("packages", profile_name)
+            package_data = self._load_optional_profile("software", profile_name)
             if package_data:
                 self._deep_merge(self.master_config, package_data)
 

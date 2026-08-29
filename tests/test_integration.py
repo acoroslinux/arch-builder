@@ -41,7 +41,7 @@ class MockConfig(Config):
                     "genisomake": "/usr/local/bin/mock-geniso",
                 },
             }
-        if path == "packages":
+        if path == "software":
             return ["base", "networking"]  # Packages we want to test in mock mode.
         if path == "workdir_base":
             return "/mnt/build-chroot"

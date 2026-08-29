@@ -13,16 +13,16 @@ class TestGlobalConfigLoader(unittest.TestCase):
         self.test_dir.mkdir(parents=True, exist_ok=True)
         (self.test_dir / "architectures").mkdir(parents=True, exist_ok=True)
         (self.test_dir / "desktops").mkdir(parents=True, exist_ok=True)
-        (self.test_dir / "kernels").mkdir(parents=True, exist_ok=True)
-        (self.test_dir / "packages").mkdir(parents=True, exist_ok=True)
+        (self.test_dir / "system").mkdir(parents=True, exist_ok=True)
+        (self.test_dir / "software").mkdir(parents=True, exist_ok=True)
         (self.test_dir / "services").mkdir(parents=True, exist_ok=True)
         (self.test_dir / "live-users").mkdir(parents=True, exist_ok=True)
 
         (self.test_dir / "global_build.json").write_text(
-            '{"system": {"workdir_base": "/tmp/isofiles"}, "components": {"bootloaders": [{"name": "grub", "type": "module"}]}}'
+            '{"system": {"workdir_base": "/tmp/isofiles"}, "components": {"boot": [{"name": "grub", "type": "module"}]}}'
         )
         (self.test_dir / "architectures/x86_64.json").write_text(
-            '{"platform_specific": {"architecture": "x86_64", "base_kernel": "linux", "initramfs": "init.img", "packages": [{"name": "linux"}, {"name": "base"}]}}'
+            '{"platform_specific": {"architecture": "x86_64", "base_kernel": "linux", "initramfs": "init.img", "software": [{"name": "linux"}, {"name": "base"}]}}'
         )
         (self.test_dir / "desktops/xfce.json").write_text(
             '{"customizations": {"services": ["lightdm"]}}'
@@ -31,10 +31,10 @@ class TestGlobalConfigLoader(unittest.TestCase):
             '{"platform_specific": {"base_kernel": "linux-lts", "initramfs": "initramfs-linux-lts.img"}}'
         )
         (self.test_dir / "packages/base.json").write_text(
-            '{"packages": ["git", "curl"]}'
+            '{"software": ["git", "curl"]}'
         )
         (self.test_dir / "packages/networking.json").write_text(
-            '{"packages": ["networkmanager", "resolvconf"]}'
+            '{"software": ["networkmanager", "resolvconf"]}'
         )
         (self.test_dir / "services/common.json").write_text(
             '{"customizations": {"services": ["sshd", "systemd-timesyncd"]}}'
@@ -57,8 +57,8 @@ class TestGlobalConfigLoader(unittest.TestCase):
     def test_assemble_always_loads_base_packages(self):
         assembler = ConfigAssembler(str(self.test_dir))
         config = assembler.assemble("x86_64")
-        self.assertIn("git", config.get("packages", []))
-        self.assertIn("curl", config.get("packages", []))
+        self.assertIn("git", config.get("software", []))
+        self.assertIn("curl", config.get("software", []))
 
     def test_assemble_with_desktop_and_package_profile(self):
         assembler = ConfigAssembler(str(self.test_dir))
@@ -68,7 +68,7 @@ class TestGlobalConfigLoader(unittest.TestCase):
             package_profiles=["networking"],
         )
         self.assertEqual(config.get("customizations.services"), ["lightdm"])
-        self.assertIn("networkmanager", config.get("packages", []))
+        self.assertIn("networkmanager", config.get("software", []))
 
     def test_assemble_with_kernel_override(self):
         assembler = ConfigAssembler(str(self.test_dir))

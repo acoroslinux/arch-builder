@@ -147,7 +147,7 @@ def main():
         "--kernel",
         type=str,
         default=defaults.get("kernel"),
-        help="Kernel selection (profile in configs/kernels or direct package name, e.g. linux-lts).",
+        help="Kernel selection (profile in configs/system or direct package name, e.g. linux-lts).",
     )
 
     parser.add_argument(
@@ -163,7 +163,7 @@ def main():
         "--bootloader",
         type=str,
         default=defaults.get("bootloader"),
-        help="Bootloader profile name from configs/bootloaders.",
+        help="Bootloader profile name from configs/boot.",
     )
 
     parser.add_argument(
@@ -174,7 +174,7 @@ def main():
         nargs="+",
         action="append",
         default=defaults.get("package_profiles", []),
-        help="Package profile from configs/packages. Can be provided multiple times, space or comma separated.",
+        help="Package profile from configs/software. Can be provided multiple times, space or comma separated.",
     )
 
     parser.add_argument(
@@ -206,6 +206,19 @@ def main():
         help="Comma-separated group list for live user (e.g. wheel,audio,video).",
     )
 
+
+    parser.add_argument(
+        "--with-offline-repo",
+        action="store_true",
+        help="Embed an offline package repository on the ISO/Image.",
+    )
+
+    parser.add_argument(
+        "--offline-repo-packages",
+        type=str,
+        default=None,
+        help="Comma-separated list of packages to include in the offline repository.",
+    )
     parser.add_argument(
         "--list-options",
         action="store_true",
@@ -245,7 +258,7 @@ def main():
 
     # ── Handle Device Profile ───────────────────────────────────────────────────
     if getattr(args, "device", None):
-        device_file = resolve_from_project(f"configs/devices/{args.device}.json")
+        device_file = resolve_from_project(f"configs/hardware/{args.device}.json")
         if device_file.exists():
             import json
             with open(device_file) as f:
@@ -286,13 +299,13 @@ def main():
             f"- desktops:      {', '.join(_available_profiles(config_root, 'desktops')) or '(none)'}"
         )
         print(
-            f"- kernels:       {', '.join(_available_profiles(config_root, 'kernels')) or '(none)'}"
+            f"- kernels:       {', '.join(_available_profiles(config_root, 'system')) or '(none)'}"
         )
         print(
-            f"- bootloaders:   {', '.join(_available_profiles(config_root, 'bootloaders')) or '(none)'}"
+            f"- bootloaders:   {', '.join(_available_profiles(config_root, 'boot')) or '(none)'}"
         )
         print(
-            f"- packages:      {', '.join(_available_profiles(config_root, 'packages')) or '(none)'}"
+            f"- packages:      {', '.join(_available_profiles(config_root, 'software')) or '(none)'}"
         )
         print(
             f"- services:      {', '.join(_available_profiles(config_root, 'services')) or '(none)'}"
@@ -336,7 +349,9 @@ def main():
         live_user=args.live_user,
         live_groups=parsed_live_groups,
         fast_mode=getattr(args, "fast_mode", False),
-        use_tmpfs=getattr(args, "tmpfs", False),)
+        use_tmpfs=getattr(args, "tmpfs", False),
+        with_offline_repo=getattr(args, "with_offline_repo", False),
+        offline_repo_packages=_parse_list_arg(getattr(args, "offline_repo_packages", None)),)
 
     print("--- Arch-Builder Execution ---")
     print(f"Target Arch: {args.architecture}")
