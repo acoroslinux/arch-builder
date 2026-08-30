@@ -24,6 +24,10 @@ env/
 # Project build output and local workspace directories
 # Holds workdir/, fallback/, and pacman package cache (cache/)
 arch-builder/
+workdir/
+fallback/
+cache/
+logs/
 
 # Built ISO images
 *.iso

@@ -48,8 +48,8 @@ make -C docs html
 Choose the appropriate config subdirectory and add a JSON file:
 
 - desktop profile: `configs/desktops/`
-- kernel profile: `configs/kernels/`
-- package bundle: `configs/packages/`
+- kernel profile: `configs/system/`
+- package bundle: `configs/software/`
 - service bundle: `configs/services/`
 - live-user preset: `configs/live-users/`
 

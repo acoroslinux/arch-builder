@@ -9,6 +9,7 @@ Central build engine definitions.
 
 import shutil
 import tempfile
+from datetime import UTC, datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
 from types import SimpleNamespace
@@ -106,7 +107,7 @@ class BaseEngine(ISOEngine):
 
         try:
             mountpoint.mkdir(parents=True, exist_ok=True)
-        except PermissionError:
+        except OSError as original_error:
             fallback = resolve_from_project(
                 Path("arch-builder") / "fallback" / self.arch / "boot"
             )
@@ -122,10 +123,10 @@ class BaseEngine(ISOEngine):
                     candidate.mkdir(parents=True, exist_ok=True)
                     selected = candidate
                     break
-                except PermissionError:
+                except OSError:
                     continue
             if selected is None:
-                raise
+                raise original_error
             self.logger.warning(
                 f"Boot mountpoint '{mountpoint}' is not writable. Falling back to '{selected}'."
             )
@@ -201,7 +202,7 @@ class BaseEngine(ISOEngine):
             target = resolve_from_project(target)
         try:
             target.mkdir(parents=True, exist_ok=True)
-        except PermissionError:
+        except OSError as original_error:
             fallback = resolve_from_project(
                 Path("arch-builder") / "fallback" / self.arch
             )
@@ -214,10 +215,10 @@ class BaseEngine(ISOEngine):
                     candidate.mkdir(parents=True, exist_ok=True)
                     selected = candidate
                     break
-                except PermissionError:
+                except OSError:
                     continue
             if selected is None:
-                raise
+                raise original_error
             self.logger.warning(
                 f"Workdir '{target}' is not writable in the current mode. Falling back to '{selected}'."
             )
@@ -520,9 +521,7 @@ class ArchEngine(BaseEngine):
         # --- Generate ISO UUID (matches mkarchiso: TZ=UTC date +%F-%H-%M-%S-00) ---
         # mkarchiso creates /boot/<iso_uuid>.uuid on the ISO so the archiso hook
         # can find the ISO device by scanning all block devices for that file.
-        import datetime
-
-        iso_uuid = datetime.datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-00")
+        iso_uuid = datetime.now(UTC).strftime("%Y-%m-%d-%H-%M-%S-00")
 
         # Generate GRUB configuration (grub.cfg) inside the airootfs
         self._prepare_grub_boot_tree(effective_root, iso_uuid=iso_uuid)
@@ -737,8 +736,9 @@ class ArchEngine(BaseEngine):
                 "ISO staging directory not found. build_bootloaders() must be called first."
             )
 
-        output_abs = str(resolve_from_project(f"output/{__import__("pathlib").Path(output_path).name}"))
-        Path(output_abs).parent.mkdir(parents=True, exist_ok=True)
+        output_abs = str(resolve_from_project(output_path))
+        output_file = Path(output_abs)
+        output_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Check if we're in mock mode - skip actual execution
         is_mock = getattr(self.toolchain, "mode", "mock") == "mock"
@@ -801,6 +801,7 @@ class ArchEngine(BaseEngine):
                 f"[finalize] [MOCK] Would create ISO: {output_abs} from {iso_source}"
             )
             self.logger.info(f"[finalize] [MOCK] Command: {' '.join(command)}")
+            output_file.write_text("mock-iso-content\n", encoding="utf-8")
             return
 
         self.logger.info(
@@ -812,11 +813,11 @@ class ArchEngine(BaseEngine):
             self._run_command(command)
         except Exception as e:
             # If the ISO file was successfully generated despite a post-generation crash (e.g. SIGSEGV on clean-up)
-            if Path(output_abs).exists() and Path(output_abs).stat().st_size > 1000000:
+            if output_file.exists() and output_file.stat().st_size > 1000000:
                 self.logger.warning(
                     f"xorriso reported an exit error/crash ({e}), "
                     f"but the ISO file was successfully generated at {output_abs} "
-                    f"({Path(output_abs).stat().st_size} bytes)."
+                    f"({output_file.stat().st_size} bytes)."
                 )
             else:
                 self.logger.error(f"xorriso failed: {e}")
@@ -1058,12 +1059,35 @@ class ISOBuilder:
             ) from exc
         return engine_class(self.arch, self.config, self.toolchain)
 
+    def _sync_default_chroot_with_workdir(self, workdir_path: Path) -> None:
+        """Keep the auto-created chroot manager aligned with the effective workdir.
+
+        ``setup_workdir`` may fall back from a configured system path such as
+        /mnt/build-chroot to a project-local path when running without root or on
+        a restricted filesystem. The default chroot manager is created before
+        that fallback is known, so update it here when it still points at the
+        configured default.
+        """
+        chroot_manager = getattr(self.toolchain, "chroot_manager", None)
+        if not chroot_manager:
+            return
+
+        default_path = str(Path(self._default_chroot_path()).resolve())
+        current_path = str(Path(getattr(chroot_manager, "_workdir", "")).resolve())
+        if current_path != default_path:
+            return
+
+        effective_path = Path(workdir_path).resolve()
+        chroot_manager._workdir = str(effective_path)
+        chroot_manager.chroot_path = effective_path
+
     def build(
         self, output_path: Union[str, Path], workdir: Optional[Union[str, Path]] = None
     ) -> Path:
         output_path = Path(output_path)
         try:
             workdir_path = self.engine.setup_workdir(workdir)
+            self._sync_default_chroot_with_workdir(workdir_path)
             self.engine.setup_chroot(str(workdir_path))
             self.engine.install_packages()
             self.engine.post_install_configure()

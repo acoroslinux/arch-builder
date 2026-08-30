@@ -107,7 +107,7 @@ python3 cli.py x86_64
 ```
 
 ### 2. Selecting Kernel
-Override the default kernel using the `-k` or `--kernel` flag. You can pass any profile name from `configs/kernels/`:
+Override the default kernel using the `-k` or `--kernel` flag. You can pass any profile name from `configs/system/`:
 *   `linux` (standard Arch kernel)
 *   `linux-lts` (Long-Term Support kernel)
 *   `linux-zen` (optimized kernel for responsiveness)
@@ -164,8 +164,8 @@ Key flags:
 - `--toolchain-pacman-retries N`: retry count for `pacman` and `pacman-key` during isolated bootstrap.
 - `--desktop NAME`: desktop profile override from `configs/desktops/`.
 - `--kernel NAME`: kernel profile or explicit kernel package name.
-- `--bootloader NAME`: bootloader profile from `configs/bootloaders/`.
-- `--package-profile NAME`: additional package profile from `configs/packages/`.
+- `--bootloader NAME`: bootloader profile from `configs/boot/`.
+- `--package-profile NAME`: additional package profile from `configs/software/`.
 - `--service-profile NAME`: additional service profile from `configs/services/`.
 - `--live-profile NAME`: live-user preset from `configs/live-users/`.
 - `--live-user NAME`: live username override.

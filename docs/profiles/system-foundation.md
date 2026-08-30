@@ -37,8 +37,8 @@ python3 cli.py x86_64
 
 | File | Purpose | Important keys | Notable items |
 | --- | --- | --- | --- |
-| `configs/bootloaders/grub.json` | GRUB-based bootloader profile. | `platform_specific.packages`, `system.binaries` | Adds `grub` and `efibootmgr`; pins `grub-mkrescue` paths. |
-| `configs/bootloaders/syslinux.json` | Syslinux/Isolinux profile for BIOS-style flows. | `platform_specific.packages` | Adds `syslinux`, `mtools`, `dosfstools`. |
+| `configs/boot/grub.json` | GRUB-based bootloader profile. | `platform_specific.packages`, `system.binaries` | Adds `grub` and `efibootmgr`; pins `grub-mkrescue` paths. |
+| `configs/boot/syslinux.json` | Syslinux/Isolinux profile for BIOS-style flows. | `platform_specific.packages` | Adds `syslinux`, `mtools`, `dosfstools`. |
 
 ### Example use
 
@@ -53,10 +53,10 @@ Kernel files primarily override `platform_specific.base_kernel` and initramfs na
 
 | File | Purpose | Notable values |
 | --- | --- | --- |
-| `configs/kernels/linux.json` | Default stable kernel. | `base_kernel: linux`, `initramfs-linux.img` |
-| `configs/kernels/linux-lts.json` | Long-term support kernel. | `base_kernel: linux-lts`, `initramfs-linux-lts.img` |
-| `configs/kernels/linux-zen.json` | Performance-oriented desktop kernel. | `base_kernel: linux-zen`, `initramfs-linux-zen.img` |
-| `configs/kernels/linux-hardened.json` | Security-focused kernel variant. | `base_kernel: linux-hardened`, `initramfs-linux-hardened.img` |
+| `configs/system/linux.json` | Default stable kernel. | `base_kernel: linux`, `initramfs-linux.img` |
+| `configs/system/linux-lts.json` | Long-term support kernel. | `base_kernel: linux-lts`, `initramfs-linux-lts.img` |
+| `configs/system/linux-zen.json` | Performance-oriented desktop kernel. | `base_kernel: linux-zen`, `initramfs-linux-zen.img` |
+| `configs/system/linux-hardened.json` | Security-focused kernel variant. | `base_kernel: linux-hardened`, `initramfs-linux-hardened.img` |
 
 ### Example use
 

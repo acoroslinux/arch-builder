@@ -55,7 +55,7 @@ class TestChrootPackageInstallation(unittest.TestCase):
         
         # 1. Verify official packages installation via pacman -S
         manager.run_command.assert_any_call(
-            ["pacman", "-S", "--needed", "--noconfirm", "--disable-download-timeout", "base", "linux"],
+            ["pacman", "-Sy", "--needed", "--noconfirm", "--disable-download-timeout", "base", "linux"],
             chroot_path="/tmp/real-chroot"
         )
         
@@ -68,7 +68,7 @@ class TestChrootPackageInstallation(unittest.TestCase):
         
         # 3. Verify AUR packages prerequisites, useradd, git clone, and makepkg commands
         manager.run_command.assert_any_call(
-            ["pacman", "-S", "--needed", "--noconfirm", "git", "base-devel"],
+            ["pacman", "-Sy", "--needed", "--noconfirm", "git", "base-devel"],
             chroot_path="/tmp/real-chroot"
         )
         manager.run_command.assert_any_call(

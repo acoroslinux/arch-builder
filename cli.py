@@ -74,8 +74,8 @@ def main():
         "architecture",
         nargs="?",
         default="x86_64",
-        choices=["x86_64", "aarch64", "riscv64", "ppc64le", "s390x"],
-        help="Target architecture (e.g., x86_64, arm64). Default: x86_64",
+        choices=["x86_64"],
+        help="Target architecture. Currently supported: x86_64. Default: x86_64",
     )
 
     # Configuration and Environment

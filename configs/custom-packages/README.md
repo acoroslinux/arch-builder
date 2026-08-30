@@ -18,4 +18,4 @@ During real builds, the chroot installer will:
 
 ## Example profile
 
-See `configs/packages/custom-user.json`.
+See `configs/software/custom-user.json`.

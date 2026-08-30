@@ -4,7 +4,7 @@ Core logger configuration for the arch‑builder project.
 
 This module centralises all logging initialisation, providing:
 * colour‑coded console output,
-* rotating file logs stored in ~/logs/,
+* rotating file logs stored in a writable project-local or temporary directory,
 * a simple API to obtain a logger for any component.
 """
 
@@ -62,7 +62,7 @@ def setup_logger(
 
     The logger writes to:
     • the console (colourised, INFO+ by default)
-    • a rotating file in ``~/logs/`` (DEBUG+ by default)
+    • a rotating file when a writable log directory is available
 
     Parameters
     ----------
@@ -100,25 +100,43 @@ def setup_logger(
     # ------------------------------------------------------------------
     # File handler (rotating, no colours)
     # ------------------------------------------------------------------
-    log_dir = Path(os.path.expanduser("~")) / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
+    file_handler = None
+    log_dir_candidates = []
+    configured_log_dir = os.environ.get("ARCH_BUILDER_LOG_DIR")
+    if configured_log_dir:
+        log_dir_candidates.append(Path(configured_log_dir))
+    log_dir_candidates.extend(
+        [
+            Path(__file__).resolve().parents[1] / "logs",
+            Path("/tmp") / "arch-builder-logs",
+        ]
+    )
 
-    file_handler = RotatingFileHandler(
-        log_dir / log_filename,
-        maxBytes=1024 * 1024,  # 1 MiB per file
-        backupCount=5,
-        encoding="utf-8",
-    )
-    file_handler.setLevel(log_level)
-    file_handler.setFormatter(
-        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    )
+    for log_dir in log_dir_candidates:
+        try:
+            log_dir.mkdir(parents=True, exist_ok=True)
+            file_handler = RotatingFileHandler(
+                log_dir / log_filename,
+                maxBytes=1024 * 1024,  # 1 MiB per file
+                backupCount=5,
+                encoding="utf-8",
+            )
+            file_handler.setLevel(log_level)
+            file_handler.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                )
+            )
+            break
+        except OSError:
+            file_handler = None
 
     # ------------------------------------------------------------------
     # Attach handlers
     # ------------------------------------------------------------------
     logger.addHandler(console_handler)
-    logger.addHandler(file_handler)
+    if file_handler is not None:
+        logger.addHandler(file_handler)
 
     return logger
 
