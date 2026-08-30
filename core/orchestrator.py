@@ -273,6 +273,30 @@ class BuildOrchestrator:
             pacman_cache_dir=pacman_cache_path,
             arch=self.arch,
         )
+        # --- SMART BOOTLOADER DEFAULTS ---
+        if not self.bootloader:
+            if self.output_format == "iso":
+                self.bootloader = {"type": "grub2-hybrid"}
+            elif getattr(self, "arch", "") in ("aarch64", "armv7h", "armv6h"):
+                self.bootloader = {"type": "systemd-boot"}  # Default ARM UEFI
+            else:
+                self.bootloader = {"type": "grub2-uefi"}
+        
+        # Inject bootloader packages dynamically
+        bcfg = self.bootloader
+        btype = bcfg.get("type", "") if isinstance(bcfg, dict) else (bcfg or "")
+        
+        # Ensure we inject the required packages into the config before package installation
+        extra_pkgs = []
+        if "grub" in btype:
+            extra_pkgs.extend(["grub", "efibootmgr", "dosfstools", "mtools"])
+        elif "systemd-boot" in btype:
+            extra_pkgs.extend(["efibootmgr", "dosfstools"])
+            
+        if extra_pkgs:
+            existing = self.config.get("packages", [])
+            self.config["packages"] = list(set(existing + extra_pkgs))
+
         if self.chroot:
             self.chroot.toolchain = self.toolchain
         try:
@@ -374,7 +398,27 @@ class BuildOrchestrator:
                 self.builder.engine.install_packages()
                 self.builder.engine.post_install_configure()
                 
+                # --- INSTALL BOOTLOADER IN CHROOT (ARCH SPECIFIC) ---
                 target_root = workdir_path / "airootfs"
+                from core.chroot_manager import ChrootManager
+                chroot_tmp = ChrootManager(chroot_path=target_root, mode=self.mode, toolchain=self.toolchain, arch=self.arch)
+                bcfg = self.config.get("bootloader", {})
+                btype = bcfg.get("type", "") if isinstance(bcfg, dict) else (bcfg or "")
+                
+                if self.mode == "real":
+                    if "grub" in btype:
+                        print(f"\n[ORCHESTRATOR] Installing GRUB Bootloader ({btype}) into chroot /boot/efi...")
+                        chroot_tmp.run_command(["mkdir", "-p", "/boot/efi/EFI"])
+                        grub_target = "arm64-efi" if getattr(self, "arch", "") in ("aarch64", "armv7h", "armv6h") else "x86_64-efi"
+                        chroot_tmp.run_command(["grub-install", f"--target={grub_target}", "--efi-directory=/boot/efi", "--bootloader-id=arch", "--removable"])
+                        chroot_tmp.run_command(["grub-mkconfig", "-o", "/boot/grub/grub.cfg"])
+                    elif "systemd-boot" in btype:
+                        print(f"\n[ORCHESTRATOR] Installing systemd-boot Bootloader ({btype}) into chroot /boot/efi...")
+                        chroot_tmp.run_command(["mkdir", "-p", "/boot/efi/EFI"])
+                        chroot_tmp.run_command(["bootctl", "install", "--esp-path=/boot/efi"])
+                else:
+                    print(f"\n[MOCK] Simulated bootloader installation: {btype}")
+                # ----------------------------------------------------
                 disk_engine = DiskEngine(
                     workdir=workdir_path,
                     target_root=target_root,

@@ -1,0 +1,6 @@
+{
+    "background.png": [
+        "/usr/share/grub/themes/modern/background.png",
+        "/usr/share/plymouth/themes/void-modern/background.png"
+    ]
+}

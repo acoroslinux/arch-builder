@@ -108,11 +108,6 @@ class ChrootManager:
         self.fs_handler = MockFSHandler(self._workdir)
         self.toolchain = toolchain
         self.arch = (arch or "x86_64").lower()
-        if self.arch not in ("x86_64", "x86-64"):
-            raise ChrootManagerError(
-                f"Architecture '{self.arch}' is not supported. Only x86_64 is supported."
-            )
-        self.arch = "x86_64"
 
         # Each manager gets its own logger (useful for debugging)
         self.logger = setup_logger("chroot", "chroot.log", logging.INFO)
@@ -583,7 +578,7 @@ class ChrootManager:
                     "--gpgdir",
                     "/airootfs/etc/pacman.d/gnupg",
                     "--populate",
-                    "archlinux",
+                    "archlinuxarm" if getattr(self, "arch", "") in ("aarch64", "armv7h", "armv6h") else "archlinux",
                 ],
                 chroot_path=str(run_path),
             )

@@ -116,10 +116,8 @@ class SystemManager:
                 self.logger.debug(f"Attempting to enable service: {service}...")
                 # The command is executed inside the chroot; success/failure is logged
                 # by the ChrootManager's run_command method.
-                command = ["systemctl", "enable", "--now", f"{service}.service"]
-                self.toolchain.run_command(
-                    command, chroot_path=self.config.system.get("workdir_base")
-                )
+                command = ["systemctl", "enable", f"{service}.service"]
+                self.chroot_manager.run_in_chroot(command)
         except Exception as e:
             self.logger.critical(
                 f"Failure while configuring systemd services: {type(e).__name__}: {str(e)}"
@@ -145,8 +143,10 @@ class SystemManager:
         try:
             # Simulate the mkinitcpio command – in a real setup this would
             # collect modules and hooks based on the installed kernel packages.
-            command = ["makepkg", "-c", "--components=base"]
-            self.toolchain.run_command(command, chroot_path="/mnt/build-chroot")
+            # mkinitcpio is automatically run by pacman hooks in Arch Linux when the linux kernel is installed.
+            # However, since we write our custom mkinitcpio.conf AFTER packages are installed,
+            # we must regenerate it.
+            self.chroot_manager.run_in_chroot(["mkinitcpio", "-P"])
             self.logger.info(
                 "Initramfs generated successfully and ready for the bootloader."
             )

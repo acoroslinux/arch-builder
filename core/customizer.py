@@ -435,6 +435,36 @@ class SystemConfigurator:
                         StructuredCopyAction(custom_path, final_copy_list, arch)
                     )
 
+
+    def apply_theme_assets(self, chroot):
+        import json
+        import shutil
+        from pathlib import Path
+        try:
+            from core.path_utils import resolve_from_project
+        except ImportError:
+            def resolve_from_project(p): return Path(p)
+            
+        mapping_file = resolve_from_project("configs/assets/theme_mapping.json")
+        assets_dir = resolve_from_project("configs/assets")
+        
+        if not mapping_file.exists():
+            return
+            
+        try:
+            with open(mapping_file, 'r') as f:
+                mapping = json.load(f)
+                
+            for asset_name, paths in mapping.items():
+                src = assets_dir / asset_name
+                if src.exists():
+                    for target in paths:
+                        target_path = chroot.chroot_path / target.lstrip('/')
+                        target_path.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(src, target_path)
+        except Exception as e:
+            logger.error(f"Failed to apply theme assets: {e}")
+
     def apply(self, source_base_dir: Optional[Path] = None):
         """Apply all registered actions to the chroot."""
         if not self.chroot:
@@ -455,3 +485,5 @@ class SystemConfigurator:
                 action.execute(self.chroot, source_base_dir)
             except Exception as e:
                 logger.error(f"Failed to execute configuration action: {e}")
+
+        self.apply_theme_assets(self.chroot)
