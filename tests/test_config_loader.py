@@ -15,6 +15,8 @@ class TestGlobalConfigLoader(unittest.TestCase):
         (self.test_dir / "desktops").mkdir(parents=True, exist_ok=True)
         (self.test_dir / "system").mkdir(parents=True, exist_ok=True)
         (self.test_dir / "software").mkdir(parents=True, exist_ok=True)
+        (self.test_dir / "kernels").mkdir(parents=True, exist_ok=True)
+        (self.test_dir / "packages").mkdir(parents=True, exist_ok=True)
         (self.test_dir / "services").mkdir(parents=True, exist_ok=True)
         (self.test_dir / "live-users").mkdir(parents=True, exist_ok=True)
 

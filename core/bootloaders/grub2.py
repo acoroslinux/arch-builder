@@ -146,7 +146,7 @@ class Grub2Bootloader:
     def generate_embed_cfg(self, workdir: Path, dest_path: Path) -> bool:
         """Generate the grub-embed.cfg from template, applying placeholder substitutions."""
         embed_template = resolve_from_project(
-            "configs/templates/grub/grub-embed.cfg.in"
+            "configs/boot/templates/grub-embed.cfg.in"
         )
         if not embed_template.exists():
             logger.warning(

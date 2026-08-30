@@ -22,7 +22,7 @@
     "keymap": "us"
   },
   "build_environment": {
-    "workdir_base": "arch-builder/workdir",
+    "workdir_base": "workdir",
     "iso_label": "ARCH-MODERN",
     "binaries": {
       "grub_mkrescue": "/usr/bin/grub-mkrescue",
@@ -30,7 +30,7 @@
     }
   },
   "system": {
-    "workdir_base": "arch-builder/workdir",
+    "workdir_base": "workdir",
     "iso_label": "ARCH-MODERN",
     "binaries": {
       "grub-mkrescue": "/usr/bin/grub-mkrescue",

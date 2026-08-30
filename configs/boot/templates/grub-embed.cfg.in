@@ -1,0 +1,3 @@
+search --no-floppy --set=root --file /boot/@@ARCHISO_UUID@@.uuid
+set prefix=($root)/boot/grub
+configfile ($root)/boot/grub/grub.cfg

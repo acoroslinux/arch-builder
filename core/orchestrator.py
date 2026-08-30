@@ -178,7 +178,7 @@ class BuildOrchestrator:
 
         # 2. Initialize the chroot manager first.
         # Use the base workdir defined in config for the target architecture.
-        configured_base = self.config.get("system.workdir_base", "arch-builder/workdir")
+        configured_base = self.config.get("system.workdir_base", "workdir")
         base_workdir = resolve_from_project(str(configured_base))
         workdir = self._resolve_writable_workdir(base_workdir)
 
@@ -187,7 +187,7 @@ class BuildOrchestrator:
 
         if self.clean and self.mode != "mock":
             if os.geteuid() == 0:
-                unmount_all_under(resolve_from_project("arch-builder/workdir"))
+                unmount_all_under(resolve_from_project("workdir"))
             if workdir.exists():
                 import shutil
                 shutil.rmtree(workdir, ignore_errors=True)
@@ -257,7 +257,7 @@ class BuildOrchestrator:
         pacman_cache_path = (
             resolve_from_project(pacman_cache_dir)
             if pacman_cache_dir
-            else resolve_from_project("arch-builder/cache/pacman/pkg")
+            else resolve_from_project("cache/pacman/pkg")
         )
 
         if diagnostics_enabled:
@@ -295,7 +295,7 @@ class BuildOrchestrator:
             
         if extra_pkgs:
             existing = self.config.get("packages", [])
-            self.config["packages"] = list(set(existing + extra_pkgs))
+            self.config._data["packages"] = list(set(existing + extra_pkgs))
 
         if self.chroot:
             self.chroot.toolchain = self.toolchain
@@ -439,7 +439,7 @@ class BuildOrchestrator:
         finally:
             if self.clean and self.mode != "mock":
                 if os.geteuid() == 0:
-                    unmount_all_under(resolve_from_project("arch-builder/workdir"))
+                    unmount_all_under(resolve_from_project("workdir"))
                 if hasattr(self, 'workdir') and self.workdir and self.workdir.exists():
                     import shutil
                     shutil.rmtree(self.workdir, ignore_errors=True)

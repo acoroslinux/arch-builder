@@ -127,7 +127,7 @@
   },
   "system_info": {
     "root_device_id": "/dev/disk/by-uuid/UUID_DO_NOT_FORGET_THIS",
-    "workdir_base": "arch-builder/workdir"
+    "workdir_base": "workdir"
   },
   "customizations": {
     "hostname": "arch-builder",

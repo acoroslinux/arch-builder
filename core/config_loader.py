@@ -105,12 +105,20 @@ class ConfigAssembler:
     ) -> Dict[str, Any]:
         """Load a profile JSON from configs/<category>/<profile_name>.json if it exists."""
         profile_path = self.config_root / category / f"{profile_name}.json"
+        if not profile_path.exists() and category == "software":
+            profile_path = self.config_root / "packages" / f"{profile_name}.json"
+        elif not profile_path.exists() and category == "system":
+            profile_path = self.config_root / "kernels" / f"{profile_name}.json"
         if not profile_path.exists():
             logger.warning(
                 f"Profile '{profile_name}' not found in '{category}' at {profile_path}"
             )
             return {}
         return self._load_json_file(profile_path)
+
+    @staticmethod
+    def _packages(config: Dict[str, Any]) -> List[Any]:
+        return config.get("software", config.get("packages", []))
 
     def _apply_kernel_override(self, kernel_name: str) -> None:
         """Set selected kernel and align related fields in platform_specific."""
@@ -149,6 +157,7 @@ class ConfigAssembler:
         platform_pkgs = platform.get("software")
         if isinstance(platform_pkgs, list):
             replace_kernel_in_list(platform_pkgs)
+            platform["packages"] = platform_pkgs
 
         root_pkgs = self.master_config.get("software")
         if isinstance(root_pkgs, list):
@@ -295,6 +304,10 @@ class ConfigAssembler:
         base_package_data = self._load_optional_profile("software", "base")
         if base_package_data:
             self._deep_merge(self.master_config, base_package_data)
+            for pkg in self._packages(base_package_data):
+                self.master_config.setdefault("software", [])
+                if pkg not in self.master_config["software"]:
+                    self.master_config["software"].append(pkg)
 
         for profile_name in package_profiles or []:
             if profile_name == "base":
@@ -302,6 +315,10 @@ class ConfigAssembler:
             package_data = self._load_optional_profile("software", profile_name)
             if package_data:
                 self._deep_merge(self.master_config, package_data)
+                for pkg in self._packages(package_data):
+                    self.master_config.setdefault("software", [])
+                    if pkg not in self.master_config["software"]:
+                        self.master_config["software"].append(pkg)
 
         for profile_name in service_profiles or []:
             services_data = self._load_optional_profile("services", profile_name)

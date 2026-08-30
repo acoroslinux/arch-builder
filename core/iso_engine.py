@@ -416,7 +416,7 @@ class ArchEngine(BaseEngine):
                     "bash",
                     "-c",
                     "grub-mkimage -d /usr/lib/grub/i386-pc -o /tmp/boot.img -O i386-pc -p /boot/grub "
-                    "biosdisk iso9660 part_msdos part_gpt ext2 fat ntfs search_fs_uuid search_label",
+                    "biosdisk iso9660 part_msdos part_gpt ext2 fat ntfs search search_fs_file search_fs_uuid search_label",
                 ]
                 self._run_command(cmd)
                 shutil.copy2(effective_root / "tmp" / "boot.img", boot_img_dest)
@@ -466,7 +466,7 @@ class ArchEngine(BaseEngine):
                     "-c",
                     f"grub-mkimage -d /usr/lib/grub/{grub_target} -o /tmp/{efi_filename} -O {grub_target} "
                     "-c /tmp/grub-embed.cfg -p /boot/grub "
-                    "efifwsetup efinet efi_uga fat iso9660 part_gpt part_msdos search_fs_uuid search_label "
+                    "efifwsetup efinet efi_uga fat iso9660 part_gpt part_msdos search search_fs_file search_fs_uuid search_label "
                     "normal boot configfile linux loopback chain",
                 ]
                 self._run_command(cmd)
@@ -737,7 +737,7 @@ class ArchEngine(BaseEngine):
                 "ISO staging directory not found. build_bootloaders() must be called first."
             )
 
-        output_abs = str(resolve_from_project(output_path))
+        output_abs = str(resolve_from_project(f"output/{__import__("pathlib").Path(output_path).name}"))
         Path(output_abs).parent.mkdir(parents=True, exist_ok=True)
 
         # Check if we're in mock mode - skip actual execution
@@ -891,6 +891,9 @@ class ArchEngine(BaseEngine):
             run_path = str(self.toolchain.build_chroot)
 
         if not run_path:
+            run_path = str(chroot_manager._workdir)
+
+        if not run_path:
             self.logger.warning("[initramfs] No build chroot path available")
             return
 
@@ -938,8 +941,8 @@ class ArchEngine(BaseEngine):
                 f"[initramfs] Running mkinitcpio -p {kernel_preset} in airootfs..."
             )
             chroot_manager.run_command(
-                ["chroot", "/airootfs", "mkinitcpio", "-p", kernel_preset],
-                chroot_path=run_path,
+                ["/usr/bin/mkinitcpio", "-p", kernel_preset],
+                chroot_path=str(airootfs_path),
             )
             self.logger.info(
                 f"[initramfs] Generated initramfs for kernel: {kernel_preset}"

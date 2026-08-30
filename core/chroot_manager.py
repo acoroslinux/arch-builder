@@ -333,7 +333,7 @@ class ChrootManager:
                 [
                     "sudo",
                     "pacman",
-                    "-S",
+                    "-Sy",
                     "--needed",
                     "--noconfirm",
                     "git",
@@ -449,7 +449,7 @@ class ChrootManager:
 
         # Prepare build prerequisites and non-root builder account.
         self.run_command(
-            ["pacman", "-S", "--needed", "--noconfirm", "git", "base-devel"],
+            ["pacman", "-Sy", "--needed", "--noconfirm", "git", "base-devel"],
             chroot_path=str(run_path),
         )
         self.run_command(
@@ -635,7 +635,7 @@ class ChrootManager:
                     [
                         "sudo",
                         "pacman",
-                        "-S",
+                        "-Sy",
                         "--needed",
                         "--noconfirm",
                         "--root",
@@ -655,7 +655,7 @@ class ChrootManager:
                     command = [
                         "sudo",
                         "pacman",
-                        "-S",
+                        "-Sy",
                         "--needed",
                         "--noconfirm",
                         "--disable-download-timeout",
@@ -717,7 +717,7 @@ class ChrootManager:
         try:
             keyring_cmd = [
                 "pacman",
-                "-S",
+                "-Sy",
                 "--needed",
                 "--noconfirm",
                 *root_flag,
@@ -734,7 +734,7 @@ class ChrootManager:
                 # separate from the build toolchain.
                 command = [
                     "pacman",
-                    "-S",
+                    "-Sy",
                     "--needed",
                     "--noconfirm",
                     "--disable-download-timeout",
@@ -804,10 +804,20 @@ class ChrootManager:
         self.logger.info(
             "[chroot] Mounting essential filesystems (/proc, /sys, /dev)..."
         )
+        from core.path_utils import resolve_from_project
+        cache_dir = resolve_from_project("cache/pacman/pkg")
+        import os
+        import subprocess
+        if os.geteuid() == 0:
+            cache_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            subprocess.run(["sudo", "mkdir", "-p", str(cache_dir)])
+
         mounts = [
             ("/proc", self.chroot_path / "proc", "--bind"),
             ("/sys", self.chroot_path / "sys", "--bind"),
             ("/dev", self.chroot_path / "dev", "--bind"),
+            (str(cache_dir), self.chroot_path / "var" / "cache" / "pacman" / "pkg", "--bind"),
         ]
 
         def _sudo_run(cmd, check=True):
@@ -843,6 +853,7 @@ class ChrootManager:
 
         self.logger.info("[chroot] Unmounting essential filesystems...")
         mounts = [
+            self.chroot_path / "var" / "cache" / "pacman" / "pkg",
             self.chroot_path / "dev" / "shm",
             self.chroot_path / "proc",
             self.chroot_path / "sys",
