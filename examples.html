@@ -240,7 +240,7 @@ flowchart TD
 <p>Arch-Builder supports automatically downloading, compiling, and installing packages from the AUR (Arch User Repository) during the build process using a dedicated non-root build flow with helper accounts.</p>
 <section id="step-1-create-or-edit-an-aur-package-profile">
 <h3>Step 1: Create or edit an AUR package profile<a class="headerlink" href="#step-1-create-or-edit-an-aur-package-profile" title="Link to this heading"></a></h3>
-<p>You can edit the default <code class="docutils literal notranslate"><span class="pre">configs/packages/aur-packages.json</span></code> file to specify the AUR package names under the <code class="docutils literal notranslate"><span class="pre">package_sources.aur</span></code> list:</p>
+<p>You can edit the default <code class="docutils literal notranslate"><span class="pre">configs/software/aur-packages.json</span></code> file to specify the AUR package names under the <code class="docutils literal notranslate"><span class="pre">package_sources.aur</span></code> list:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"aur-packages"</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Custom AUR packages to compile and install."</span><span class="p">,</span>
@@ -289,7 +289,7 @@ flowchart TD
 </section>
 <section id="step-2-build-the-iso-using-the-custom-user-profile">
 <h3>Step 2: Build the ISO using the custom-user profile<a class="headerlink" href="#step-2-build-the-iso-using-the-custom-user-profile" title="Link to this heading"></a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">configs/packages/custom-user.json</span></code> profile is pre-configured to scan the local packages directory. Run the build with:</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">configs/software/custom-user.json</span></code> profile is pre-configured to scan the local packages directory. Run the build with:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--mode<span class="w"> </span>real<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--desktop<span class="w"> </span>xfce<span class="w"> </span><span class="se">\</span>

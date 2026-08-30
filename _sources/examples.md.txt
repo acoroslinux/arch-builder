@@ -141,7 +141,7 @@ Useful when iterating on a build and you intentionally want to preserve the exis
 Arch-Builder supports automatically downloading, compiling, and installing packages from the AUR (Arch User Repository) during the build process using a dedicated non-root build flow with helper accounts.
 
 ### Step 1: Create or edit an AUR package profile
-You can edit the default `configs/packages/aur-packages.json` file to specify the AUR package names under the `package_sources.aur` list:
+You can edit the default `configs/software/aur-packages.json` file to specify the AUR package names under the `package_sources.aur` list:
 
 ```json
 {
@@ -189,7 +189,7 @@ configs/custom-packages/local/calamares-3.3.0-1-x86_64.pkg.tar.zst
 ```
 
 ### Step 2: Build the ISO using the custom-user profile
-The `configs/packages/custom-user.json` profile is pre-configured to scan the local packages directory. Run the build with:
+The `configs/software/custom-user.json` profile is pre-configured to scan the local packages directory. Run the build with:
 
 ```bash
 sudo python3 cli.py x86_64 \

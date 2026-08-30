@@ -174,12 +174,12 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/bootloaders/grub.json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/boot/grub.json</span></code></p></td>
 <td><p>GRUB-based bootloader profile.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">platform_specific.packages</span></code>, <code class="docutils literal notranslate"><span class="pre">system.binaries</span></code></p></td>
 <td><p>Adds <code class="docutils literal notranslate"><span class="pre">grub</span></code> and <code class="docutils literal notranslate"><span class="pre">efibootmgr</span></code>; pins <code class="docutils literal notranslate"><span class="pre">grub-mkrescue</span></code> paths.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/bootloaders/syslinux.json</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/boot/syslinux.json</span></code></p></td>
 <td><p>Syslinux/Isolinux profile for BIOS-style flows.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">platform_specific.packages</span></code></p></td>
 <td><p>Adds <code class="docutils literal notranslate"><span class="pre">syslinux</span></code>, <code class="docutils literal notranslate"><span class="pre">mtools</span></code>, <code class="docutils literal notranslate"><span class="pre">dosfstools</span></code>.</p></td>
@@ -205,19 +205,19 @@ python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/kernels/linux.json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/system/linux.json</span></code></p></td>
 <td><p>Default stable kernel.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">base_kernel:</span> <span class="pre">linux</span></code>, <code class="docutils literal notranslate"><span class="pre">initramfs-linux.img</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/kernels/linux-lts.json</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/system/linux-lts.json</span></code></p></td>
 <td><p>Long-term support kernel.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">base_kernel:</span> <span class="pre">linux-lts</span></code>, <code class="docutils literal notranslate"><span class="pre">initramfs-linux-lts.img</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/kernels/linux-zen.json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/system/linux-zen.json</span></code></p></td>
 <td><p>Performance-oriented desktop kernel.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">base_kernel:</span> <span class="pre">linux-zen</span></code>, <code class="docutils literal notranslate"><span class="pre">initramfs-linux-zen.img</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/kernels/linux-hardened.json</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/system/linux-hardened.json</span></code></p></td>
 <td><p>Security-focused kernel variant.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">base_kernel:</span> <span class="pre">linux-hardened</span></code>, <code class="docutils literal notranslate"><span class="pre">initramfs-linux-hardened.img</span></code></p></td>
 </tr>
