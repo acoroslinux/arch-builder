@@ -6,6 +6,5 @@
     "wl-clipboard",
     "grim",
     "slurp"
-  ],
-  "dependencies": ["pacman"]
+  ]
 }

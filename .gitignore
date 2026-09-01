@@ -28,6 +28,7 @@ workdir/
 fallback/
 cache/
 logs/
+output/
 
 # Built ISO images
 *.iso

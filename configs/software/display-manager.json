@@ -1,9 +1,7 @@
 {
     "name": "display-manager",
-    "description": "Packages for graphical session management (GDM, SDDM, and others).",
+    "description": "SDDM graphical session manager.",
     "packages": [
-        "sddm",
-        "xf86-video-intel"
-    ],
-    "dependencies": ["pacman"]
+        "sddm"
+    ]
 }

@@ -57,6 +57,7 @@ class SyslinuxBootloader:
         )
         iso_label = self._cfg_get("system.iso_label", "ARCH-MODERN")
         arch = self._cfg_get("platform_specific.architecture", "x86_64")
+        desktop = str(self._cfg_get("desktop", "")).upper()
 
         logger.info(
             f"[SYSLINUX] Using kernel={kernel_file} initramfs={initramfs_file} "
@@ -73,6 +74,7 @@ class SyslinuxBootloader:
 
         return {
             "@@BOOT_TITLE@@": "Arch Modern",
+            "@@DESKTOP@@": desktop,
             "@@ARCH@@": arch,
             "@@KERNEL_FILE@@": kernel_file,
             "@@INITRAMFS_FILE@@": initramfs_file,
@@ -89,15 +91,16 @@ class SyslinuxBootloader:
         syslinux_dir = workdir / "boot" / "syslinux"
         syslinux_dir.mkdir(parents=True, exist_ok=True)
 
-        templates_dir = resolve_from_project("configs/templates/syslinux")
+        templates_dir = resolve_from_project("configs/boot/templates")
         if not templates_dir.exists():
             logger.error(f"[SYSLINUX] Templates directory not found: {templates_dir}")
             return False
 
         replacements = self._build_replacements(iso_uuid=iso_uuid)
 
-        # Process all syslinux template files
-        for tmpl_file in sorted(templates_dir.iterdir()):
+        # Only ISOLINUX templates belong in boot/syslinux. The same source
+        # directory also contains GRUB templates.
+        for tmpl_file in sorted(templates_dir.glob("isolinux*.cfg*")):
             # Skip non-config files (e.g. .png)
             if tmpl_file.suffix == ".png":
                 continue
@@ -108,6 +111,12 @@ class SyslinuxBootloader:
                 content = tmpl_file.read_text()
                 for placeholder, value in replacements.items():
                     content = content.replace(placeholder, value)
+                if not (templates_dir / "splash.png").exists():
+                    content = "\n".join(
+                        line
+                        for line in content.splitlines()
+                        if not line.lstrip().startswith("MENU BACKGROUND")
+                    ) + "\n"
                 (syslinux_dir / dest_name).write_text(content)
                 logger.info(f"[SYSLINUX] Generated {dest_name} from template")
             elif tmpl_file.suffix == ".cfg":
@@ -156,14 +165,12 @@ class SyslinuxBootloader:
             self._mock_binaries(syslinux_dir)
 
         # Always copy splash.png from templates if it exists
-        splash_src = resolve_from_project("configs/templates/syslinux/splash.png")
+        splash_src = resolve_from_project("configs/boot/templates/splash.png")
         if splash_src.exists():
             shutil.copy2(splash_src, syslinux_dir / "splash.png")
             logger.info("[SYSLINUX] Copied splash.png to boot/syslinux directory.")
         else:
-            logger.warning(
-                "[SYSLINUX] splash.png not found in templates, menu will have no background."
-            )
+            logger.info("[SYSLINUX] No optional splash.png configured.")
 
         return True
 

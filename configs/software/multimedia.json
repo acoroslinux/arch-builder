@@ -7,6 +7,5 @@
     "gst-plugins-base",
     "gst-plugins-good",
     "gst-plugins-bad"
-  ],
-  "dependencies": ["pacman"]
+  ]
 }

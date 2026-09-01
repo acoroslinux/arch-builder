@@ -170,7 +170,7 @@ What to inspect:
 - configured GRUB binary path in `configs/global_build.json`
 - generated boot directory inside the active chroot or fallback path
 
-## Symptom: final ISO packaging fails or the ISO is left inside the isolated rootfs
+## Symptom: final artifact packaging fails or the output is left inside the isolated rootfs
 
 Historical cause:
 
@@ -178,11 +178,12 @@ Historical cause:
 
 Current handling:
 
-- if the rescue ISO exists inside the isolated chroot, the builder copies it out to the requested destination path
+- if an intermediate artifact exists inside the isolated chroot, the builder copies it to the requested `output/` destination
 
 What to inspect:
 
-- `<isolated-root>/tmp/bootloader-rescue.iso`
+- `<isolated-root>/tmp/bootloader-rescue.iso` (ISO builds)
+- `<isolated-root>/root.img` and `<isolated-root>/efi.img` (disk builds)
 - requested final output path
 
 ## Symptom: cleanup prints noisy unmount warnings

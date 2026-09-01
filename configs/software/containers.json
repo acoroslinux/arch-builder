@@ -6,6 +6,5 @@
     "docker-compose",
     "podman",
     "buildah"
-  ],
-  "dependencies": ["pacman"]
+  ]
 }

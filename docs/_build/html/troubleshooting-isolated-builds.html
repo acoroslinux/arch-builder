@@ -67,7 +67,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#symptom-chroot-commands-run-in-the-wrong-rootfs">Symptom: chroot commands run in the wrong rootfs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#symptom-customization-fails-on-missing-groups-or-initramfs-config-placement">Symptom: customization fails on missing groups or initramfs config placement</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#symptom-bootloader-creation-fails">Symptom: bootloader creation fails</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#symptom-final-iso-packaging-fails-or-the-iso-is-left-inside-the-isolated-rootfs">Symptom: final ISO packaging fails or the ISO is left inside the isolated rootfs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#symptom-final-artifact-packaging-fails-or-the-output-is-left-inside-the-isolated-rootfs">Symptom: final artifact packaging fails or the output is left inside the isolated rootfs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#symptom-cleanup-prints-noisy-unmount-warnings">Symptom: cleanup prints noisy unmount warnings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#symptom-workspace-local-fallback-path-becomes-unwritable-after-sudo-builds">Symptom: workspace-local fallback path becomes unwritable after <code class="docutils literal notranslate"><span class="pre">sudo</span></code> builds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#recommended-recovery-workflow">Recommended recovery workflow</a></li>
@@ -280,19 +280,20 @@
 <li><p>generated boot directory inside the active chroot or fallback path</p></li>
 </ul>
 </section>
-<section id="symptom-final-iso-packaging-fails-or-the-iso-is-left-inside-the-isolated-rootfs">
-<h2>Symptom: final ISO packaging fails or the ISO is left inside the isolated rootfs<a class="headerlink" href="#symptom-final-iso-packaging-fails-or-the-iso-is-left-inside-the-isolated-rootfs" title="Link to this heading"></a></h2>
+<section id="symptom-final-artifact-packaging-fails-or-the-output-is-left-inside-the-isolated-rootfs">
+<h2>Symptom: final artifact packaging fails or the output is left inside the isolated rootfs<a class="headerlink" href="#symptom-final-artifact-packaging-fails-or-the-output-is-left-inside-the-isolated-rootfs" title="Link to this heading"></a></h2>
 <p>Historical cause:</p>
 <ul class="simple">
 <li><p>final packaging path handling was incorrect for isolated mode</p></li>
 </ul>
 <p>Current handling:</p>
 <ul class="simple">
-<li><p>if the rescue ISO exists inside the isolated chroot, the builder copies it out to the requested destination path</p></li>
+<li><p>if an intermediate artifact exists inside the isolated chroot, the builder copies it to the requested <code class="docutils literal notranslate"><span class="pre">output/</span></code> destination</p></li>
 </ul>
 <p>What to inspect:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">&lt;isolated-root&gt;/tmp/bootloader-rescue.iso</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;isolated-root&gt;/tmp/bootloader-rescue.iso</span></code> (ISO builds)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;isolated-root&gt;/root.img</span></code> and <code class="docutils literal notranslate"><span class="pre">&lt;isolated-root&gt;/efi.img</span></code> (disk builds)</p></li>
 <li><p>requested final output path</p></li>
 </ul>
 </section>

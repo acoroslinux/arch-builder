@@ -7,8 +7,6 @@
     "exfatprogs",
     "dosfstools",
     "mtools",
-    "syslinux",
     "ntfs-3g"
-  ],
-  "dependencies": ["pacman"]
+  ]
 }

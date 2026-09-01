@@ -1,9 +1,9 @@
 {
+  "name": "common-remote",
+  "description": "Remote access services for live systems.",
   "customizations": {
     "services": [
-      "sshd",
-      "avahi-daemon",
-      "avahi-daemon.socket"
+      "sshd"
     ]
   }
 }

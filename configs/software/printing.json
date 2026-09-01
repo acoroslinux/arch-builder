@@ -7,5 +7,7 @@
     "system-config-printer",
     "ghostscript"
   ],
-  "dependencies": ["pacman"]
+  "customizations": {
+    "services": ["cups"]
+  }
 }

@@ -1,9 +1,9 @@
 {
-    "name": "base-networking",
-    "description": "Basic packages for network and DNS management.",
+    "name": "networking",
+    "description": "Additional wireless and DNS compatibility tools.",
     "packages": [
-        "netctl",
-        "resolvconf"
-    ],
-    "dependencies": ["pacman"]
+        "iwd",
+        "wpa_supplicant",
+        "openresolv"
+    ]
 }

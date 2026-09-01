@@ -96,7 +96,9 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
 <span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">UTC</span><span class="p">,</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">SimpleNamespace</span>
@@ -125,6 +127,7 @@
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;ArchBuilder&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Arm64Engine&quot;</span><span class="p">,</span>
     <span class="s2">&quot;ArchEngine&quot;</span><span class="p">,</span>
     <span class="s2">&quot;BaseEngine&quot;</span><span class="p">,</span>
     <span class="s2">&quot;Config&quot;</span><span class="p">,</span>
@@ -174,10 +177,6 @@
             <span class="n">toolchain</span><span class="p">,</span> <span class="s2">&quot;logger&quot;</span><span class="p">,</span> <span class="n">setup_logger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_system_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="c1"># Alterar para usar o novo bloco system_info em vez de system</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system_info&quot;</span><span class="p">,</span> <span class="p">{})</span>
-
     <span class="k">def</span> <span class="nf">_cfg_get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compatibility wrapper for config.get(key[, default]).&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
@@ -187,11 +186,8 @@
         <span class="k">return</span> <span class="n">default</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">value</span>
 
     <span class="k">def</span> <span class="nf">_workdir_base</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="n">system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_config</span><span class="p">()</span>
         <span class="n">configured</span> <span class="o">=</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system.workdir_base&quot;</span><span class="p">)</span>
-            <span class="ow">or</span> <span class="n">system</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;workdir_base&quot;</span><span class="p">)</span>
-            <span class="ow">or</span> <span class="n">system</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;workdir&quot;</span><span class="p">)</span>
             <span class="ow">or</span> <span class="s2">&quot;arch-builder/workdir&quot;</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">resolve_from_project</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">configured</span><span class="p">)))</span>
@@ -205,7 +201,7 @@
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">mountpoint</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">PermissionError</span><span class="p">:</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">original_error</span><span class="p">:</span>
             <span class="n">fallback</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span>
                 <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;arch-builder&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;fallback&quot;</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">arch</span> <span class="o">/</span> <span class="s2">&quot;boot&quot;</span>
             <span class="p">)</span>
@@ -221,10 +217,10 @@
                     <span class="n">candidate</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                     <span class="n">selected</span> <span class="o">=</span> <span class="n">candidate</span>
                     <span class="k">break</span>
-                <span class="k">except</span> <span class="ne">PermissionError</span><span class="p">:</span>
+                <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
                     <span class="k">continue</span>
             <span class="k">if</span> <span class="n">selected</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span>
+                <span class="k">raise</span> <span class="n">original_error</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Boot mountpoint &#39;</span><span class="si">{</span><span class="n">mountpoint</span><span class="si">}</span><span class="s2">&#39; is not writable. Falling back to &#39;</span><span class="si">{</span><span class="n">selected</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
             <span class="p">)</span>
@@ -257,7 +253,7 @@
 
     <span class="k">def</span> <span class="nf">_package_plan</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a normalized package installation plan from legacy and new config keys.&quot;&quot;&quot;</span>
-        <span class="n">legacy_packages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_packages</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cfg_get</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">))</span>
+        <span class="n">legacy_packages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_packages</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cfg_get</span><span class="p">(</span><span class="s2">&quot;software&quot;</span><span class="p">))</span>
         <span class="n">platform_packages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_packages</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cfg_get</span><span class="p">(</span><span class="s2">&quot;platform_specific.packages&quot;</span><span class="p">)</span>
         <span class="p">)</span>
@@ -266,9 +262,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_cfg_get</span><span class="p">(</span><span class="s2">&quot;package_sources.official&quot;</span><span class="p">,</span> <span class="p">[])</span>
         <span class="p">)</span>
         <span class="n">aur</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_packages</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cfg_get</span><span class="p">(</span><span class="s2">&quot;package_sources.aur&quot;</span><span class="p">,</span> <span class="p">[]))</span>
-        <span class="n">local_paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_packages</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_cfg_get</span><span class="p">(</span><span class="s2">&quot;package_sources.local_packages&quot;</span><span class="p">,</span> <span class="p">[])</span>
-        <span class="p">)</span>
+        <span class="n">local_paths</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">resolve_from_project</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_packages</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cfg_get</span><span class="p">(</span><span class="s2">&quot;package_sources.local_packages&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
 
         <span class="c1"># Load all matching package files from a user-provided local package directory.</span>
         <span class="n">local_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cfg_get</span><span class="p">(</span><span class="s2">&quot;package_sources.local_dir&quot;</span><span class="p">)</span>
@@ -302,7 +301,7 @@
             <span class="n">target</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">target</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">PermissionError</span><span class="p">:</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">original_error</span><span class="p">:</span>
             <span class="n">fallback</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span>
                 <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;arch-builder&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;fallback&quot;</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">arch</span>
             <span class="p">)</span>
@@ -315,10 +314,10 @@
                     <span class="n">candidate</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                     <span class="n">selected</span> <span class="o">=</span> <span class="n">candidate</span>
                     <span class="k">break</span>
-                <span class="k">except</span> <span class="ne">PermissionError</span><span class="p">:</span>
+                <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
                     <span class="k">continue</span>
             <span class="k">if</span> <span class="n">selected</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span>
+                <span class="k">raise</span> <span class="n">original_error</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Workdir &#39;</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">&#39; is not writable in the current mode. Falling back to &#39;</span><span class="si">{</span><span class="n">selected</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
             <span class="p">)</span>
@@ -388,7 +387,7 @@
         <span class="c1"># 3. Prepare a build toolchain (host tools or isolated Arch bootstrap in real mode).</span>
         <span class="c1"># These values are read from the toolchain object, which is set up by the orchestrator.</span>
         <span class="n">force_isolated</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="p">,</span> <span class="s2">&quot;force_isolated&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system_info.force_isolated_toolchain&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system.force_isolated_toolchain&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="c1"># In isolated mode, ensure /airootfs exists inside the build chroot for package installation</span>
@@ -537,14 +536,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[grub] Generating GRUB BIOS boot image in chroot...&quot;</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="s2">&quot;chroot&quot;</span><span class="p">,</span>
-                    <span class="nb">str</span><span class="p">(</span><span class="n">effective_root</span><span class="p">),</span>
                     <span class="s2">&quot;bash&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;-c&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;grub-mkimage -d /usr/lib/grub/i386-pc -o /tmp/boot.img -O i386-pc -p /boot/grub &quot;</span>
-                    <span class="s2">&quot;biosdisk iso9660 part_msdos part_gpt ext2 fat ntfs search_fs_uuid search_label&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;biosdisk iso9660 part_msdos part_gpt ext2 fat ntfs search search_fs_file search_fs_uuid search_label&quot;</span><span class="p">,</span>
                 <span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">chroot_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">effective_root</span><span class="p">))</span>
                 <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;tmp&quot;</span> <span class="o">/</span> <span class="s2">&quot;boot.img&quot;</span><span class="p">,</span> <span class="n">boot_img_dest</span><span class="p">)</span>
                 <span class="p">(</span><span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;tmp&quot;</span> <span class="o">/</span> <span class="s2">&quot;boot.img&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[grub] Created BIOS boot image: </span><span class="si">{</span><span class="n">boot_img_dest</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -586,16 +583,14 @@
 
                 <span class="c1"># Compile the standalone EFI image inside the chroot</span>
                 <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="s2">&quot;chroot&quot;</span><span class="p">,</span>
-                    <span class="nb">str</span><span class="p">(</span><span class="n">effective_root</span><span class="p">),</span>
                     <span class="s2">&quot;bash&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;-c&quot;</span><span class="p">,</span>
                     <span class="sa">f</span><span class="s2">&quot;grub-mkimage -d /usr/lib/grub/</span><span class="si">{</span><span class="n">grub_target</span><span class="si">}</span><span class="s2"> -o /tmp/</span><span class="si">{</span><span class="n">efi_filename</span><span class="si">}</span><span class="s2"> -O </span><span class="si">{</span><span class="n">grub_target</span><span class="si">}</span><span class="s2"> &quot;</span>
                     <span class="s2">&quot;-c /tmp/grub-embed.cfg -p /boot/grub &quot;</span>
-                    <span class="s2">&quot;efifwsetup efinet efi_uga fat iso9660 part_gpt part_msdos search_fs_uuid search_label &quot;</span>
+                    <span class="s2">&quot;efifwsetup efinet efi_uga fat iso9660 part_gpt part_msdos search search_fs_file search_fs_uuid search_label &quot;</span>
                     <span class="s2">&quot;normal boot configfile linux loopback chain&quot;</span><span class="p">,</span>
                 <span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">chroot_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">effective_root</span><span class="p">))</span>
                 <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">effective_root</span> <span class="o">/</span> <span class="s2">&quot;tmp&quot;</span> <span class="o">/</span> <span class="n">efi_filename</span><span class="p">,</span> <span class="n">efi_binary_dest</span><span class="p">)</span>
 
                 <span class="c1"># Cleanup</span>
@@ -648,9 +643,7 @@
         <span class="c1"># --- Generate ISO UUID (matches mkarchiso: TZ=UTC date +%F-%H-%M-%S-00) ---</span>
         <span class="c1"># mkarchiso creates /boot/&lt;iso_uuid&gt;.uuid on the ISO so the archiso hook</span>
         <span class="c1"># can find the ISO device by scanning all block devices for that file.</span>
-        <span class="kn">import</span> <span class="nn">datetime</span>
-
-        <span class="n">iso_uuid</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">-%H-%M-%S-00&quot;</span><span class="p">)</span>
+        <span class="n">iso_uuid</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">UTC</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">-%H-%M-%S-00&quot;</span><span class="p">)</span>
 
         <span class="c1"># Generate GRUB configuration (grub.cfg) inside the airootfs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_grub_boot_tree</span><span class="p">(</span><span class="n">effective_root</span><span class="p">,</span> <span class="n">iso_uuid</span><span class="o">=</span><span class="n">iso_uuid</span><span class="p">)</span>
@@ -869,7 +862,8 @@
             <span class="p">)</span>
 
         <span class="n">output_abs</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">resolve_from_project</span><span class="p">(</span><span class="n">output_path</span><span class="p">))</span>
-        <span class="n">Path</span><span class="p">(</span><span class="n">output_abs</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_abs</span><span class="p">)</span>
+        <span class="n">output_file</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="c1"># Check if we&#39;re in mock mode - skip actual execution</span>
         <span class="n">is_mock</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="s2">&quot;mock&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;mock&quot;</span>
@@ -897,6 +891,7 @@
             <span class="s2">&quot;acoroslinux&quot;</span><span class="p">,</span>
             <span class="s2">&quot;-preparer&quot;</span><span class="p">,</span>
             <span class="s2">&quot;arch-builder&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;-pad&quot;</span><span class="p">,</span>
             <span class="c1"># BIOS syslinux parameters (archiso official layout: boot/syslinux/)</span>
             <span class="s2">&quot;-eltorito-boot&quot;</span><span class="p">,</span>
             <span class="s2">&quot;boot/syslinux/isolinux.bin&quot;</span><span class="p">,</span>
@@ -931,6 +926,7 @@
                 <span class="sa">f</span><span class="s2">&quot;[finalize] [MOCK] Would create ISO: </span><span class="si">{</span><span class="n">output_abs</span><span class="si">}</span><span class="s2"> from </span><span class="si">{</span><span class="n">iso_source</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[finalize] [MOCK] Command: </span><span class="si">{</span><span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">command</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">output_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="s2">&quot;mock-iso-content</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
             <span class="k">return</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -942,11 +938,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_run_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="c1"># If the ISO file was successfully generated despite a post-generation crash (e.g. SIGSEGV on clean-up)</span>
-            <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_abs</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_abs</span><span class="p">)</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span> <span class="o">&gt;</span> <span class="mi">1000000</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">output_file</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">output_file</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span> <span class="o">&gt;</span> <span class="mi">1000000</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;xorriso reported an exit error/crash (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">), &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;but the ISO file was successfully generated at </span><span class="si">{</span><span class="n">output_abs</span><span class="si">}</span><span class="s2"> &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">Path</span><span class="p">(</span><span class="n">output_abs</span><span class="p">)</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span><span class="si">}</span><span class="s2"> bytes).&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">output_file</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span><span class="si">}</span><span class="s2"> bytes).&quot;</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;xorriso failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1022,6 +1018,9 @@
             <span class="n">run_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="o">.</span><span class="n">build_chroot</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">run_path</span><span class="p">:</span>
+            <span class="n">run_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">chroot_manager</span><span class="o">.</span><span class="n">_workdir</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">run_path</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;[initramfs] No build chroot path available&quot;</span><span class="p">)</span>
             <span class="k">return</span>
 
@@ -1059,18 +1058,22 @@
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Determine which kernel preset to use</span>
-            <span class="n">kernel_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-                <span class="s2">&quot;platform_specific.base_kernel&quot;</span><span class="p">,</span> <span class="s2">&quot;vmlinuz-linux&quot;</span>
-            <span class="p">)</span>
-            <span class="n">kernel_preset</span> <span class="o">=</span> <span class="n">kernel_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;vmlinuz-&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arch</span> <span class="o">==</span> <span class="s2">&quot;aarch64&quot;</span><span class="p">:</span>
+                <span class="n">kernel_name</span> <span class="o">=</span> <span class="s2">&quot;Image&quot;</span>
+                <span class="n">kernel_preset</span> <span class="o">=</span> <span class="s2">&quot;linux-aarch64&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">kernel_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="s2">&quot;platform_specific.base_kernel&quot;</span><span class="p">,</span> <span class="s2">&quot;vmlinuz-linux&quot;</span>
+                <span class="p">)</span>
+                <span class="n">kernel_preset</span> <span class="o">=</span> <span class="n">kernel_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;vmlinuz-&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
 
             <span class="c1"># Run mkinitcpio inside the airootfs chroot</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;[initramfs] Running mkinitcpio -p </span><span class="si">{</span><span class="n">kernel_preset</span><span class="si">}</span><span class="s2"> in airootfs...&quot;</span>
             <span class="p">)</span>
             <span class="n">chroot_manager</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
-                <span class="p">[</span><span class="s2">&quot;chroot&quot;</span><span class="p">,</span> <span class="s2">&quot;/airootfs&quot;</span><span class="p">,</span> <span class="s2">&quot;mkinitcpio&quot;</span><span class="p">,</span> <span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="n">kernel_preset</span><span class="p">],</span>
-                <span class="n">chroot_path</span><span class="o">=</span><span class="n">run_path</span><span class="p">,</span>
+                <span class="p">[</span><span class="s2">&quot;/usr/bin/mkinitcpio&quot;</span><span class="p">,</span> <span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="n">kernel_preset</span><span class="p">],</span>
+                <span class="n">chroot_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">airootfs_path</span><span class="p">),</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;[initramfs] Generated initramfs for kernel: </span><span class="si">{</span><span class="n">kernel_preset</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -1124,6 +1127,170 @@
                 <span class="n">chroot_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_workdir_base</span><span class="p">(),</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Service &#39;</span><span class="si">{</span><span class="n">service</span><span class="si">}</span><span class="s2">&#39; enabled.&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Arm64Engine">
+<a class="viewcode-back" href="../../api.html#core.iso_engine.Arm64Engine">[docs]</a>
+<span class="nd">@ISOEngine</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;aarch64&quot;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Arm64Engine</span><span class="p">(</span><span class="n">ArchEngine</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raspberry Pi 4 AArch64 target using the Arch Linux ARM rootfs.&quot;&quot;&quot;</span>
+
+    <span class="n">_TARGET_PACKAGES_TO_SKIP</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;archiso&quot;</span><span class="p">,</span> <span class="s2">&quot;syslinux&quot;</span><span class="p">,</span> <span class="s2">&quot;grub&quot;</span><span class="p">,</span> <span class="s2">&quot;efibootmgr&quot;</span><span class="p">,</span> <span class="s2">&quot;intel-ucode&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;amd-ucode&quot;</span><span class="p">,</span> <span class="s2">&quot;mkinitcpio-archiso&quot;</span><span class="p">,</span> <span class="s2">&quot;os-prober&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;firmware-raspberrypi&quot;</span><span class="p">,</span> <span class="s2">&quot;uboot-raspberrypi&quot;</span><span class="p">,</span> <span class="s2">&quot;raspberrypi-bootloader&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_target_root</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+        <span class="n">root</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="p">,</span> <span class="s2">&quot;iso_rootfs_path&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">root</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+        <span class="n">build_chroot</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="p">,</span> <span class="s2">&quot;build_chroot&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">build_chroot</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;airootfs&quot;</span> <span class="k">if</span> <span class="n">build_chroot</span> <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_workdir_base</span><span class="p">())</span> <span class="o">/</span> <span class="s2">&quot;airootfs&quot;</span>
+
+<div class="viewcode-block" id="Arm64Engine.setup_chroot">
+<a class="viewcode-back" href="../../api.html#core.iso_engine.Arm64Engine.setup_chroot">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_chroot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workdir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Seed the target with the signed Arch Linux ARM Raspberry Pi rootfs.&quot;&quot;&quot;</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_root</span><span class="p">()</span>
+        <span class="n">target</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">platform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;platform_specific&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">platform</span><span class="p">[</span><span class="s2">&quot;base_kernel&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Image&quot;</span>
+        <span class="n">platform</span><span class="p">[</span><span class="s2">&quot;initramfs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;initramfs-linux-aarch64.img&quot;</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="s2">&quot;mock&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;mock&quot;</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">target</span> <span class="o">/</span> <span class="s2">&quot;etc&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">target</span> <span class="o">/</span> <span class="s2">&quot;boot&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">target</span> <span class="o">/</span> <span class="s2">&quot;boot&quot;</span> <span class="o">/</span> <span class="s2">&quot;Image&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;mock-arm-kernel&quot;</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">target</span> <span class="o">/</span> <span class="s2">&quot;boot&quot;</span> <span class="o">/</span> <span class="s2">&quot;initramfs-linux-aarch64.img&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;mock-initramfs&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">arm_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arm_target&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">boot_type</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bootloader&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">board</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;u-boot-odroid-n2&quot;</span><span class="p">:</span> <span class="s2">&quot;odroid-n2&quot;</span><span class="p">,</span> <span class="s2">&quot;u-boot-pinebookpro&quot;</span><span class="p">:</span> <span class="s2">&quot;pinebookpro&quot;</span><span class="p">,</span> <span class="s2">&quot;u-boot-rockpro64&quot;</span><span class="p">:</span> <span class="s2">&quot;rockpro64&quot;</span><span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">boot_type</span><span class="p">,</span> <span class="s2">&quot;rpi4&quot;</span><span class="p">)</span>
+        <span class="n">board_target</span> <span class="o">=</span> <span class="p">(</span><span class="n">arm_target</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;targets&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">board</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="n">board_target</span><span class="p">:</span>
+            <span class="n">arm_target</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">arm_target</span><span class="p">,</span> <span class="o">**</span><span class="n">board_target</span><span class="p">,</span> <span class="s2">&quot;platform&quot;</span><span class="p">:</span> <span class="n">board</span><span class="p">}</span>
+        <span class="n">rootfs_urls</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">arm_target</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rootfs_url&quot;</span><span class="p">,</span> <span class="s2">&quot;https://ca.us.mirror.archlinuxarm.org/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz&quot;</span><span class="p">),</span>
+            <span class="o">*</span><span class="n">arm_target</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rootfs_fallback_urls&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+        <span class="p">]</span>
+        <span class="n">archive</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;archlinuxarm-</span><span class="si">{</span><span class="n">board</span><span class="si">}</span><span class="s2">-aarch64.tar.gz&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">archive</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[ARM] Downloading Arch Linux ARM Raspberry Pi rootfs&quot;</span><span class="p">)</span>
+            <span class="n">last_error</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">rootfs_url</span> <span class="ow">in</span> <span class="n">rootfs_urls</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                        <span class="p">[</span><span class="s2">&quot;curl&quot;</span><span class="p">,</span> <span class="s2">&quot;-L&quot;</span><span class="p">,</span> <span class="s2">&quot;--fail&quot;</span><span class="p">,</span> <span class="s2">&quot;--retry&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">archive</span><span class="p">),</span> <span class="n">rootfs_url</span><span class="p">],</span>
+                        <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">archive</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span> <span class="o">&gt;</span> <span class="mi">100</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">:</span>
+                        <span class="k">break</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CalledProcessError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="n">last_error</span> <span class="o">=</span> <span class="n">exc</span>
+                    <span class="n">archive</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ISOBuilderError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unable to download an Arch Linux ARM rootfs: </span><span class="si">{</span><span class="n">last_error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">iterdir</span><span class="p">():</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">child</span><span class="p">)</span> <span class="k">if</span> <span class="n">child</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">child</span><span class="o">.</span><span class="n">is_symlink</span><span class="p">()</span> <span class="k">else</span> <span class="n">child</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[ARM] Extracting Raspberry Pi rootfs&quot;</span><span class="p">)</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;tar&quot;</span><span class="p">,</span> <span class="s2">&quot;-xzf&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">archive</span><span class="p">),</span> <span class="s2">&quot;-C&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">target</span><span class="p">),</span> <span class="s2">&quot;--numeric-owner&quot;</span><span class="p">],</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">qemu</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s2">&quot;qemu-aarch64-static&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">qemu</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ISOBuilderError</span><span class="p">(</span><span class="s2">&quot;qemu-aarch64-static is required to configure an ARM64 rootfs on x86_64&quot;</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">target</span> <span class="o">/</span> <span class="s2">&quot;usr&quot;</span> <span class="o">/</span> <span class="s2">&quot;bin&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">qemu</span><span class="p">,</span> <span class="n">target</span> <span class="o">/</span> <span class="s2">&quot;usr&quot;</span> <span class="o">/</span> <span class="s2">&quot;bin&quot;</span> <span class="o">/</span> <span class="s2">&quot;qemu-aarch64-static&quot;</span><span class="p">)</span>
+
+        <span class="n">mirror</span> <span class="o">=</span> <span class="n">arm_target</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mirror&quot;</span><span class="p">,</span> <span class="s2">&quot;https://mirror.archlinuxarm.org/$arch/$repo&quot;</span><span class="p">)</span>
+        <span class="n">mirrorlist</span> <span class="o">=</span> <span class="n">target</span> <span class="o">/</span> <span class="s2">&quot;etc&quot;</span> <span class="o">/</span> <span class="s2">&quot;pacman.d&quot;</span> <span class="o">/</span> <span class="s2">&quot;mirrorlist&quot;</span>
+        <span class="n">mirrorlist</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">mirrorlist</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Server = </span><span class="si">{</span><span class="n">mirror</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="n">pacman_conf</span> <span class="o">=</span> <span class="n">target</span> <span class="o">/</span> <span class="s2">&quot;etc&quot;</span> <span class="o">/</span> <span class="s2">&quot;pacman.conf&quot;</span>
+        <span class="c1"># The ARM bootstrap has historically shipped stale or x86 repository</span>
+        <span class="c1"># sections. Use an explicit Arch Linux ARM configuration so pacman</span>
+        <span class="c1"># never attempts to download Arch Linux x86 databases.</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;[options]</span>
+<span class="s2">Architecture = aarch64</span>
+<span class="s2">HoldPkg = pacman glibc</span>
+<span class="s2">CacheDir = /var/cache/pacman/pkg/</span>
+<span class="s2">DBPath = /var/lib/pacman/</span>
+<span class="s2">GPGDir = /etc/pacman.d/gnupg/</span>
+<span class="s2">SigLevel = Required TrustAll DatabaseOptional</span>
+<span class="s2">LocalFileSigLevel = Optional</span>
+
+<span class="s2">[core]</span>
+<span class="s2">Server = </span><span class="si">{</span><span class="n">mirror</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$repo&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;core&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$arch&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;aarch64&#39;</span><span class="p">)</span><span class="si">}</span>
+
+<span class="s2">[extra]</span>
+<span class="s2">Server = </span><span class="si">{</span><span class="n">mirror</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$repo&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;extra&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$arch&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;aarch64&#39;</span><span class="p">)</span><span class="si">}</span>
+
+<span class="s2">[alarm]</span>
+<span class="s2">Server = </span><span class="si">{</span><span class="n">mirror</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$repo&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;alarm&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;$arch&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;aarch64&#39;</span><span class="p">)</span><span class="si">}</span>
+<span class="s2">&quot;&quot;&quot;</span>
+        <span class="n">pacman_conf</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_arm_pacman_conf</span> <span class="o">=</span> <span class="n">content</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;arm_target&quot;</span><span class="p">,</span> <span class="p">{})[</span><span class="s2">&quot;platform&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">board</span>
+        <span class="k">if</span> <span class="n">board_target</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kernel_package&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;platform_specific&quot;</span><span class="p">,</span> <span class="p">{})[</span><span class="s2">&quot;kernel_package&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">board_target</span><span class="p">[</span><span class="s2">&quot;kernel_package&quot;</span><span class="p">]</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_generate_initramfs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Keep the signed kernel/initramfs supplied by the ARM rootfs.&quot;&quot;&quot;</span>
+        <span class="n">boot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_root</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;boot&quot;</span>
+        <span class="n">kernel</span> <span class="o">=</span> <span class="n">boot</span> <span class="o">/</span> <span class="s2">&quot;Image&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">kernel</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">kernel</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">boot</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;vmlinuz-*&quot;</span><span class="p">))),</span> <span class="n">kernel</span><span class="p">)</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">boot</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;initramfs*.img&quot;</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">kernel</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">images</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[initramfs] Using ARM rootfs kernel and initramfs&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;platform_specific&quot;</span><span class="p">,</span> <span class="p">{})[</span><span class="s2">&quot;base_kernel&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kernel</span><span class="o">.</span><span class="n">name</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s2">&quot;platform_specific&quot;</span><span class="p">][</span><span class="s2">&quot;initramfs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">return</span>
+        <span class="k">raise</span> <span class="n">ISOBuilderError</span><span class="p">(</span><span class="s2">&quot;ARM rootfs does not contain Image and initramfs*.img&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_package_plan</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_package_plan</span><span class="p">()</span>
+        <span class="n">mapped</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="n">plan</span><span class="p">[</span><span class="s2">&quot;official&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">package</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TARGET_PACKAGES_TO_SKIP</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">mapped</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;linux-aarch64&quot;</span> <span class="k">if</span> <span class="n">package</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;linux&quot;</span><span class="p">,</span> <span class="s2">&quot;linux-lts&quot;</span><span class="p">,</span> <span class="s2">&quot;linux-zen&quot;</span><span class="p">,</span> <span class="s2">&quot;linux-hardened&quot;</span><span class="p">}</span> <span class="k">else</span> <span class="n">package</span><span class="p">)</span>
+        <span class="n">kernel_package</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;platform_specific.kernel_package&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">kernel_package</span><span class="p">:</span>
+            <span class="n">mapped</span> <span class="o">=</span> <span class="p">[</span><span class="n">kernel_package</span> <span class="k">if</span> <span class="n">package</span> <span class="o">==</span> <span class="s2">&quot;linux-aarch64&quot;</span> <span class="k">else</span> <span class="n">package</span> <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="n">mapped</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;arm_target.platform&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;rpi4&quot;</span><span class="p">,</span> <span class="s2">&quot;odroid-n2&quot;</span><span class="p">):</span>
+            <span class="n">mapped</span> <span class="o">=</span> <span class="p">[</span><span class="n">package</span> <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="n">mapped</span> <span class="k">if</span> <span class="n">package</span> <span class="o">!=</span> <span class="s2">&quot;linux-aarch64&quot;</span><span class="p">]</span>
+        <span class="n">plan</span><span class="p">[</span><span class="s2">&quot;official&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">package</span> <span class="k">for</span> <span class="n">package</span> <span class="ow">in</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">mapped</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">package</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TARGET_PACKAGES_TO_SKIP</span>
+        <span class="p">]</span>
+
+        <span class="n">compatible_local</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">package_path</span> <span class="ow">in</span> <span class="n">plan</span><span class="p">[</span><span class="s2">&quot;local_paths&quot;</span><span class="p">]:</span>
+            <span class="c1"># Arch package filenames carry the target architecture.  Keep</span>
+            <span class="c1"># architecture-independent packages and reject known x86 builds.</span>
+            <span class="n">package_name</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">package_path</span><span class="p">)</span><span class="o">.</span><span class="n">name</span>
+            <span class="k">if</span> <span class="s2">&quot;-x86_64.pkg.tar&quot;</span> <span class="ow">in</span> <span class="n">package_name</span> <span class="ow">or</span> <span class="s2">&quot;-i686.pkg.tar&quot;</span> <span class="ow">in</span> <span class="n">package_name</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;[ARM] Skipping incompatible local package: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">package_path</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">compatible_local</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">package_path</span><span class="p">)</span>
+        <span class="n">plan</span><span class="p">[</span><span class="s2">&quot;local_paths&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compatible_local</span>
+        <span class="k">return</span> <span class="n">plan</span>
+
+<div class="viewcode-block" id="Arm64Engine.post_install_configure">
+<a class="viewcode-back" href="../../api.html#core.iso_engine.Arm64Engine.post_install_configure">[docs]</a>
+    <span class="k">def</span> <span class="nf">post_install_configure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">post_install_configure</span><span class="p">()</span>
+        <span class="c1"># Common custom files contain the x86 project pacman.conf. Restore the</span>
+        <span class="c1"># target repository configuration after those files are copied.</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="s2">&quot;mock&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;mock&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arm_pacman_conf</span><span class="p">:</span>
+            <span class="n">pacman_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_root</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;etc&quot;</span> <span class="o">/</span> <span class="s2">&quot;pacman.conf&quot;</span>
+            <span class="n">pacman_conf</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">pacman_conf</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_arm_pacman_conf</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span></div>
 </div>
 
 
@@ -1192,6 +1359,28 @@
             <span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
         <span class="k">return</span> <span class="n">engine_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">arch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">_sync_default_chroot_with_workdir</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">workdir_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Keep the auto-created chroot manager aligned with the effective workdir.</span>
+
+<span class="sd">        ``setup_workdir`` may fall back from a configured system path such as</span>
+<span class="sd">        /mnt/build-chroot to a project-local path when running without root or on</span>
+<span class="sd">        a restricted filesystem. The default chroot manager is created before</span>
+<span class="sd">        that fallback is known, so update it here when it still points at the</span>
+<span class="sd">        configured default.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">chroot_manager</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="p">,</span> <span class="s2">&quot;chroot_manager&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">chroot_manager</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">default_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_default_chroot_path</span><span class="p">())</span><span class="o">.</span><span class="n">resolve</span><span class="p">())</span>
+        <span class="n">current_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">chroot_manager</span><span class="p">,</span> <span class="s2">&quot;_workdir&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">resolve</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">current_path</span> <span class="o">!=</span> <span class="n">default_path</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">effective_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">workdir_path</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+        <span class="n">chroot_manager</span><span class="o">.</span><span class="n">_workdir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">effective_path</span><span class="p">)</span>
+        <span class="n">chroot_manager</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">=</span> <span class="n">effective_path</span>
+
 <div class="viewcode-block" id="ISOBuilder.build">
 <a class="viewcode-back" href="../../api.html#core.iso_engine.ISOBuilder.build">[docs]</a>
     <span class="k">def</span> <span class="nf">build</span><span class="p">(</span>
@@ -1200,11 +1389,28 @@
         <span class="n">output_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">workdir_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">setup_workdir</span><span class="p">(</span><span class="n">workdir</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sync_default_chroot_with_workdir</span><span class="p">(</span><span class="n">workdir_path</span><span class="p">)</span>
+            <span class="n">hook_runner</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="s2">&quot;hook_runner&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">hook_runner</span><span class="p">:</span>
+                <span class="n">hook_runner</span><span class="p">(</span><span class="s2">&quot;pre_chroot&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">setup_chroot</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">workdir_path</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">hook_runner</span><span class="p">:</span>
+                <span class="n">hook_runner</span><span class="p">(</span><span class="s2">&quot;post_chroot&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="o">.</span><span class="n">chroot_manager</span><span class="p">)</span>
+                <span class="n">hook_runner</span><span class="p">(</span><span class="s2">&quot;pre_packages&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="o">.</span><span class="n">chroot_manager</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">install_packages</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">hook_runner</span><span class="p">:</span>
+                <span class="n">hook_runner</span><span class="p">(</span><span class="s2">&quot;post_packages&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="o">.</span><span class="n">chroot_manager</span><span class="p">)</span>
+                <span class="n">hook_runner</span><span class="p">(</span><span class="s2">&quot;pre_customize&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="o">.</span><span class="n">chroot_manager</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">post_install_configure</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">hook_runner</span><span class="p">:</span>
+                <span class="n">hook_runner</span><span class="p">(</span><span class="s2">&quot;post_customize&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="o">.</span><span class="n">chroot_manager</span><span class="p">)</span>
+                <span class="n">hook_runner</span><span class="p">(</span><span class="s2">&quot;pre_boot&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span><span class="o">.</span><span class="n">chroot_manager</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">build_bootloaders</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">_boot_mountpoint</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">hook_runner</span><span class="p">:</span>
+                <span class="n">hook_runner</span><span class="p">(</span><span class="s2">&quot;pre_iso&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">finalize_isofile</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">output_path</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">hook_runner</span><span class="p">:</span>
+                <span class="n">hook_runner</span><span class="p">(</span><span class="s2">&quot;post_iso&quot;</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;=== Build completed successfully! ===&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">output_path</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>

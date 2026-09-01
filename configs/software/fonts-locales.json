@@ -7,6 +7,5 @@
     "noto-fonts-emoji",
     "ttf-dejavu",
     "glibc"
-  ],
-  "dependencies": ["pacman"]
+  ]
 }

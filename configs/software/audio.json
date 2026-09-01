@@ -8,6 +8,5 @@
     "wireplumber",
     "alsa-utils",
     "pavucontrol"
-  ],
-  "dependencies": ["pacman"]
+  ]
 }

@@ -7,6 +7,5 @@
     "nmap",
     "tcpdump",
     "ufw"
-  ],
-  "dependencies": ["pacman"]
+  ]
 }

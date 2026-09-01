@@ -1,6 +1,6 @@
 {
   "name": "common-base",
-  "description": "Common system services to be enabled on all ISO builds",
+  "description": "Core services enabled by the default live ISO profile.",
   "customizations": {
     "services": [
       "NetworkManager",

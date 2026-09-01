@@ -17,58 +17,35 @@
     ]
   },
   "customizations": {
+    "hostname": "arch-builder",
     "timezone": "UTC",
     "locale": "en_US.UTF-8",
     "keymap": "us"
   },
-  "build_environment": {
-    "workdir_base": "workdir",
-    "iso_label": "ARCH-MODERN",
-    "binaries": {
-      "grub_mkrescue": "/usr/bin/grub-mkrescue",
-      "genisoimage": "/usr/bin/genisoimage"
-    }
-  },
   "system": {
     "workdir_base": "workdir",
-    "iso_label": "ARCH-MODERN",
-    "binaries": {
-      "grub-mkrescue": "/usr/bin/grub-mkrescue",
-      "grub_mkrescue": "/usr/bin/grub-mkrescue",
-      "genisomake": "/usr/bin/genisoimage",
-      "genisoimage": "/usr/bin/genisoimage"
-    }
+    "iso_label": "ARCH-MODERN"
   },
   "boot": {
     "kernel_params": "loglevel=3 quiet splash rd.udev.log_level=3 vt.global_cursor_default=0 nouveau.modeset=1 radeon.modeset=1 i915.modeset=1 nvme_load=yes"
   },
-  "components": {
-    "bootloaders": [
-      {
-        "name": "grub",
-        "type": "module"
-      },
-      {
-        "name": "syslinux",
-        "type": "module"
-      }
+  "system_config": {
+    "commands": [
+      "echo 'Build finished' > /var/log/build_status.txt",
+      "mkdir -p /srv/samba/public",
+      "chown nobody:nobody /srv/samba/public",
+      "chmod 1777 /srv/samba/public"
     ],
-    "kernels": [
+    "files": [
       {
-        "name": "linux",
-        "type": "module"
+        "src": "configs/custom_files/etc/vconsole.conf",
+        "dest": "/etc/vconsole.conf",
+        "mode": "0644"
       },
       {
-        "name": "linux-lts",
-        "type": "module"
-      },
-      {
-        "name": "linux-zen",
-        "type": "module"
-      },
-      {
-        "name": "linux-hardened",
-        "type": "module"
+        "src": "configs/custom_files/sudoers.d/99-live-user",
+        "dest": "/etc/sudoers.d/99-live-user",
+        "mode": "0440"
       }
     ]
   }

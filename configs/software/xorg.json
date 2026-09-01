@@ -2,13 +2,11 @@
   "name": "xorg",
   "description": "Xorg display stack and utilities.",
   "packages": [
-    "xorg",
     "xorg-server",
     "xorg-xinit",
     "xorg-xrandr",
     "xorg-xset",
     "xorg-xinput",
     "xterm"
-  ],
-  "dependencies": ["pacman"]
+  ]
 }

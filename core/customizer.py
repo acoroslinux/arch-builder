@@ -7,6 +7,8 @@ Responsible for applying customization rules that include:
 """
 
 import logging
+import os
+import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -18,6 +20,59 @@ logger = logging.getLogger("SystemConfigurator")
 
 class ConfigError(Exception):
     """Exception raised for system configuration errors."""
+
+
+def _resolve_within(base: Path, relative_path: str, description: str) -> Path:
+    """Resolve a configured path without allowing it to escape its base."""
+    base = base.resolve()
+    candidate = (base / str(relative_path).lstrip("/")).resolve()
+    try:
+        candidate.relative_to(base)
+    except ValueError as exc:
+        raise ConfigError(
+            f"{description} escapes its allowed root: {relative_path}"
+        ) from exc
+    return candidate
+
+
+def _normalized_file_mode(source: Path) -> int:
+    return 0o755 if source.stat().st_mode & 0o111 else 0o644
+
+
+def _copy_path(source: Path, destination: Path) -> None:
+    """Merge a source into rootfs with deterministic ownership-independent modes."""
+    if source.name == ".gitkeep":
+        return
+
+    if source.is_symlink():
+        if destination.exists() or destination.is_symlink():
+            if destination.is_dir() and not destination.is_symlink():
+                raise ConfigError(
+                    f"Cannot replace destination directory with symlink: {destination}"
+                )
+            destination.unlink()
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.symlink_to(os.readlink(source))
+        return
+
+    if source.is_dir():
+        if destination.exists() and not destination.is_dir():
+            raise ConfigError(
+                f"Cannot merge source directory into non-directory: {destination}"
+            )
+        destination.mkdir(parents=True, exist_ok=True)
+        destination.chmod(0o755)
+        for child in source.iterdir():
+            _copy_path(child, destination / child.name)
+        return
+
+    if not source.is_file():
+        raise ConfigError(f"Unsupported copy source type: {source}")
+    if destination.exists() and destination.is_dir():
+        raise ConfigError(f"Cannot replace destination directory with file: {destination}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, destination)
+    destination.chmod(_normalized_file_mode(source))
 
 
 class SystemAction:
@@ -76,6 +131,7 @@ class UserAction(SystemAction):
 
             # Ensure home directory exists and has correct ownership
             chroot.run_command(f"mkdir -p /home/{name}")
+            chroot.run_command(f"cp -a /etc/skel/. /home/{name}/")
             chroot.run_command(f"chown -R {name}:{name} /home/{name}")
 
             # Set the password.
@@ -158,27 +214,25 @@ class FileAction(SystemAction):
             return
 
         logger.info(f"  [File] Copying file: {self.src} -> {self.dest}")
-        src_path = source_base / self.src
-        dest_path = chroot.chroot_path / str(self.dest).lstrip("/")
+        src_path = _resolve_within(source_base, self.src, "File source")
+        dest_path = _resolve_within(chroot.chroot_path, self.dest, "File destination")
 
         if chroot.mode == "real":
             if not src_path.exists():
-                logger.warning(f"  [File] Source file does not exist: {src_path}")
-                return
+                raise ConfigError(f"File source does not exist: {src_path}")
+            if not src_path.is_file():
+                raise ConfigError(f"File source is not a regular file: {src_path}")
 
-            dest_path.parent.mkdir(parents=True, exist_ok=True)
-            import shutil
-            import os
-            import subprocess
-
-            cmd_copy = ["cp", "-a", "--no-preserve=ownership", str(src_path), str(dest_path)]
-            if os.geteuid() != 0:
-                subprocess.run(["sudo"] + cmd_copy, check=True)
-            else:
-                subprocess.run(cmd_copy, check=True)
+            _copy_path(src_path, dest_path)
 
             if self.mode:
-                chroot.run_command(f"chmod {self.mode} '{self.dest}'")
+                try:
+                    mode = int(str(self.mode), 8)
+                except ValueError as exc:
+                    raise ConfigError(f"Invalid file mode: {self.mode}") from exc
+                if mode < 0 or mode > 0o7777:
+                    raise ConfigError(f"Invalid file mode: {self.mode}")
+                dest_path.chmod(mode)
         else:
             logger.info(f"    [Mock] Copy file {src_path} -> {dest_path} (mode: {self.mode})")
 
@@ -259,51 +313,22 @@ class StructuredCopyAction(SystemAction):
             # Format destinations that contain python_version
             dest_rel = dest_rel.format(python_version=py_ver)
 
-            src_path = source_base / self.customizations_path / src_rel
-            dest_path = chroot.chroot_path / dest_rel.lstrip("/")
+            copy_root = _resolve_within(
+                source_base, str(self.customizations_path), "Customizations path"
+            )
+            src_path = _resolve_within(copy_root, src_rel, "Structured copy source")
+            dest_path = _resolve_within(
+                chroot.chroot_path, dest_rel, "Structured copy destination"
+            )
 
             logger.info(f"  [StructuredCopy] Copying: {src_rel} -> {dest_rel}")
 
             if chroot.mode == "real":
                 if not src_path.exists():
-                    logger.warning(
-                        f"  [StructuredCopy] Source path does not exist: {src_path}"
+                    raise ConfigError(
+                        f"Structured copy source does not exist: {src_path}"
                     )
-                    continue
-
-                import os
-                import subprocess
-
-                # Ensure destination parent directory exists
-                dest_dir = (
-                    dest_path
-                    if src_path.is_dir() and not dest_rel.endswith(src_path.name)
-                    else dest_path.parent
-                )
-                dest_dir_in_chroot = Path("/") / dest_dir.relative_to(
-                    chroot.chroot_path
-                )
-
-                chroot.run_command(f"mkdir -p {dest_dir_in_chroot}")
-
-                # Copy file/directory preserving all attributes except ownership and merging contents (-T)
-                cmd_copy = [
-                    "cp",
-                    "-a",
-                    "--no-preserve=ownership",
-                    "-T",
-                    str(src_path),
-                    str(dest_path),
-                ]
-                try:
-                    if os.geteuid() != 0:
-                        subprocess.run(["sudo"] + cmd_copy, check=True)
-                    else:
-                        subprocess.run(cmd_copy, check=True)
-                except Exception as e:
-                    logger.error(
-                        f"  [StructuredCopy] Failed to copy {src_path} to {dest_path}: {e}"
-                    )
+                _copy_path(src_path, dest_path)
             else:
                 logger.info(f"    [Mock] Copy {src_path} to {dest_path}")
 
@@ -348,11 +373,12 @@ class SystemConfigurator:
 
         # 4. Users
         users = cust_config.get("users", [])
+        user_actions = []
         for u in users:
             # Unwrap Config dict instances.
             if hasattr(u, "_data"):
                 u = u._data
-            self.actions.append(UserAction(u))
+            user_actions.append(UserAction(u))
 
         # 5. Services
         services = cust_config.get("services", [])
@@ -362,12 +388,13 @@ class SystemConfigurator:
         if services:
             # List of strings.
             srv_list = [str(s) for s in services]
-            self.actions.append(ServiceAction(srv_list))
+            service_action = ServiceAction(srv_list)
+        else:
+            service_action = None
 
         # 6. Commands (generic post-install scripts)
         commands = cust_config.get("commands", []) or sys_config.get("commands", [])
-        for cmd in commands:
-            self.actions.append(CommandAction(str(cmd)))
+        command_actions = [CommandAction(str(cmd)) for cmd in commands]
 
         # 7. Initramfs (mkinitcpio configuration)
         initramfs = (
@@ -381,13 +408,14 @@ class SystemConfigurator:
             if isinstance(initramfs, dict):
                 self.actions.append(MkinitcpioAction(initramfs))
 
-        # 7b. Explicit files (system_config.files / customizations.files)
+        # Explicit files are applied after common/desktop copies so they are final overrides.
         files_list = sys_config.get("files", []) or cust_config.get("files", [])
+        explicit_file_actions = []
         for f_rule in files_list:
             if hasattr(f_rule, "_data"):
                 f_rule = f_rule._data
             if isinstance(f_rule, dict):
-                self.actions.append(FileAction(f_rule))
+                explicit_file_actions.append(FileAction(f_rule))
 
         # 8. Structured Copy (Desktop-environment file copying)
         desktop_env = _safe_get(config, "desktop_environment")
@@ -435,6 +463,12 @@ class SystemConfigurator:
                         StructuredCopyAction(custom_path, final_copy_list, arch)
                     )
 
+        self.actions.extend(explicit_file_actions)
+        self.actions.extend(user_actions)
+        if service_action:
+            self.actions.append(service_action)
+        self.actions.extend(command_actions)
+
 
     def apply_theme_assets(self, chroot):
         import json
@@ -459,11 +493,14 @@ class SystemConfigurator:
                 src = assets_dir / asset_name
                 if src.exists():
                     for target in paths:
-                        target_path = chroot.chroot_path / target.lstrip('/')
-                        target_path.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.copy2(src, target_path)
+                        target_path = _resolve_within(
+                            chroot.chroot_path, target, "Theme asset destination"
+                        )
+                        _copy_path(src, target_path)
+                else:
+                    raise ConfigError(f"Theme asset source does not exist: {src}")
         except Exception as e:
-            logger.error(f"Failed to apply theme assets: {e}")
+            raise ConfigError(f"Failed to apply theme assets: {e}") from e
 
     def apply(self, source_base_dir: Optional[Path] = None):
         """Apply all registered actions to the chroot."""
@@ -484,6 +521,8 @@ class SystemConfigurator:
             try:
                 action.execute(self.chroot, source_base_dir)
             except Exception as e:
-                logger.error(f"Failed to execute configuration action: {e}")
+                raise ConfigError(
+                    f"{type(action).__name__} failed: {e}"
+                ) from e
 
         self.apply_theme_assets(self.chroot)

@@ -521,14 +521,16 @@ class ChrootManager:
         for subdir in ["var/lib/pacman", "var/cache/pacman/pkg", "etc/pacman.d"]:
             (airootfs_path / subdir).mkdir(parents=True, exist_ok=True)
 
-        # Copy pacman config and mirrorlist from the build chroot into airootfs
         build_chroot = Path(run_path)
-        for conf_file in ["etc/pacman.conf", "etc/pacman.d/mirrorlist"]:
-            src = build_chroot / conf_file
-            dst = airootfs_path / conf_file
-            if src.exists():
-                dst.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src, dst)
+        # ARM rootfs archives have their own repository and signing keyring.
+        is_arm = self.arch in ("aarch64", "armv7h", "armv6h")
+        if not is_arm:
+            for conf_file in ["etc/pacman.conf", "etc/pacman.d/mirrorlist"]:
+                src = build_chroot / conf_file
+                dst = airootfs_path / conf_file
+                if src.exists():
+                    dst.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(src, dst)
 
         # Ensure the target architecture and mirrors are correctly configured in the target configs
         pacman_conf_dst = airootfs_path / "etc" / "pacman.conf"
@@ -550,7 +552,7 @@ class ChrootManager:
             pacman_conf_dst.write_text(content, encoding="utf-8")
 
         # Copy the target's mirrorlist to the build host chroot's /etc/pacman.d/mirrorlist as well
-        if mirrorlist_dst.exists():
+        if mirrorlist_dst.exists() and not is_arm:
             build_host_mirrorlist = build_chroot / "etc" / "pacman.d" / "mirrorlist"
             build_host_mirrorlist.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(mirrorlist_dst, build_host_mirrorlist)
@@ -562,26 +564,27 @@ class ChrootManager:
             "[airootfs] Initializing pacman keyring and database in airootfs..."
         )
         try:
-            # Use pacman-key from the build host to initialize the gpg directory inside airootfs.
-            self.run_command(
-                [
-                    "pacman-key",
-                    "--gpgdir",
-                    "/airootfs/etc/pacman.d/gnupg",
-                    "--init",
-                ],
-                chroot_path=str(run_path),
-            )
-            self.run_command(
-                [
-                    "pacman-key",
-                    "--gpgdir",
-                    "/airootfs/etc/pacman.d/gnupg",
-                    "--populate",
-                    "archlinuxarm" if getattr(self, "arch", "") in ("aarch64", "armv7h", "armv6h") else "archlinux",
-                ],
-                chroot_path=str(run_path),
-            )
+            if not is_arm:
+                # The ARM archive already carries the Arch Linux ARM keyring.
+                self.run_command(
+                    [
+                        "pacman-key",
+                        "--gpgdir",
+                        "/airootfs/etc/pacman.d/gnupg",
+                        "--init",
+                    ],
+                    chroot_path=str(run_path),
+                )
+                self.run_command(
+                    [
+                        "pacman-key",
+                        "--gpgdir",
+                        "/airootfs/etc/pacman.d/gnupg",
+                        "--populate",
+                        "archlinux",
+                    ],
+                    chroot_path=str(run_path),
+                )
 
             # Ensure the airootfs keyring directory was created.
             target_gpgdir = airootfs_path / "etc" / "pacman.d" / "gnupg"

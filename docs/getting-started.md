@@ -22,7 +22,7 @@ python3 cli.py --list-options
 python3 cli.py x86_64 --desktop xfce
 ```
 
-This will use a dynamic ISO output name unless `-o` is provided.
+This will use a dynamic output name unless `-o` is provided.
 
 ## First real build
 
@@ -42,7 +42,9 @@ sudo python3 cli.py x86_64 --mode real --desktop xfce --force-isolated-toolchain
 If `-o` is omitted, the output file becomes:
 
 ```text
-arch-builder-<desktop>-<architecture>.iso
+arch-builder-<desktop>-<architecture>.<format>
+
+PC builds default to `.iso`; hardware profiles such as `rpi4`, `odroid-n2`, `pinebookpro`, and `rockpro64` produce `.img` files in `output/`.
 ```
 
 If no desktop override is supplied, `base` is used in the generated name.

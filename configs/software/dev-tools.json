@@ -10,6 +10,5 @@
     "gcc",
     "gdb",
     "ripgrep"
-  ],
-  "dependencies": ["pacman"]
+  ]
 }

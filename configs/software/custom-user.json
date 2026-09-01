@@ -1,14 +1,8 @@
 {
   "name": "custom-user",
-  "description": "User custom package sources (official repo + local package files + AUR).",
+  "description": "Local package files supplied by the user.",
   "package_sources": {
-    "official": [],
     "local_dir": "configs/custom-packages/local",
-    "local_glob": "*.pkg.tar*",
-    "aur": [],
-    "disabled_aur": [
-      "calamares-git"
-    ]
-  },
-  "dependencies": ["pacman"]
+    "local_glob": "*.pkg.tar*"
+  }
 }

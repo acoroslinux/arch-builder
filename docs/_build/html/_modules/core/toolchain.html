@@ -115,6 +115,7 @@
         <span class="n">workdir_base</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
         <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mock&quot;</span><span class="p">,</span>
         <span class="n">force_isolated</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">allow_host</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">pacman_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
         <span class="n">diagnostics_enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">diagnostics_log_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -123,6 +124,7 @@
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">force_isolated</span> <span class="o">=</span> <span class="n">force_isolated</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allow_host</span> <span class="o">=</span> <span class="n">allow_host</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pacman_retries</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">pacman_retries</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">diagnostics_enabled</span> <span class="o">=</span> <span class="n">diagnostics_enabled</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">diagnostics_log_path</span> <span class="o">=</span> <span class="n">diagnostics_log_path</span>
@@ -132,7 +134,7 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pacman_cache_dir</span> <span class="o">=</span> <span class="n">pacman_cache_dir</span> <span class="ow">or</span> <span class="n">default_cache</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_ready</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">use_host</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_host</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">iso_rootfs_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mounted</span> <span class="o">=</span> <span class="kc">False</span>
@@ -183,27 +185,20 @@
             <span class="sa">f</span><span class="s2">&quot;[TOOLCHAIN] Initializing isolated build host at: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">toolchain_dir</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">toolchain_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_diag</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;setup start mode=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2"> force_isolated=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">force_isolated</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_diag</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;setup start mode=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2"> force_isolated=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">force_isolated</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;allow_host=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">allow_host</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">force_isolated</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">allow_host</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">force_isolated</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_host_has_tools</span><span class="p">():</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="s2">&quot;[TOOLCHAIN] Forced isolated mode enabled. Bootstrapping an isolated chroot...&quot;</span>
-                <span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">use_host</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_bootstrap_archlinux</span><span class="p">()</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_is_ready</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="k">return</span>
-
-            <span class="c1"># Check whether the required tools already exist on the host.</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_host_has_tools</span><span class="p">():</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="s2">&quot;[TOOLCHAIN] Required tools found on the host. Using the local environment.&quot;</span>
+                    <span class="s2">&quot;[TOOLCHAIN] Host toolchain explicitly allowed and required tools were found.&quot;</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">use_host</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="s2">&quot;[TOOLCHAIN] Missing host tools. Bootstrapping an isolated chroot...&quot;</span>
+                    <span class="s2">&quot;[TOOLCHAIN] Bootstrapping an isolated Arch toolchain in the workdir.&quot;</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">use_host</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_bootstrap_archlinux</span><span class="p">()</span>
@@ -349,6 +344,7 @@
                 <span class="s2">&quot;squashfs-tools&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;xorriso&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;mtools&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;qemu-img&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;grub&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;cdrtools&quot;</span><span class="p">,</span>
             <span class="p">],</span>
@@ -569,9 +565,50 @@
             <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">DEVNULL</span><span class="p">,</span>
         <span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">_path_inside_build_chroot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a path usable from inside the build chroot.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+        <span class="n">build_root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">build_root</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="c1"># The project root is bind-mounted at the same absolute path inside</span>
+            <span class="c1"># the build chroot, so workspace absolute paths remain valid.</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_path_inside_root</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate a host path below ``root`` to its in-chroot path.&quot;&quot;&quot;</span>
+        <span class="n">resolved_path</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+        <span class="n">resolved_root</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">relative</span> <span class="o">=</span> <span class="n">resolved_path</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">resolved_root</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;/&quot;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">relative</span><span class="o">.</span><span class="n">parts</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;/</span><span class="si">{</span><span class="n">relative</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_translate_command_paths</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">execution_root</span><span class="p">:</span> <span class="n">Path</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Translate absolute argv paths for an isolated chroot invocation.&quot;&quot;&quot;</span>
+        <span class="n">translated</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">argument</span> <span class="ow">in</span> <span class="n">command</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">argument</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">Path</span><span class="p">(</span><span class="n">argument</span><span class="p">)</span><span class="o">.</span><span class="n">is_absolute</span><span class="p">():</span>
+                <span class="n">translated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_path_inside_root</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">argument</span><span class="p">),</span> <span class="n">execution_root</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">translated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">argument</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">translated</span>
+
 <div class="viewcode-block" id="ToolchainManager.run_tool">
 <a class="viewcode-back" href="../../api.html#core.toolchain.ToolchainManager.run_tool">[docs]</a>
-    <span class="k">def</span> <span class="nf">run_tool</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">cwd</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CompletedProcess</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">run_tool</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">cwd</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">target_chroot</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">CompletedProcess</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Execute a build tool.</span>
 <span class="sd">        If the tools are available on the host, run the command directly.</span>
@@ -587,7 +624,7 @@
             <span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;use_host&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;use_host&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
                     <span class="n">command</span><span class="p">,</span>
                     <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -597,7 +634,19 @@
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Run the command inside the build chroot.</span>
-                <span class="n">chroot_cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;chroot&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span><span class="p">)]</span> <span class="o">+</span> <span class="n">command</span>
+                <span class="n">execution_root</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">Path</span><span class="p">(</span><span class="n">target_chroot</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">target_chroot</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                    <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">inner_command</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_command_paths</span><span class="p">(</span>
+                    <span class="n">command</span><span class="p">,</span> <span class="n">execution_root</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">target_chroot</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">inner_target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path_inside_build_chroot</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">target_chroot</span><span class="p">))</span>
+                    <span class="n">inner_command</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;chroot&quot;</span><span class="p">,</span> <span class="n">inner_target</span><span class="p">,</span> <span class="o">*</span><span class="n">inner_command</span><span class="p">]</span>
+
+                <span class="n">chroot_cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;chroot&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span><span class="p">)]</span> <span class="o">+</span> <span class="n">inner_command</span>
                 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">geteuid</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">chroot_cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sudo&quot;</span><span class="p">,</span> <span class="o">*</span><span class="n">chroot_cmd</span><span class="p">]</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
@@ -631,8 +680,21 @@
 <a class="viewcode-back" href="../../api.html#core.toolchain.ToolchainManager.run_command">[docs]</a>
     <span class="k">def</span> <span class="nf">run_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">chroot_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compatibility wrapper expected by ISOBuilder/BaseEngine.&quot;&quot;&quot;</span>
-        <span class="n">cwd</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">chroot_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">chroot_path</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_tool</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">cwd</span><span class="p">)</span>
+        <span class="n">target_chroot</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">cwd</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">chroot_path</span><span class="p">:</span>
+            <span class="n">chroot_path_obj</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">chroot_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;use_host&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="n">build_root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chroot</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">resolved</span> <span class="o">=</span> <span class="n">chroot_path_obj</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">build_root</span> <span class="ow">and</span> <span class="n">resolved</span> <span class="o">!=</span> <span class="n">build_root</span><span class="p">:</span>
+                    <span class="n">target_chroot</span> <span class="o">=</span> <span class="n">resolved</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">cwd</span> <span class="o">=</span> <span class="n">resolved</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cwd</span> <span class="o">=</span> <span class="n">chroot_path_obj</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_tool</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">cwd</span><span class="p">,</span> <span class="n">target_chroot</span><span class="o">=</span><span class="n">target_chroot</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span></div>
 
 

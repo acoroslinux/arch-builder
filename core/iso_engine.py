@@ -8,6 +8,7 @@ Central build engine definitions.
 """
 
 import shutil
+import subprocess
 import tempfile
 from datetime import UTC, datetime
 from abc import ABC, abstractmethod
@@ -38,6 +39,7 @@ _ENGINE_REGISTRY: Dict[str, Type["BaseEngine"]] = {}
 
 __all__ = [
     "ArchBuilder",
+    "Arm64Engine",
     "ArchEngine",
     "BaseEngine",
     "Config",
@@ -76,10 +78,6 @@ class BaseEngine(ISOEngine):
             toolchain, "logger", setup_logger(self.__class__.__name__)
         )
 
-    def _system_config(self) -> Dict[str, Any]:
-        # Alterar para usar o novo bloco system_info em vez de system
-        return self.config.get("system_info", {})
-
     def _cfg_get(self, key: str, default: Any = None) -> Any:
         """Compatibility wrapper for config.get(key[, default])."""
         try:
@@ -89,11 +87,8 @@ class BaseEngine(ISOEngine):
         return default if value is None else value
 
     def _workdir_base(self) -> str:
-        system = self._system_config()
         configured = (
             self.config.get("system.workdir_base")
-            or system.get("workdir_base")
-            or system.get("workdir")
             or "arch-builder/workdir"
         )
         return str(resolve_from_project(str(configured)))
@@ -168,9 +163,12 @@ class BaseEngine(ISOEngine):
             self._cfg_get("package_sources.official", [])
         )
         aur = self._normalize_packages(self._cfg_get("package_sources.aur", []))
-        local_paths = self._normalize_packages(
-            self._cfg_get("package_sources.local_packages", [])
-        )
+        local_paths = [
+            str(resolve_from_project(path))
+            for path in self._normalize_packages(
+                self._cfg_get("package_sources.local_packages", [])
+            )
+        ]
 
         # Load all matching package files from a user-provided local package directory.
         local_dir = self._cfg_get("package_sources.local_dir")
@@ -267,7 +265,7 @@ class ArchEngine(BaseEngine):
         # 3. Prepare a build toolchain (host tools or isolated Arch bootstrap in real mode).
         # These values are read from the toolchain object, which is set up by the orchestrator.
         force_isolated = getattr(self.toolchain, "force_isolated", False) or bool(
-            self.config.get("system_info.force_isolated_toolchain", False)
+            self.config.get("system.force_isolated_toolchain", False)
         )
 
         # In isolated mode, ensure /airootfs exists inside the build chroot for package installation
@@ -412,14 +410,12 @@ class ArchEngine(BaseEngine):
             self.logger.info("[grub] Generating GRUB BIOS boot image in chroot...")
             try:
                 cmd = [
-                    "chroot",
-                    str(effective_root),
                     "bash",
                     "-c",
                     "grub-mkimage -d /usr/lib/grub/i386-pc -o /tmp/boot.img -O i386-pc -p /boot/grub "
                     "biosdisk iso9660 part_msdos part_gpt ext2 fat ntfs search search_fs_file search_fs_uuid search_label",
                 ]
-                self._run_command(cmd)
+                self._run_command(cmd, chroot_path=str(effective_root))
                 shutil.copy2(effective_root / "tmp" / "boot.img", boot_img_dest)
                 (effective_root / "tmp" / "boot.img").unlink(missing_ok=True)
                 self.logger.info(f"[grub] Created BIOS boot image: {boot_img_dest}")
@@ -461,8 +457,6 @@ class ArchEngine(BaseEngine):
 
                 # Compile the standalone EFI image inside the chroot
                 cmd = [
-                    "chroot",
-                    str(effective_root),
                     "bash",
                     "-c",
                     f"grub-mkimage -d /usr/lib/grub/{grub_target} -o /tmp/{efi_filename} -O {grub_target} "
@@ -470,7 +464,7 @@ class ArchEngine(BaseEngine):
                     "efifwsetup efinet efi_uga fat iso9660 part_gpt part_msdos search search_fs_file search_fs_uuid search_label "
                     "normal boot configfile linux loopback chain",
                 ]
-                self._run_command(cmd)
+                self._run_command(cmd, chroot_path=str(effective_root))
                 shutil.copy2(effective_root / "tmp" / efi_filename, efi_binary_dest)
 
                 # Cleanup
@@ -932,10 +926,14 @@ class ArchEngine(BaseEngine):
 
         try:
             # Determine which kernel preset to use
-            kernel_name = self.config.get(
-                "platform_specific.base_kernel", "vmlinuz-linux"
-            )
-            kernel_preset = kernel_name.replace("vmlinuz-", "")
+            if self.arch == "aarch64":
+                kernel_name = "Image"
+                kernel_preset = "linux-aarch64"
+            else:
+                kernel_name = self.config.get(
+                    "platform_specific.base_kernel", "vmlinuz-linux"
+                )
+                kernel_preset = kernel_name.replace("vmlinuz-", "")
 
             # Run mkinitcpio inside the airootfs chroot
             self.logger.info(
@@ -995,6 +993,161 @@ class ArchEngine(BaseEngine):
                 chroot_path=self._workdir_base(),
             )
             self.logger.info(f"Service '{service}' enabled.")
+
+
+@ISOEngine.register("aarch64")
+class Arm64Engine(ArchEngine):
+    """Raspberry Pi 4 AArch64 target using the Arch Linux ARM rootfs."""
+
+    _TARGET_PACKAGES_TO_SKIP = {
+        "archiso", "syslinux", "grub", "efibootmgr", "intel-ucode",
+        "amd-ucode", "mkinitcpio-archiso", "os-prober",
+        "firmware-raspberrypi", "uboot-raspberrypi", "raspberrypi-bootloader",
+    }
+
+    def _target_root(self) -> Path:
+        root = getattr(self.toolchain, "iso_rootfs_path", None)
+        if root:
+            return Path(root)
+        build_chroot = getattr(self.toolchain, "build_chroot", None)
+        return Path(build_chroot) / "airootfs" if build_chroot else Path(self._workdir_base()) / "airootfs"
+
+    def setup_chroot(self, workdir: str) -> None:
+        """Seed the target with the signed Arch Linux ARM Raspberry Pi rootfs."""
+        target = self._target_root()
+        target.mkdir(parents=True, exist_ok=True)
+        platform = self.config._data.setdefault("platform_specific", {})
+        platform["base_kernel"] = "Image"
+        platform["initramfs"] = "initramfs-linux-aarch64.img"
+        if getattr(self.toolchain, "mode", "mock") == "mock":
+            (target / "etc").mkdir(parents=True, exist_ok=True)
+            (target / "boot").mkdir(parents=True, exist_ok=True)
+            (target / "boot" / "Image").write_bytes(b"mock-arm-kernel")
+            (target / "boot" / "initramfs-linux-aarch64.img").write_bytes(b"mock-initramfs")
+            return
+
+        arm_target = self.config.get("arm_target", {})
+        boot_type = (self.config.get("bootloader", {}) or {}).get("type", "")
+        board = {"u-boot-odroid-n2": "odroid-n2", "u-boot-pinebookpro": "pinebookpro", "u-boot-rockpro64": "rockpro64"}.get(boot_type, "rpi4")
+        board_target = (arm_target.get("targets", {}) or {}).get(board, {})
+        if board_target:
+            arm_target = {**arm_target, **board_target, "platform": board}
+        rootfs_urls = [
+            arm_target.get("rootfs_url", "https://ca.us.mirror.archlinuxarm.org/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz"),
+            *arm_target.get("rootfs_fallback_urls", []),
+        ]
+        archive = target.parent / f"archlinuxarm-{board}-aarch64.tar.gz"
+        if not archive.exists():
+            self.logger.info("[ARM] Downloading Arch Linux ARM Raspberry Pi rootfs")
+            last_error = None
+            for rootfs_url in rootfs_urls:
+                try:
+                    subprocess.run(
+                        ["curl", "-L", "--fail", "--retry", "2", "-o", str(archive), rootfs_url],
+                        check=True,
+                    )
+                    if archive.stat().st_size > 100 * 1024 * 1024:
+                        break
+                except (OSError, subprocess.CalledProcessError) as exc:
+                    last_error = exc
+                    archive.unlink(missing_ok=True)
+            else:
+                raise ISOBuilderError(f"Unable to download an Arch Linux ARM rootfs: {last_error}")
+
+        for child in target.iterdir():
+            shutil.rmtree(child) if child.is_dir() and not child.is_symlink() else child.unlink(missing_ok=True)
+        self.logger.info("[ARM] Extracting Raspberry Pi rootfs")
+        subprocess.run(["tar", "-xzf", str(archive), "-C", str(target), "--numeric-owner"], check=True)
+
+        qemu = shutil.which("qemu-aarch64-static")
+        if not qemu:
+            raise ISOBuilderError("qemu-aarch64-static is required to configure an ARM64 rootfs on x86_64")
+        (target / "usr" / "bin").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(qemu, target / "usr" / "bin" / "qemu-aarch64-static")
+
+        mirror = arm_target.get("mirror", "https://mirror.archlinuxarm.org/$arch/$repo")
+        mirrorlist = target / "etc" / "pacman.d" / "mirrorlist"
+        mirrorlist.parent.mkdir(parents=True, exist_ok=True)
+        mirrorlist.write_text(f"Server = {mirror}\n", encoding="utf-8")
+        pacman_conf = target / "etc" / "pacman.conf"
+        # The ARM bootstrap has historically shipped stale or x86 repository
+        # sections. Use an explicit Arch Linux ARM configuration so pacman
+        # never attempts to download Arch Linux x86 databases.
+        content = f"""[options]
+Architecture = aarch64
+HoldPkg = pacman glibc
+CacheDir = /var/cache/pacman/pkg/
+DBPath = /var/lib/pacman/
+GPGDir = /etc/pacman.d/gnupg/
+SigLevel = Required TrustAll DatabaseOptional
+LocalFileSigLevel = Optional
+
+[core]
+Server = {mirror.replace('$repo', 'core').replace('$arch', 'aarch64')}
+
+[extra]
+Server = {mirror.replace('$repo', 'extra').replace('$arch', 'aarch64')}
+
+[alarm]
+Server = {mirror.replace('$repo', 'alarm').replace('$arch', 'aarch64')}
+"""
+        pacman_conf.write_text(content, encoding="utf-8")
+        self._arm_pacman_conf = content
+        self.config._data.setdefault("arm_target", {})["platform"] = board
+        if board_target.get("kernel_package"):
+            self.config._data.setdefault("platform_specific", {})["kernel_package"] = board_target["kernel_package"]
+
+    def _generate_initramfs(self) -> None:
+        """Keep the signed kernel/initramfs supplied by the ARM rootfs."""
+        boot = self._target_root() / "boot"
+        kernel = boot / "Image"
+        if not kernel.exists():
+            kernel = next(iter(sorted(boot.glob("vmlinuz-*"))), kernel)
+        images = sorted(boot.glob("initramfs*.img"))
+        if kernel.exists() and images:
+            self.logger.info("[initramfs] Using ARM rootfs kernel and initramfs")
+            self.config._data.setdefault("platform_specific", {})["base_kernel"] = kernel.name
+            self.config._data["platform_specific"]["initramfs"] = images[0].name
+            return
+        raise ISOBuilderError("ARM rootfs does not contain Image and initramfs*.img")
+
+    def _package_plan(self) -> Dict[str, List[str]]:
+        plan = super()._package_plan()
+        mapped = []
+        for package in plan["official"]:
+            if package in self._TARGET_PACKAGES_TO_SKIP:
+                continue
+            mapped.append("linux-aarch64" if package in {"linux", "linux-lts", "linux-zen", "linux-hardened"} else package)
+        kernel_package = self.config.get("platform_specific.kernel_package")
+        if kernel_package:
+            mapped = [kernel_package if package == "linux-aarch64" else package for package in mapped]
+        if self.config.get("arm_target.platform") in ("rpi4", "odroid-n2"):
+            mapped = [package for package in mapped if package != "linux-aarch64"]
+        plan["official"] = [
+            package for package in dict.fromkeys(mapped)
+            if package not in self._TARGET_PACKAGES_TO_SKIP
+        ]
+
+        compatible_local = []
+        for package_path in plan["local_paths"]:
+            # Arch package filenames carry the target architecture.  Keep
+            # architecture-independent packages and reject known x86 builds.
+            package_name = Path(package_path).name
+            if "-x86_64.pkg.tar" in package_name or "-i686.pkg.tar" in package_name:
+                self.logger.warning("[ARM] Skipping incompatible local package: %s", package_path)
+                continue
+            compatible_local.append(package_path)
+        plan["local_paths"] = compatible_local
+        return plan
+
+    def post_install_configure(self) -> None:
+        super().post_install_configure()
+        # Common custom files contain the x86 project pacman.conf. Restore the
+        # target repository configuration after those files are copied.
+        if getattr(self.toolchain, "mode", "mock") != "mock" and self._arm_pacman_conf:
+            pacman_conf = self._target_root() / "etc" / "pacman.conf"
+            pacman_conf.parent.mkdir(parents=True, exist_ok=True)
+            pacman_conf.write_text(self._arm_pacman_conf, encoding="utf-8")
 
 
 class ISOBuilder:
@@ -1088,11 +1241,27 @@ class ISOBuilder:
         try:
             workdir_path = self.engine.setup_workdir(workdir)
             self._sync_default_chroot_with_workdir(workdir_path)
+            hook_runner = getattr(self.engine, "hook_runner", None)
+            if hook_runner:
+                hook_runner("pre_chroot")
             self.engine.setup_chroot(str(workdir_path))
+            if hook_runner:
+                hook_runner("post_chroot", self.toolchain.chroot_manager)
+                hook_runner("pre_packages", self.toolchain.chroot_manager)
             self.engine.install_packages()
+            if hook_runner:
+                hook_runner("post_packages", self.toolchain.chroot_manager)
+                hook_runner("pre_customize", self.toolchain.chroot_manager)
             self.engine.post_install_configure()
+            if hook_runner:
+                hook_runner("post_customize", self.toolchain.chroot_manager)
+                hook_runner("pre_boot", self.toolchain.chroot_manager)
             self.engine.build_bootloaders(self.engine._boot_mountpoint())
+            if hook_runner:
+                hook_runner("pre_iso")
             self.engine.finalize_isofile(str(output_path))
+            if hook_runner:
+                hook_runner("post_iso")
             logger.info("=== Build completed successfully! ===")
             return output_path
         except Exception as exc:

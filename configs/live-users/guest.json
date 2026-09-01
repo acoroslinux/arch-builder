@@ -1,17 +1,18 @@
 {
+  "name": "guest",
+  "description": "Live desktop user without administrator privileges.",
   "customizations": {
     "users": [
       {
         "name": "live",
-        "groups": ["audio", "video", "wheel"],
+        "groups": [
+          "video",
+          "audio",
+          "networkmanager",
+          "autologin"
+        ],
         "password": "live"
-      },
-      {
-        "name": "root",
-        "groups": ["root"],
-        "password": "root"
       }
     ]
   }
 }
-

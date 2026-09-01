@@ -1,4 +1,6 @@
+import tempfile
 import unittest
+from pathlib import Path
 from core.bootloaders.syslinux import SyslinuxBootloader
 from core.config_loader import ConfigAssembler
 
@@ -38,6 +40,21 @@ class TestSyslinuxBootloaderGeneration(unittest.TestCase):
 
         self.assertEqual(replacements["@@KERNEL_FILE@@"], "vmlinuz-linux")
         self.assertEqual(replacements["@@INITRAMFS_FILE@@"], "initramfs-linux.img")
+
+    def test_syslinux_generates_only_its_config_without_unresolved_desktop(self):
+        assembler = ConfigAssembler("configs")
+        config = assembler.assemble(target_arch="x86_64", target_desktop="xfce")
+        loader = SyslinuxBootloader(config)
+
+        with tempfile.TemporaryDirectory(prefix="arch_builder_syslinux_") as tmp:
+            workdir = Path(tmp)
+            self.assertTrue(loader.prepare_files(workdir, iso_uuid="test-uuid"))
+            generated = sorted(path.name for path in (workdir / "boot/syslinux").iterdir())
+            self.assertEqual(generated, ["isolinux.cfg"])
+            content = (workdir / "boot/syslinux/isolinux.cfg").read_text()
+            self.assertIn("XFCE", content)
+            self.assertNotIn("@@DESKTOP@@", content)
+            self.assertNotIn("MENU BACKGROUND", content)
 
 
 if __name__ == "__main__":

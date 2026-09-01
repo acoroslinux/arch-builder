@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -40,16 +41,43 @@ def _parse_list_arg(arg_value):
 def _resolve_output_name(
     architecture: str, desktop: str = None, output: str = None
 ) -> str:
+    output_dir = resolve_from_project("output")
     if output:
-        return output
+        requested = Path(output)
+        if requested.is_absolute():
+            return str(requested)
+        if requested.parts and requested.parts[0] == "output":
+            return str(resolve_from_project(requested))
+        return str(output_dir / requested)
 
     desktop_label = _slugify_name(desktop or "base", "base")
     arch_label = _slugify_name(architecture, "x86_64")
-    return f"arch-builder-{desktop_label}-{arch_label}.iso"
+    return str(output_dir / f"arch-builder-{desktop_label}-{arch_label}.iso")
+
+
+def _config_path_from_argv(argv=None) -> Path:
+    """Resolve the manifest early so its defaults can configure argparse."""
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("-c", "--config", default="configs/global_build.json")
+    known, _ = parser.parse_known_args(argv)
+    return resolve_from_project(known.config)
+
+
+def _restore_invoking_user_ownership(paths) -> None:
+    """Return root-created build artifacts to the user who invoked sudo."""
+    if os.geteuid() != 0:
+        return
+    sudo_uid = os.environ.get("SUDO_UID")
+    sudo_gid = os.environ.get("SUDO_GID")
+    if not sudo_uid or not sudo_gid:
+        return
+    uid, gid = int(sudo_uid), int(sudo_gid)
+    for path in paths:
+        os.chown(path, uid, gid)
 
 
 def main():
-    default_config_path = resolve_from_project("configs/global_build.json")
+    default_config_path = _config_path_from_argv()
     defaults = {}
     try:
         with open(default_config_path, "r") as f:
@@ -67,15 +95,15 @@ def main():
     parser.add_argument(
         "--device",
         type=str,
-        help="Hardware device profile (e.g., rpi4, pinebookpro)",
+        help="Hardware device profile (supported ARM targets: rpi4, odroid-n2, pinebookpro, rockpro64).",
     )
 
     parser.add_argument(
         "architecture",
         nargs="?",
         default="x86_64",
-        choices=["x86_64"],
-        help="Target architecture. Currently supported: x86_64. Default: x86_64",
+        choices=["x86_64", "aarch64"],
+        help="Target architecture. Supported: x86_64 and aarch64 (Raspberry Pi 4). Default: x86_64",
     )
 
     # Configuration and Environment
@@ -83,7 +111,7 @@ def main():
         "-c",
         "--config",
         type=str,
-        default=str(resolve_from_project("configs/global_build.json")),
+        default=str(default_config_path),
         help="Path to the global configuration JSON file. Default: configs/global_build.json",
     )
 
@@ -95,6 +123,7 @@ def main():
     )
 
     parser.add_argument(
+        "-f",
         "--format",
         choices=["iso", "img", "raw", "qcow2", "vmdk", "vhd", "vhdx", "vdi", "tarball", "container"],
         default="iso",
@@ -119,7 +148,13 @@ def main():
     parser.add_argument(
         "--force-isolated-toolchain",
         action="store_true",
-        help="Force isolated Arch bootstrap toolchain in real mode, even if host tools are available.",
+        help="Force isolated Arch bootstrap toolchain in real mode. Real mode is isolated by default.",
+    )
+
+    parser.add_argument(
+        "--use-host-toolchain",
+        action="store_true",
+        help="Compatibility/debug option: allow real mode to use host Arch build tools if they are available.",
     )
 
     parser.add_argument(
@@ -231,7 +266,7 @@ def main():
         "--output",
         type=str,
         default=None,
-        help="Output ISO file name. Default: arch-builder-<desktop>-<architecture>.iso",
+        help="Output file name. Relative names are created in output/. Default: output/arch-builder-<desktop>-<architecture>.iso",
     )
 
     # Verbosity
@@ -255,41 +290,85 @@ def main():
     )
 
     args = parser.parse_args()
+    config_path = resolve_from_project(args.config)
+    if not config_path.exists():
+        parser.error(f"configuration file not found: {config_path}")
 
     # ── Handle Device Profile ───────────────────────────────────────────────────
     if getattr(args, "device", None):
-        device_file = resolve_from_project(f"configs/hardware/{args.device}.json")
-        if device_file.exists():
-            import json
-            with open(device_file) as f:
+        device_file = config_path.parent / "hardware" / f"{args.device}.json"
+        if not device_file.exists():
+            parser.error(f"hardware profile not found: {device_file}")
+        with open(device_file, encoding="utf-8") as f:
+            try:
                 dev_cfg = json.load(f)
+            except (OSError, json.JSONDecodeError) as exc:
+                parser.error(f"invalid hardware profile '{device_file}': {exc}")
+        if not isinstance(dev_cfg, dict):
+            parser.error(f"hardware profile must be a JSON object: {device_file}")
+
+        device_name = dev_cfg.get("name")
+        if not isinstance(device_name, str) or not device_name:
+            parser.error(f"hardware profile is missing a non-empty name: {device_file}")
+        if not isinstance(dev_cfg.get("architecture"), str) or not dev_cfg["architecture"]:
+            parser.error(
+                f"hardware profile is missing an architecture: {device_file}"
+            )
+        bootloader_cfg = dev_cfg.get("bootloader")
+        if (
+            not isinstance(bootloader_cfg, dict)
+            or not isinstance(bootloader_cfg.get("type"), str)
+            or not bootloader_cfg["type"]
+        ):
+            parser.error(
+                f"hardware profile requires bootloader.type: {device_file}"
+            )
+        allowed_formats = {
+            "iso", "img", "raw", "qcow2", "vmdk", "vhd", "vhdx",
+            "vdi", "tarball", "container",
+        }
+        if "output_format" in dev_cfg and dev_cfg["output_format"] not in allowed_formats:
+            parser.error(
+                f"unsupported output_format in hardware profile '{device_file}': "
+                f"{dev_cfg['output_format']}"
+            )
+
+        device_arch = str(dev_cfg.get("architecture", "x86_64")).lower()
+        if device_arch == "aarch64" and args.device not in ("rpi4", "odroid-n2", "pinebookpro", "rockpro64"):
+            parser.error(
+                f"hardware profile '{args.device}' is not implemented yet; "
+                "supported targets are rpi4, odroid-n2, pinebookpro and rockpro64"
+            )
+        if device_arch not in ("x86_64", "x86-64", "aarch64"):
+            parser.error(
+                f"hardware profile '{args.device}' requires unsupported "
+                f"architecture '{device_arch}'; this builder supports only x86_64"
+            )
             
-            # Explicitly update args.architecture if not provided on CLI
-            if "architecture" in dev_cfg:
-                # If architecture was not passed in sys.argv (not considering flags for architecture since it is positional usually)
-                arch_passed = any(a in getattr(args, "architecture", "") for a in sys.argv[1:]) if getattr(args, "architecture", None) else False
-                if not arch_passed or getattr(args, "architecture", "") == "x86_64":
-                    args.architecture = dev_cfg["architecture"]
+        args.architecture = "x86_64" if device_arch == "x86-64" else device_arch
             
-            # Explicitly update format
-            if "output_format" in dev_cfg and "--format" not in sys.argv and "-f" not in sys.argv:
-                args.format = dev_cfg["output_format"]
+        if "output_format" in dev_cfg and "--format" not in sys.argv and "-f" not in sys.argv:
+            args.format = dev_cfg["output_format"]
                 
-            # Explicitly update bootloader
-            if "bootloader" in dev_cfg and "--bootloader" not in sys.argv and "-b" not in sys.argv:
-                # To prevent config_loader from crashing when we pass a dict, we can dump it to a temporary file
-                # OR we just set args.bootloader = dev_cfg["bootloader"] and fix config_loader.py
-                args.bootloader = dev_cfg["bootloader"]
+        if "bootloader" in dev_cfg and "--bootloader" not in sys.argv and "-b" not in sys.argv:
+            args.bootloader = dev_cfg["bootloader"]
                 
     if args.architecture.lower() == "x86-64":
         args.architecture = "x86_64"
+    if args.architecture == "aarch64":
+        if args.device not in ("rpi4", "odroid-n2", "pinebookpro", "rockpro64"):
+            parser.error("aarch64 builds require a supported ARM board profile")
+        if args.format != "img":
+            parser.error("ARM board builds must use --format img")
     output_name = _resolve_output_name(
         architecture=args.architecture,
         desktop=args.desktop,
         output=args.output,
     )
+    if args.architecture == "aarch64" and args.output is None:
+        output_name = str(Path(output_name).with_suffix(".img"))
 
-    config_root = resolve_from_project("configs")
+    config_root = config_path.parent
     if args.list_options:
         print("Available build selections:")
         print(
@@ -315,12 +394,6 @@ def main():
         )
         sys.exit(0)
 
-    # Prepare paths
-    config_path = resolve_from_project(args.config)
-    if not config_path.exists():
-        print(f"Error: Configuration file '{config_path}' not found.")
-        sys.exit(1)
-
     # Initialize Orchestrator
     parsed_live_groups = None
     if args.live_groups:
@@ -335,8 +408,10 @@ def main():
         arch=args.architecture,
         config_path=str(config_path),
         mode=args.mode,
+        output_format=args.format,
         clean=args.clean,
         force_isolated_toolchain=args.force_isolated_toolchain,
+        use_host_toolchain=args.use_host_toolchain,
         toolchain_debug=args.toolchain_debug,
         toolchain_debug_log=args.toolchain_debug_log,
         toolchain_pacman_retries=args.toolchain_pacman_retries,
@@ -357,8 +432,10 @@ def main():
     print(f"Target Arch: {args.architecture}")
     print(f"Mode:        {args.mode}")
     print(f"Clean:       {'yes' if args.clean else 'no'}")
-    if args.force_isolated_toolchain:
-        print("Toolchain:   forced isolated bootstrap")
+    if args.mode == "real" and not args.use_host_toolchain:
+        print("Toolchain:   isolated bootstrap in workdir")
+    elif args.use_host_toolchain:
+        print("Toolchain:   host toolchain allowed")
     if args.toolchain_debug:
         debug_log_target = args.toolchain_debug_log or "<workdir>/toolchain-debug.log"
         print(f"Diag Log:    {debug_log_target}")
@@ -401,6 +478,9 @@ def main():
             md5_file = Path(str(result_iso) + ".md5")
             sha256_file.write_text(f"{sha256_val}  {Path(result_iso).name}\n")
             md5_file.write_text(f"{md5_val}  {Path(result_iso).name}\n")
+            _restore_invoking_user_ownership(
+                [Path(result_iso), sha256_file, md5_file]
+            )
 
             print(f"   SHA256: {sha256_val} -> {sha256_file.name}")
             print(f"   MD5:    {md5_val} -> {md5_file.name}")

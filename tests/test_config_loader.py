@@ -23,6 +23,9 @@ class TestGlobalConfigLoader(unittest.TestCase):
         (self.test_dir / "global_build.json").write_text(
             '{"system": {"workdir_base": "/tmp/isofiles"}, "components": {"boot": [{"name": "grub", "type": "module"}]}}'
         )
+        (self.test_dir / "custom-build.json").write_text(
+            '{"metadata": {"name": "custom-manifest"}, "system": {"workdir_base": "/tmp/custom-isofiles"}}'
+        )
         (self.test_dir / "architectures/x86_64.json").write_text(
             '{"platform_specific": {"architecture": "x86_64", "base_kernel": "linux", "initramfs": "init.img", "software": [{"name": "linux"}, {"name": "base"}]}}'
         )
@@ -56,6 +59,12 @@ class TestGlobalConfigLoader(unittest.TestCase):
         self.assertIsInstance(config, Config)
         self.assertEqual(config.get("platform_specific.architecture"), "x86_64")
 
+    def test_exact_manifest_path_is_loaded(self):
+        assembler = ConfigAssembler(str(self.test_dir / "custom-build.json"))
+        config = assembler.assemble("x86_64")
+        self.assertEqual(config.get("metadata.name"), "custom-manifest")
+        self.assertEqual(config.get("system.workdir_base"), "/tmp/custom-isofiles")
+
     def test_assemble_always_loads_base_packages(self):
         assembler = ConfigAssembler(str(self.test_dir))
         config = assembler.assemble("x86_64")
@@ -70,6 +79,7 @@ class TestGlobalConfigLoader(unittest.TestCase):
             package_profiles=["networking"],
         )
         self.assertEqual(config.get("customizations.services"), ["lightdm"])
+        self.assertEqual(config.get("desktop"), "xfce")
         self.assertIn("networkmanager", config.get("software", []))
 
     def test_assemble_with_kernel_override(self):
@@ -90,7 +100,7 @@ class TestGlobalConfigLoader(unittest.TestCase):
 
         users = config.get("customizations.users", [])
         user_names = [u.get("name") for u in users if isinstance(u, dict)]
-        self.assertIn("live", user_names)
+        self.assertEqual(user_names.count("live"), 1)
 
         copy_files = config.get("desktop_environment.copy_files", [])
         copied_dests = [r.get("destination") for r in copy_files if isinstance(r, dict)]
@@ -145,6 +155,76 @@ class TestGlobalConfigLoader(unittest.TestCase):
         self.assertIn("lightdm", services)
         self.assertIn("sshd", services)
         self.assertIn("systemd-timesyncd", services)
+
+    def test_real_kernel_profiles_select_the_matching_package(self):
+        for kernel in ("linux", "linux-lts", "linux-zen", "linux-hardened"):
+            with self.subTest(kernel=kernel):
+                config = ConfigAssembler("configs").assemble(
+                    "x86_64", target_desktop="xfce", target_kernel=kernel
+                )
+                package_names = list(
+                    dict.fromkeys(
+                        config.get("software", [])
+                        + config.get("platform_specific.packages", [])
+                    )
+                )
+                selected = [
+                    name
+                    for name in package_names
+                    if name in {"linux", "linux-lts", "linux-zen", "linux-hardened"}
+                ]
+                self.assertEqual(selected, [kernel])
+
+    def test_real_desktop_merge_has_one_live_user(self):
+        desktop_dir = Path("configs/desktops")
+        for desktop_path in sorted(desktop_dir.glob("*.json")):
+            with self.subTest(desktop=desktop_path.stem):
+                config = ConfigAssembler("configs").assemble(
+                    "x86_64", target_desktop=desktop_path.stem
+                )
+                names = [
+                    user.get("name")
+                    for user in config.get("customizations.users", [])
+                    if isinstance(user, dict)
+                ]
+                self.assertEqual(len(names), len(set(names)))
+
+    def test_bootloader_profile_sets_type_and_packages(self):
+        config = ConfigAssembler("configs").assemble(
+            "x86_64", target_bootloader="grub"
+        )
+        self.assertEqual(config.get("bootloader.type"), "grub")
+        self.assertIn("grub", config.get("platform_specific.packages", []))
+
+    def test_missing_selected_profile_fails_explicitly(self):
+        with self.assertRaises(ConfigValidationError):
+            ConfigAssembler(str(self.test_dir)).assemble(
+                "x86_64", package_profiles=["does-not-exist"]
+            )
+
+    def test_missing_selected_kernel_fails_explicitly(self):
+        with self.assertRaises(ConfigValidationError):
+            ConfigAssembler(str(self.test_dir)).assemble(
+                "x86_64", target_kernel="does-not-exist"
+            )
+
+    def test_profile_name_must_match_filename(self):
+        (self.test_dir / "software/mismatched.json").write_text(
+            '{"name": "different", "packages": ["git"]}'
+        )
+        with self.assertRaises(ConfigValidationError):
+            ConfigAssembler(str(self.test_dir)).assemble(
+                "x86_64", package_profiles=["mismatched"]
+            )
+
+    def test_invalid_package_sources_fail_validation(self):
+        (self.test_dir / "software/invalid-sources.json").write_text(
+            '{"name": "invalid-sources", "package_sources": {"official": "git"}}'
+        )
+        with self.assertRaises(ConfigValidationError):
+            ConfigAssembler(str(self.test_dir)).assemble(
+                "x86_64", package_profiles=["invalid-sources"]
+            )
 
 
 if __name__ == "__main__":

@@ -7,6 +7,5 @@
       "libpamac-aur",
       "pamac-aur"
     ]
-  },
-  "dependencies": ["pacman"]
+  }
 }

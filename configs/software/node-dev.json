@@ -6,6 +6,5 @@
     "npm",
     "yarn",
     "pnpm"
-  ],
-  "dependencies": ["pacman"]
+  ]
 }

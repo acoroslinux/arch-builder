@@ -1,17 +1,19 @@
 {
+  "name": "admin",
+  "description": "Password-enabled live administrator with desktop and network access.",
   "customizations": {
     "users": [
       {
         "name": "live",
-        "groups": ["wheel", "video", "audio", "networkmanager"],
+        "groups": [
+          "wheel",
+          "video",
+          "audio",
+          "networkmanager",
+          "autologin"
+        ],
         "password": "live"
-      },
-      {
-        "name": "root",
-        "groups": ["root"],
-        "password": "root"
       }
-  ]
+    ]
   }
 }
-

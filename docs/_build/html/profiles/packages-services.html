@@ -109,7 +109,7 @@
              
   <section id="package-and-service-profiles">
 <h1>Package And Service Profiles<a class="headerlink" href="#package-and-service-profiles" title="Link to this heading"></a></h1>
-<p>This page documents every JSON file under <code class="docutils literal notranslate"><span class="pre">configs/packages/</span></code> and <code class="docutils literal notranslate"><span class="pre">configs/services/</span></code>.</p>
+<p>This page documents every JSON file under <code class="docutils literal notranslate"><span class="pre">configs/software/</span></code> and <code class="docutils literal notranslate"><span class="pre">configs/services/</span></code>.</p>
 <section id="package-profiles">
 <h2>Package profiles<a class="headerlink" href="#package-profiles" title="Link to this heading"></a></h2>
 <p>Package profiles usually provide either:</p>
@@ -125,91 +125,91 @@
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/audio.json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/audio.json</span></code></p></td>
 <td><p>PipeWire-based audio stack.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">pipewire</span></code>, <code class="docutils literal notranslate"><span class="pre">pipewire-alsa</span></code>, <code class="docutils literal notranslate"><span class="pre">pipewire-pulse</span></code>, <code class="docutils literal notranslate"><span class="pre">wireplumber</span></code>, <code class="docutils literal notranslate"><span class="pre">alsa-utils</span></code>, <code class="docutils literal notranslate"><span class="pre">pavucontrol</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/base.json</span></code></p></td>
-<td><p>Minimal essential package set.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">base</span></code>, <code class="docutils literal notranslate"><span class="pre">linux</span></code>, <code class="docutils literal notranslate"><span class="pre">efuse</span></code>, <code class="docutils literal notranslate"><span class="pre">vim</span></code>, <code class="docutils literal notranslate"><span class="pre">networkmanager</span></code>; dependency on <code class="docutils literal notranslate"><span class="pre">pacman</span></code>.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/base.json</span></code></p></td>
+<td><p>Core package set for the live ISO.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">base</span></code>, <code class="docutils literal notranslate"><span class="pre">linux</span></code>, <code class="docutils literal notranslate"><span class="pre">linux-firmware</span></code>, <code class="docutils literal notranslate"><span class="pre">vim</span></code>, <code class="docutils literal notranslate"><span class="pre">networkmanager</span></code>, <code class="docutils literal notranslate"><span class="pre">7zip</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/bluetooth.json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/bluetooth.json</span></code></p></td>
 <td><p>Bluetooth support bundle.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">bluez</span></code>, <code class="docutils literal notranslate"><span class="pre">bluez-utils</span></code>, <code class="docutils literal notranslate"><span class="pre">blueman</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/containers.json</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/containers.json</span></code></p></td>
 <td><p>Container tooling profile.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">docker</span></code>, <code class="docutils literal notranslate"><span class="pre">docker-compose</span></code>, <code class="docutils literal notranslate"><span class="pre">podman</span></code>, <code class="docutils literal notranslate"><span class="pre">buildah</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/custom-user.json</span></code></p></td>
-<td><p>Mixed official/local/AUR package sourcing example.</p></td>
-<td><p>Official <code class="docutils literal notranslate"><span class="pre">calamares</span></code>, local package dir <code class="docutils literal notranslate"><span class="pre">configs/custom-packages/local</span></code>, AUR <code class="docutils literal notranslate"><span class="pre">calamares-git</span></code>.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/custom-user.json</span></code></p></td>
+<td><p>Local package sourcing profile.</p></td>
+<td><p>Local package dir <code class="docutils literal notranslate"><span class="pre">configs/custom-packages/local</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/aur-packages.json</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/aur-packages.json</span></code></p></td>
 <td><p>Custom AUR packages profile.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">yay-bin</span></code>, <code class="docutils literal notranslate"><span class="pre">pamac-aur</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/dev-tools.json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/dev-tools.json</span></code></p></td>
 <td><p>General development toolchain.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">base-devel</span></code>, <code class="docutils literal notranslate"><span class="pre">git</span></code>, <code class="docutils literal notranslate"><span class="pre">cmake</span></code>, <code class="docutils literal notranslate"><span class="pre">ninja</span></code>, <code class="docutils literal notranslate"><span class="pre">make</span></code>, <code class="docutils literal notranslate"><span class="pre">gcc</span></code>, <code class="docutils literal notranslate"><span class="pre">gdb</span></code>, <code class="docutils literal notranslate"><span class="pre">ripgrep</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/display-manager.json</span></code></p></td>
-<td><p>Display-manager helper bundle.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">sddm</span></code>, <code class="docutils literal notranslate"><span class="pre">xf86-video-intel</span></code>.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/display-manager.json</span></code></p></td>
+<td><p>SDDM display-manager bundle.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sddm</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/filesystems.json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/filesystems.json</span></code></p></td>
 <td><p>Filesystem tooling bundle.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">btrfs-progs</span></code>, <code class="docutils literal notranslate"><span class="pre">xfsprogs</span></code>, <code class="docutils literal notranslate"><span class="pre">exfatprogs</span></code>, <code class="docutils literal notranslate"><span class="pre">dosfstools</span></code>, <code class="docutils literal notranslate"><span class="pre">ntfs-3g</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/fonts-locales.json</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/fonts-locales.json</span></code></p></td>
 <td><p>Fonts and locale coverage.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">noto-fonts</span></code>, <code class="docutils literal notranslate"><span class="pre">noto-fonts-cjk</span></code>, <code class="docutils literal notranslate"><span class="pre">noto-fonts-emoji</span></code>, <code class="docutils literal notranslate"><span class="pre">ttf-dejavu</span></code>, <code class="docutils literal notranslate"><span class="pre">glibc</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/monitoring.json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/monitoring.json</span></code></p></td>
 <td><p>Monitoring and diagnostics utilities.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">htop</span></code>, <code class="docutils literal notranslate"><span class="pre">iotop</span></code>, <code class="docutils literal notranslate"><span class="pre">btop</span></code>, <code class="docutils literal notranslate"><span class="pre">sysstat</span></code>, <code class="docutils literal notranslate"><span class="pre">lsof</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/multimedia.json</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/multimedia.json</span></code></p></td>
 <td><p>Multimedia codecs and playback.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">ffmpeg</span></code>, <code class="docutils literal notranslate"><span class="pre">vlc</span></code>, <code class="docutils literal notranslate"><span class="pre">gst-plugins-base</span></code>, <code class="docutils literal notranslate"><span class="pre">gst-plugins-good</span></code>, <code class="docutils literal notranslate"><span class="pre">gst-plugins-bad</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/network-advanced.json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/network-advanced.json</span></code></p></td>
 <td><p>Advanced networking and firewall set.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">networkmanager</span></code>, <code class="docutils literal notranslate"><span class="pre">nm-connection-editor</span></code>, <code class="docutils literal notranslate"><span class="pre">openssh</span></code>, <code class="docutils literal notranslate"><span class="pre">wireguard-tools</span></code>, <code class="docutils literal notranslate"><span class="pre">nmap</span></code>, <code class="docutils literal notranslate"><span class="pre">tcpdump</span></code>, <code class="docutils literal notranslate"><span class="pre">ufw</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/networking.json</span></code></p></td>
-<td><p>Basic networking profile.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">netctl</span></code>, <code class="docutils literal notranslate"><span class="pre">resolvconf</span></code>.</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/networking.json</span></code></p></td>
+<td><p>Wireless and DNS compatibility profile.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">iwd</span></code>, <code class="docutils literal notranslate"><span class="pre">wpa_supplicant</span></code>, <code class="docutils literal notranslate"><span class="pre">openresolv</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/node-dev.json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/node-dev.json</span></code></p></td>
 <td><p>Node.js developer profile.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">nodejs</span></code>, <code class="docutils literal notranslate"><span class="pre">npm</span></code>, <code class="docutils literal notranslate"><span class="pre">yarn</span></code>, <code class="docutils literal notranslate"><span class="pre">pnpm</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/printing.json</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/printing.json</span></code></p></td>
 <td><p>Printing stack.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">cups</span></code>, <code class="docutils literal notranslate"><span class="pre">cups-pdf</span></code>, <code class="docutils literal notranslate"><span class="pre">system-config-printer</span></code>, <code class="docutils literal notranslate"><span class="pre">ghostscript</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/python-dev.json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/python-dev.json</span></code></p></td>
 <td><p>Python developer profile.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">python</span></code>, <code class="docutils literal notranslate"><span class="pre">python-pip</span></code>, <code class="docutils literal notranslate"><span class="pre">python-virtualenv</span></code>, <code class="docutils literal notranslate"><span class="pre">python-setuptools</span></code>, <code class="docutils literal notranslate"><span class="pre">ipython</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/security.json</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/security.json</span></code></p></td>
 <td><p>Security and hardening toolkit.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">iptables-nft</span></code>, <code class="docutils literal notranslate"><span class="pre">nftables</span></code>, <code class="docutils literal notranslate"><span class="pre">fail2ban</span></code>, <code class="docutils literal notranslate"><span class="pre">lynis</span></code>, <code class="docutils literal notranslate"><span class="pre">clamav</span></code>.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">iptables</span></code>, <code class="docutils literal notranslate"><span class="pre">nftables</span></code>, <code class="docutils literal notranslate"><span class="pre">fail2ban</span></code>, <code class="docutils literal notranslate"><span class="pre">lynis</span></code>, <code class="docutils literal notranslate"><span class="pre">clamav</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/systemd.json</span></code></p></td>
-<td><p>systemd-focused package bundle.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">systemd</span></code>, <code class="docutils literal notranslate"><span class="pre">systemd-boot</span></code>.</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/calamares-installer.json</span></code></p></td>
+<td><p>Installer profile using the bundled local package.</p></td>
+<td><p>Calamares local package plus filesystem and partitioning tools.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/virtualization.json</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/virtualization.json</span></code></p></td>
 <td><p>KVM and virtualization stack.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">qemu-full</span></code>, <code class="docutils literal notranslate"><span class="pre">libvirt</span></code>, <code class="docutils literal notranslate"><span class="pre">virt-manager</span></code>, <code class="docutils literal notranslate"><span class="pre">dnsmasq</span></code>, <code class="docutils literal notranslate"><span class="pre">bridge-utils</span></code>, <code class="docutils literal notranslate"><span class="pre">edk2-ovmf</span></code>.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">qemu-full</span></code>, <code class="docutils literal notranslate"><span class="pre">libvirt</span></code>, <code class="docutils literal notranslate"><span class="pre">virt-manager</span></code>, <code class="docutils literal notranslate"><span class="pre">dnsmasq</span></code>, <code class="docutils literal notranslate"><span class="pre">edk2-ovmf</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/wayland.json</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/wayland.json</span></code></p></td>
 <td><p>Wayland session support.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">wayland</span></code>, <code class="docutils literal notranslate"><span class="pre">xorg-xwayland</span></code>, <code class="docutils literal notranslate"><span class="pre">wl-clipboard</span></code>, <code class="docutils literal notranslate"><span class="pre">grim</span></code>, <code class="docutils literal notranslate"><span class="pre">slurp</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/packages/xorg.json</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/software/xorg.json</span></code></p></td>
 <td><p>X11/Xorg stack.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">xorg-server</span></code>, <code class="docutils literal notranslate"><span class="pre">xorg-xinit</span></code>, <code class="docutils literal notranslate"><span class="pre">xorg-xrandr</span></code>, <code class="docutils literal notranslate"><span class="pre">xorg-xset</span></code>, <code class="docutils literal notranslate"><span class="pre">xorg-xinput</span></code>.</p></td>
 </tr>
@@ -239,21 +239,13 @@ python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="
 <td><p>Core runtime services.</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">NetworkManager</span></code>, <code class="docutils literal notranslate"><span class="pre">systemd-timesyncd</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/services/common-bluetooth.json</span></code></p></td>
-<td><p>Bluetooth runtime services.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">bluetooth</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/services/common-printing.json</span></code></p></td>
-<td><p>Printing services.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">cups</span></code></p></td>
-</tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">configs/services/common-remote.json</span></code></p></td>
-<td><p>Remote access and discovery.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">sshd</span></code>, <code class="docutils literal notranslate"><span class="pre">avahi-daemon</span></code></p></td>
+<td><p>Remote access service.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sshd</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">configs/services/common-virtualization.json</span></code></p></td>
 <td><p>Virtualization daemons.</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">libvirtd</span></code>, <code class="docutils literal notranslate"><span class="pre">virtlogd</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">libvirtd</span></code>, <code class="docutils literal notranslate"><span class="pre">virtlogd.socket</span></code></p></td>
 </tr>
 </tbody>
 </table>

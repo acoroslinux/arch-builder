@@ -1,24 +1,29 @@
 {
-    "name": "live-initramfs",
-    "description": "Initramfs configuration for live ISO boot with archiso hooks.",
-    "initramfs_config": {
-        "modules": [
-            "loop",
-            "overlay"
-        ],
-        "binaries": [
-            "fsck",
-            "fsck.fat"
-        ],
-        "hooks": [
-            "base",
-            "udev",
-            "modconf",
-            "archiso",
-            "block",
-            "filesystems",
-            "keyboard"
-        ]
-    }
+  "name": "live",
+  "description": "Initramfs configuration for live ISO boot with archiso hooks.",
+  "initramfs_config": {
+    "modules": [
+      "squashfs",
+      "loop",
+      "overlay"
+    ],
+    "binaries": [
+      "fsck",
+      "fsck.fat"
+    ],
+    "hooks": [
+      "base",
+      "udev",
+      "kms",
+      "plymouth",
+      "modconf",
+      "memdisk",
+      "archiso",
+      "archiso_loop_mnt",
+      "block",
+      "filesystems",
+      "keyboard"
+    ],
+    "files": []
+  }
 }
-

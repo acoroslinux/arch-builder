@@ -39,6 +39,7 @@ class BuildOrchestrator:
         fast_mode: bool = False,
         use_tmpfs: bool = False,
         force_isolated_toolchain: bool = False,
+        use_host_toolchain: bool = False,
         toolchain_debug: bool = False,
         toolchain_debug_log: Optional[str] = None,
         toolchain_pacman_retries: int = 3,
@@ -71,13 +72,14 @@ class BuildOrchestrator:
         self.with_offline_repo = with_offline_repo
         self.offline_repo_packages = offline_repo_packages or []
         self.arch = (arch or "x86_64").lower()
-        if self.arch not in ("x86_64", "x86-64"):
+        if self.arch not in ("x86_64", "x86-64", "aarch64"):
             raise BuildOrchestratorError(
-                f"Architecture '{self.arch}' is not supported. Only x86_64 is supported."
+                f"Architecture '{self.arch}' is not supported. Supported: x86_64 and aarch64."
             )
         self.with_offline_repo = with_offline_repo
         self.offline_repo_packages = offline_repo_packages or []
-        self.arch = "x86_64"
+        if self.arch == "x86-64":
+            self.arch = "x86_64"
         self.config_path = str(resolve_from_project(config_path))
         self.mode = mode
         self.output_format = output_format
@@ -85,6 +87,7 @@ class BuildOrchestrator:
         self.fast_mode = fast_mode
         self.use_tmpfs = use_tmpfs
         self.force_isolated_toolchain = force_isolated_toolchain
+        self.use_host_toolchain = use_host_toolchain
         self.toolchain_debug = toolchain_debug
         self.toolchain_debug_log = toolchain_debug_log
         self.toolchain_pacman_retries = toolchain_pacman_retries
@@ -155,7 +158,7 @@ class BuildOrchestrator:
         # 1. Load and validate configuration using the assembler.
         from core.config_loader import ConfigAssembler
 
-        assembler = ConfigAssembler(str(Path(self.config_path).parent))
+        assembler = ConfigAssembler(self.config_path)
         try:
             self.config = assembler.assemble(
                 target_arch=self.arch,
@@ -234,8 +237,14 @@ class BuildOrchestrator:
         )
 
         # 3. Prepare a build toolchain (host tools or isolated Arch bootstrap in real mode).
-        force_isolated = self.force_isolated_toolchain or bool(
-            self.config.get("system.force_isolated_toolchain", False)
+        allow_host_toolchain = bool(
+            self.use_host_toolchain
+            or self.config.get("system.allow_host_toolchain", False)
+        )
+        force_isolated = (
+            self.force_isolated_toolchain
+            or bool(self.config.get("system.force_isolated_toolchain", False))
+            or (self.mode == "real" and not allow_host_toolchain)
         )
         pacman_retries = int(
             self.config.get(
@@ -267,6 +276,7 @@ class BuildOrchestrator:
             workdir_base=workdir,
             mode=self.mode,
             force_isolated=force_isolated,
+            allow_host=allow_host_toolchain,
             pacman_retries=pacman_retries,
             diagnostics_enabled=diagnostics_enabled,
             diagnostics_log_path=diagnostics_log_path,
@@ -281,6 +291,8 @@ class BuildOrchestrator:
                 self.bootloader = {"type": "systemd-boot"}  # Default ARM UEFI
             else:
                 self.bootloader = {"type": "grub2-uefi"}
+        if not self.config.get("bootloader"):
+            self.config._data["bootloader"] = self.bootloader
         
         # Inject bootloader packages dynamically
         bcfg = self.bootloader
@@ -294,8 +306,8 @@ class BuildOrchestrator:
             extra_pkgs.extend(["efibootmgr", "dosfstools"])
             
         if extra_pkgs:
-            existing = self.config.get("packages", [])
-            self.config._data["packages"] = list(set(existing + extra_pkgs))
+            existing = self.config.get("software", [])
+            self.config._data["software"] = list(dict.fromkeys(existing + extra_pkgs))
 
         if self.chroot:
             self.chroot.toolchain = self.toolchain
@@ -338,40 +350,63 @@ class BuildOrchestrator:
                 toolchain=self.toolchain,
                 chroot_manager=self.chroot,
             )
-            self.workdir = self.builder.engine.setup_workdir()
+            # Let ISOBuilder invoke the same phase hook system used by disk builds.
+            self.builder.engine.hook_runner = self.run_hooks
+            # Keep the engine and disk-image exporter on the same architecture
+            # scoped workdir selected above (workdir/<arch>).
+            self.workdir = self.builder.engine.setup_workdir(str(workdir))
         except ISOBuilderError as e:
             raise BuildOrchestratorError(f"Failed to initialize the builder: {e}")
 
 
     def run_hooks(self, phase: str, chroot=None):
-        import os, shutil
-        from pathlib import Path
-        hooks_dir = Path("configs/hooks") / phase
+        """Run project hook scripts for a named build phase.
+
+        Host hooks receive build metadata through the environment. Chroot
+        hooks are copied into the target rootfs and executed there, so scripts
+        never accidentally operate on the host filesystem.
+        """
+        import os, shutil, subprocess
+        hooks_dir = resolve_from_project("configs/hooks") / phase
         if not hooks_dir.exists():
             return
-        scripts = sorted([p for p in hooks_dir.iterdir() if p.is_file() and p.suffix == ".sh"])
+        scripts = sorted(
+            p for p in hooks_dir.iterdir()
+            if p.is_file() and not p.is_symlink() and p.suffix == ".sh"
+        )
         if not scripts:
             return
         print(f"Running {phase} hooks...")
         env = os.environ.copy()
-        env["CHROOT_PATH"] = str(self.workdir / "chroot" if not chroot else chroot.target_root)
+        env["CHROOT_PATH"] = str(chroot.chroot_path if chroot else self.workdir / "airootfs")
         env["WORK_DIR"] = str(self.workdir)
         env["ARCH"] = getattr(self, "arch", "")
         env["DISTRO"] = getattr(self, "distro", "")
         env["FORMAT"] = getattr(self, "output_format", "")
+        env["HOOK_PHASE"] = phase
         
-        if phase == "post_chroot" and chroot:
-            chroot_tmp = Path(chroot.target_root) / "tmp"
+        if chroot:
+            chroot_tmp = Path(chroot.chroot_path) / "tmp"
             chroot_tmp.mkdir(parents=True, exist_ok=True)
             for script in scripts:
                 tgt = chroot_tmp / script.name
                 shutil.copy2(script, tgt)
                 tgt.chmod(0o755)
-                chroot.run_in_chroot(["/tmp/" + script.name])
+                chroot_env = [
+                    "env",
+                    "CHROOT_PATH=/",
+                    "WORK_DIR=/tmp",
+                    f"ARCH={env['ARCH']}",
+                    f"DISTRO={env['DISTRO']}",
+                    f"FORMAT={env['FORMAT']}",
+                    f"HOOK_PHASE={phase}",
+                    "/tmp/" + script.name,
+                ]
+                chroot.run_command(chroot_env, chroot_path=str(chroot.chroot_path))
+                tgt.unlink(missing_ok=True)
         else:
-            import subprocess
             for script in scripts:
-                subprocess.run([str(script)], env=env, check=True)
+                subprocess.run([str(script)], env=env, cwd=str(resolve_from_project(".")), check=True)
 
     def run_build(self, output_iso: str) -> Path:
         """
@@ -380,12 +415,15 @@ class BuildOrchestrator:
         try:
             self._setup()
 
+            self.run_hooks("pre_build")
+
             print("\n[STEP 1/1] Running build pipeline through the engine...")
             output_path = Path(output_iso)
             
             if self.output_format == "iso":
                 # ISOBuilder orchestrates the chroot and ISO creation internally.
                 result_iso = self.builder.build(output_path, str(self.workdir))
+                self.run_hooks("post_build")
                 print("\n✅ BUILD SUCCEEDED!")
                 print(f"ISO generated at: {result_iso}")
                 return result_iso
@@ -394,9 +432,15 @@ class BuildOrchestrator:
                 
                 # Do the required setup steps that build() does before ISO generation
                 workdir_path = self.builder.engine.setup_workdir(str(self.workdir))
+                self.run_hooks("pre_chroot")
                 self.builder.engine.setup_chroot(str(workdir_path))
+                self.run_hooks("post_chroot", self.chroot)
+                self.run_hooks("pre_packages")
                 self.builder.engine.install_packages()
+                self.run_hooks("post_packages", self.chroot)
+                self.run_hooks("pre_customize", self.chroot)
                 self.builder.engine.post_install_configure()
+                self.run_hooks("post_customize", self.chroot)
                 
                 # --- INSTALL BOOTLOADER IN CHROOT (ARCH SPECIFIC) ---
                 target_root = workdir_path / "airootfs"
@@ -427,7 +471,11 @@ class BuildOrchestrator:
                     mode=self.mode,
                     toolchain=self.toolchain
                 )
+                self.run_hooks("pre_boot", self.chroot)
+                self.run_hooks("pre_iso")
                 result_iso = disk_engine.build_disk_image(self.output_format)
+                self.run_hooks("post_iso")
+                self.run_hooks("post_build")
                 print("\n✅ BUILD SUCCEEDED!")
                 print(f"Disk generated at: {result_iso}")
                 return result_iso

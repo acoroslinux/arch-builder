@@ -25,6 +25,7 @@ class ToolchainManager:
         workdir_base: Path,
         mode: str = "mock",
         force_isolated: bool = False,
+        allow_host: bool = False,
         pacman_retries: int = 3,
         diagnostics_enabled: bool = False,
         diagnostics_log_path: Optional[Path] = None,
@@ -33,6 +34,7 @@ class ToolchainManager:
     ):
         self.mode = mode
         self.force_isolated = force_isolated
+        self.allow_host = allow_host
         self.pacman_retries = max(1, pacman_retries)
         self.diagnostics_enabled = diagnostics_enabled
         self.diagnostics_log_path = diagnostics_log_path
@@ -42,7 +44,7 @@ class ToolchainManager:
         )
         self.pacman_cache_dir = pacman_cache_dir or default_cache
         self._is_ready = False
-        self.use_host = True
+        self.use_host = False
         self.build_chroot: Optional[Path] = None
         self.iso_rootfs_path: Optional[Path] = None
         self._mounted = False
@@ -91,27 +93,20 @@ class ToolchainManager:
             f"[TOOLCHAIN] Initializing isolated build host at: {self.toolchain_dir}"
         )
         self.toolchain_dir.mkdir(parents=True, exist_ok=True)
-        self._diag(f"setup start mode={self.mode} force_isolated={self.force_isolated}")
+        self._diag(
+            f"setup start mode={self.mode} force_isolated={self.force_isolated} "
+            f"allow_host={self.allow_host}"
+        )
 
         if self.mode == "real":
-            if self.force_isolated:
+            if self.allow_host and not self.force_isolated and self._host_has_tools():
                 logger.info(
-                    "[TOOLCHAIN] Forced isolated mode enabled. Bootstrapping an isolated chroot..."
-                )
-                self.use_host = False
-                self._bootstrap_archlinux()
-                self._is_ready = True
-                return
-
-            # Check whether the required tools already exist on the host.
-            if self._host_has_tools():
-                logger.info(
-                    "[TOOLCHAIN] Required tools found on the host. Using the local environment."
+                    "[TOOLCHAIN] Host toolchain explicitly allowed and required tools were found."
                 )
                 self.use_host = True
             else:
                 logger.info(
-                    "[TOOLCHAIN] Missing host tools. Bootstrapping an isolated chroot..."
+                    "[TOOLCHAIN] Bootstrapping an isolated Arch toolchain in the workdir."
                 )
                 self.use_host = False
                 self._bootstrap_archlinux()
@@ -256,6 +251,7 @@ class ToolchainManager:
                 "squashfs-tools",
                 "xorriso",
                 "mtools",
+                "qemu-img",
                 "grub",
                 "cdrtools",
             ],
@@ -476,7 +472,48 @@ class ToolchainManager:
             stderr=subprocess.DEVNULL,
         )
 
-    def run_tool(self, command: list, cwd: Path = None) -> subprocess.CompletedProcess:
+    def _path_inside_build_chroot(self, path: Path) -> str:
+        """Return a path usable from inside the build chroot."""
+        if not self.build_chroot:
+            return str(path)
+
+        path = path.resolve()
+        build_root = Path(self.build_chroot).resolve()
+        try:
+            return "/" + str(path.relative_to(build_root))
+        except ValueError:
+            # The project root is bind-mounted at the same absolute path inside
+            # the build chroot, so workspace absolute paths remain valid.
+            return str(path)
+
+    @staticmethod
+    def _path_inside_root(path: Path, root: Path) -> str:
+        """Translate a host path below ``root`` to its in-chroot path."""
+        resolved_path = path.resolve()
+        resolved_root = root.resolve()
+        try:
+            relative = resolved_path.relative_to(resolved_root)
+        except ValueError:
+            return str(path)
+        return "/" if not relative.parts else f"/{relative}"
+
+    def _translate_command_paths(
+        self, command: list, execution_root: Path
+    ) -> list:
+        """Translate absolute argv paths for an isolated chroot invocation."""
+        translated = []
+        for argument in command:
+            if isinstance(argument, str) and Path(argument).is_absolute():
+                translated.append(
+                    self._path_inside_root(Path(argument), execution_root)
+                )
+            else:
+                translated.append(argument)
+        return translated
+
+    def run_tool(
+        self, command: list, cwd: Path = None, target_chroot: Path = None
+    ) -> subprocess.CompletedProcess:
         """
         Execute a build tool.
         If the tools are available on the host, run the command directly.
@@ -492,7 +529,7 @@ class ToolchainManager:
             )
 
         try:
-            if getattr(self, "use_host", True):
+            if getattr(self, "use_host", False):
                 result = subprocess.run(
                     command,
                     check=True,
@@ -502,7 +539,19 @@ class ToolchainManager:
                 )
             else:
                 # Run the command inside the build chroot.
-                chroot_cmd = ["chroot", str(self.build_chroot)] + command
+                execution_root = (
+                    Path(target_chroot)
+                    if target_chroot is not None
+                    else Path(self.build_chroot)
+                )
+                inner_command = self._translate_command_paths(
+                    command, execution_root
+                )
+                if target_chroot is not None:
+                    inner_target = self._path_inside_build_chroot(Path(target_chroot))
+                    inner_command = ["chroot", inner_target, *inner_command]
+
+                chroot_cmd = ["chroot", str(self.build_chroot)] + inner_command
                 if os.geteuid() != 0:
                     chroot_cmd = ["sudo", *chroot_cmd]
                 result = subprocess.run(
@@ -533,8 +582,21 @@ class ToolchainManager:
 
     def run_command(self, command: list, chroot_path: str = None) -> str:
         """Compatibility wrapper expected by ISOBuilder/BaseEngine."""
-        cwd = Path(chroot_path) if chroot_path else None
-        result = self.run_tool(command, cwd=cwd)
+        target_chroot = None
+        cwd = None
+        if chroot_path:
+            chroot_path_obj = Path(chroot_path)
+            if self.mode == "real" and not getattr(self, "use_host", False):
+                build_root = Path(self.build_chroot).resolve() if self.build_chroot else None
+                resolved = chroot_path_obj.resolve()
+                if build_root and resolved != build_root:
+                    target_chroot = resolved
+                else:
+                    cwd = resolved
+            else:
+                cwd = chroot_path_obj
+
+        result = self.run_tool(command, cwd=cwd, target_chroot=target_chroot)
         return result.stdout or ""
 
     def execute_command(self, command: list, chroot_path: str = None) -> str:

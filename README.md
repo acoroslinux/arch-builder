@@ -10,7 +10,7 @@ The online documentation is published at:
 
 https://acoroslinux.github.io/arch-builder/
 
-Arch-Builder is a modular Arch Linux ISO builder written in Python. It assembles build profiles from JSON configuration files, prepares a target root filesystem, applies customizations, configures bootloaders, and produces a final ISO image.
+Arch-Builder is a modular Arch Linux image builder written in Python. It assembles build profiles from JSON configuration files, prepares a target root filesystem, applies customizations, configures bootloaders, and produces ISO or raw disk images.
 
 The project supports two execution modes:
 
@@ -23,9 +23,26 @@ The project supports two execution modes:
 - Calamares offline graphic installer profile (`calamares-installer`).
 - Real isolated build-host bootstrap for running on non-Arch Linux distributions with parallel pacman downloads.
 - Automatic SHA256 and MD5 verification checksum generation (`.sha256` and `.md5`).
+- AUR package builds through a dedicated non-root `aurbuilder` account.
+- Optional phase hooks under `configs/hooks/<phase>/` for host and chroot actions.
 - Workspace-local build tree and reusable pacman cache.
 - Dynamic output naming based on desktop and architecture.
 - Test suite covering configuration assembly and real-like orchestration behavior.
+
+## Supported Targets
+
+| Target | Format | Status |
+| --- | --- | --- |
+| `x86_64` | `.iso` | Real-build validated. |
+| `generic-uefi` | `.img` | Disk-image profile; hardware validation pending. |
+| `rpi4` | `.img` | ARM64 implementation; board validation pending. |
+| `odroid-n2` | `.img` | ARM64 implementation; board validation pending. |
+| `pinebookpro` | `.img` | ARM64/Rockchip implementation; board validation pending. |
+| `rockpro64` | `.img` | ARM64/Rockchip implementation; board validation pending. |
+| `visionfive2` | `.img` | Not supported: no maintained Arch RISC-V rootfs here. |
+| `asahi` | `.img` | Not supported: requires the Asahi `m1n1` boot chain. |
+
+ARM images must be tested on their matching hardware before deployment.
 
 ## Repository Layout
 
@@ -85,21 +102,33 @@ python3 cli.py x86_64 --desktop xfce
 Default output naming is dynamic when `-o/--output` is not provided:
 
 ```text
-arch-builder-<desktop>-<architecture>.iso
+output/arch-builder-<desktop>-<architecture>.<format>
 ```
 
 Examples:
 
-- `arch-builder-xfce-x86_64.iso`
-- `arch-builder-base-x86_64.iso`
+- `output/arch-builder-xfce-x86_64.iso`
+- `output/arch-builder-base-x86_64.iso`
+
+Device builds use `.img`, for example `output/arch-builder-xfce-aarch64.img`.
+
+Virtual machine formats are also supported:
+
+```bash
+sudo python3 cli.py x86_64 --mode real --format vdi -d xfce
+sudo python3 cli.py x86_64 --mode real --format vmdk -d xfce
+```
+
+VM images are written uncompressed as `.vdi` or `.vmdk` in `output/`.
 
 ## Choosing Architecture and Kernel
 
-Arch-Builder supports customizing the Linux kernel packaged in the ISO. Only `x86_64` (64-bit) architecture is supported.
+Arch-Builder supports customizing the Linux kernel packaged in the image. Supported engines are `x86_64` and `aarch64`.
 
 ### 1. Selecting Architecture
-Specify the target architecture as the first positional argument. Only the `x86_64` architecture is supported:
-*   `x86_64` (default and only supported architecture)
+Specify the target architecture as the first positional argument:
+*   `x86_64` for PC ISO/disk builds
+*   `aarch64` for supported ARM board profiles
 
 Example:
 ```bash
@@ -139,9 +168,9 @@ sudo python3 cli.py \
 
 By default, the project uses visible workspace-local paths:
 
-- `arch-builder/workdir/`
-- `arch-builder/fallback/`
-- `arch-builder/cache/pacman/pkg/`
+- `workdir/<architecture>/`
+- `fallback/<architecture>/`
+- `cache/pacman/pkg/`
 
 These defaults keep build state inside the repository workspace while allowing pacman cache reuse across builds.
 
@@ -170,6 +199,7 @@ Key flags:
 - `--live-profile NAME`: live-user preset from `configs/live-users/`.
 - `--live-user NAME`: live username override.
 - `--live-groups a,b,c`: live-user group override.
+- `--device NAME`: hardware profile from `configs/hardware/`.
 
 ## Configuration Model
 

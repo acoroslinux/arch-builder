@@ -10,7 +10,8 @@ python3 cli.py [architecture] [options]
 
 ## Core arguments
 
-- `architecture`: target architecture, default `x86_64`.
+- `architecture`: target architecture, default `x86_64`; supported engines are `x86_64` and `aarch64`.
+- `--device NAME`: hardware profile (`rpi4`, `odroid-n2`, `pinebookpro`, `rockpro64`, or `generic-uefi`).
 - `-c, --config`: global configuration file path.
 - `--mode {mock,real}`: build execution mode.
 
@@ -44,9 +45,9 @@ python3 cli.py [architecture] [options]
 
 ## Output control
 
-- `-o, --output PATH`: explicit ISO output path.
+- `-o, --output PATH`: explicit ISO or disk-image output path.
 
-When omitted, the output name is generated automatically using desktop and architecture (`arch-builder-<desktop>-<architecture>.iso`). Upon build completion, SHA256 (`.sha256`) and MD5 (`.md5`) checksum files are automatically generated alongside the final ISO image.
+When omitted, the output name is generated automatically using desktop and architecture. ISO builds use `.iso`; device/disk builds use `.img`. SHA256 (`.sha256`) and MD5 (`.md5`) checksum files are generated alongside the final artifact.
 
 ## Example commands
 
@@ -74,3 +75,21 @@ sudo python3 cli.py \
 ```bash
 sudo python3 cli.py x86_64 --mode real --no-clean
 ```
+
+## ARM board image
+
+```bash
+sudo python3 cli.py --device rpi4 --mode real --format img --desktop xfce
+sudo python3 cli.py --device odroid-n2 --mode real --format img --desktop xfce
+```
+
+## Virtual machine disks
+
+Disk builds can be converted directly with `qemu-img`. VM formats are left uncompressed:
+
+```bash
+sudo python3 cli.py x86_64 --mode real --format vdi --desktop xfce
+sudo python3 cli.py x86_64 --mode real --format vmdk --desktop xfce
+```
+
+The resulting `.vdi` or `.vmdk` files are written to `output/` alongside their checksums.

@@ -1,0 +1,46 @@
+{
+  "platform_specific": {
+    "architecture": "aarch64",
+    "base_kernel": "Image",
+    "initramfs": "initramfs-linux-aarch64.img",
+    "packages": [
+      { "name": "linux-aarch64" },
+      { "name": "firmware-raspberrypi" },
+      { "name": "uboot-raspberrypi" },
+      { "name": "raspberrypi-bootloader" }
+    ]
+  },
+  "arm_target": {
+    "platform": "rpi4",
+    "rootfs_url": "https://ca.us.mirror.archlinuxarm.org/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz",
+    "rootfs_fallback_urls": [
+      "https://fl.us.mirror.archlinuxarm.org/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz",
+      "https://mirror.math.princeton.edu/pub/archlinuxarm/os/ArchLinuxARM-rpi-aarch64-latest.tar.gz"
+    ],
+    "mirror": "https://ca.us.mirror.archlinuxarm.org/$arch/$repo",
+    "targets": {
+      "odroid-n2": {
+        "rootfs_url": "https://ca.us.mirror.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz",
+        "rootfs_fallback_urls": [
+          "https://fl.us.mirror.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz"
+        ],
+        "mirror": "https://ca.us.mirror.archlinuxarm.org/$arch/$repo",
+        "kernel_package": "linux-odroid-n2"
+      },
+      "pinebookpro": {
+        "rootfs_url": "https://ca.us.mirror.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz",
+        "rootfs_fallback_urls": ["https://fl.us.mirror.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz"],
+        "mirror": "https://ca.us.mirror.archlinuxarm.org/$arch/$repo",
+        "kernel_package": "linux-pbp",
+        "dtb": "rk3399-pinebook-pro.dtb"
+      },
+      "rockpro64": {
+        "rootfs_url": "https://ca.us.mirror.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz",
+        "rootfs_fallback_urls": ["https://fl.us.mirror.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz"],
+        "mirror": "https://ca.us.mirror.archlinuxarm.org/$arch/$repo",
+        "kernel_package": "linux-aarch64",
+        "boot_files": ["boot.scr", "rksd_loader.img", "u-boot.itb"]
+      }
+    }
+  }
+}

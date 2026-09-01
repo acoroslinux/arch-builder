@@ -1,8 +1,10 @@
 {
+  "name": "common-virtualization",
+  "description": "Services required by a libvirt virtualization host.",
   "customizations": {
     "services": [
       "libvirtd",
-      "virtlogd"
+      "virtlogd.socket"
     ]
   }
 }

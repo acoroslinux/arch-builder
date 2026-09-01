@@ -6,5 +6,7 @@
     "bluez-utils",
     "blueman"
   ],
-  "dependencies": ["pacman"]
+  "customizations": {
+    "services": ["bluetooth"]
+  }
 }

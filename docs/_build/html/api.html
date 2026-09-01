@@ -66,9 +66,9 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-core.orchestrator">Orchestration</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#build-orchestrator-the-build-workflow-conductor">Build Orchestrator - The Build Workflow Conductor</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#core.orchestrator.BuildOrchestratorError"><code class="docutils literal notranslate"><span class="pre">BuildOrchestratorError</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#core.orchestrator.BuildOrchestrator"><code class="docutils literal notranslate"><span class="pre">BuildOrchestrator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.orchestrator.BuildOrchestrator.run_hooks"><code class="docutils literal notranslate"><span class="pre">BuildOrchestrator.run_hooks()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#core.orchestrator.BuildOrchestrator.run_build"><code class="docutils literal notranslate"><span class="pre">BuildOrchestrator.run_build()</span></code></a></li>
 </ul>
 </li>
@@ -93,6 +93,11 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#module-core.iso_engine">ISO Engine</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#core.iso_engine.ArchBuilder"><code class="docutils literal notranslate"><span class="pre">ArchBuilder</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core.iso_engine.Arm64Engine"><code class="docutils literal notranslate"><span class="pre">Arm64Engine</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#core.iso_engine.Arm64Engine.setup_chroot"><code class="docutils literal notranslate"><span class="pre">Arm64Engine.setup_chroot()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.iso_engine.Arm64Engine.post_install_configure"><code class="docutils literal notranslate"><span class="pre">Arm64Engine.post_install_configure()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#core.iso_engine.ArchEngine"><code class="docutils literal notranslate"><span class="pre">ArchEngine</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#core.iso_engine.ArchEngine.setup_chroot"><code class="docutils literal notranslate"><span class="pre">ArchEngine.setup_chroot()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#core.iso_engine.ArchEngine.install_packages"><code class="docutils literal notranslate"><span class="pre">ArchEngine.install_packages()</span></code></a></li>
@@ -184,6 +189,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#core.customizer.SystemConfigurator"><code class="docutils literal notranslate"><span class="pre">SystemConfigurator</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#core.customizer.SystemConfigurator.load_from_config"><code class="docutils literal notranslate"><span class="pre">SystemConfigurator.load_from_config()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#core.customizer.SystemConfigurator.apply_theme_assets"><code class="docutils literal notranslate"><span class="pre">SystemConfigurator.apply_theme_assets()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#core.customizer.SystemConfigurator.apply"><code class="docutils literal notranslate"><span class="pre">SystemConfigurator.apply()</span></code></a></li>
 </ul>
 </li>
@@ -243,56 +249,71 @@ configuration assembly, chroot execution, and ISO generation.</p>
 </section>
 <section id="module-core.orchestrator">
 <span id="orchestration"></span><h2>Orchestration<a class="headerlink" href="#module-core.orchestrator" title="Link to this heading"></a></h2>
-<section id="build-orchestrator-the-build-workflow-conductor">
-<h3>Build Orchestrator - The Build Workflow Conductor<a class="headerlink" href="#build-orchestrator-the-build-workflow-conductor" title="Link to this heading"></a></h3>
-<p>Coordinates all arch-builder components to run the complete
-ISO build process.</p>
-</section>
 <dl class="py exception">
 <dt class="sig sig-object py" id="core.orchestrator.BuildOrchestratorError">
 <em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.orchestrator.</span></span><span class="sig-name descname"><span class="pre">BuildOrchestratorError</span></span><a class="reference internal" href="_modules/core/orchestrator.html#BuildOrchestratorError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.orchestrator.BuildOrchestratorError" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
 <p>Exception raised for build orchestration failures.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="core.orchestrator.BuildOrchestrator">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.orchestrator.</span></span><span class="sig-name descname"><span class="pre">BuildOrchestrator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_isolated_toolchain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain_debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain_debug_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain_pacman_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desktop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootloader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">package_profiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_profiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/orchestrator.html#BuildOrchestrator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.orchestrator.BuildOrchestrator" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.orchestrator.</span></span><span class="sig-name descname"><span class="pre">BuildOrchestrator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'iso'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fast_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_tmpfs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_isolated_toolchain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_host_toolchain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain_debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain_debug_log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain_pacman_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desktop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bootloader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">package_profiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_profiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_profile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_offline_repo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offline_repo_packages</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/orchestrator.html#BuildOrchestrator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.orchestrator.BuildOrchestrator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Coordinates the build workflow.
 It ties together configuration, the architecture engine, and the chroot environment.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>arch</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>config_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>clean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
-<li><p><strong>force_isolated_toolchain</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
-<li><p><strong>toolchain_debug</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
-<li><p><strong>toolchain_debug_log</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>toolchain_pacman_retries</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
-<li><p><strong>desktop</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>kernel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>bootloader</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>package_profiles</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
-<li><p><strong>service_profiles</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
-<li><p><strong>live_profile</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>live_user</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>live_groups</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>arch</strong> (<em>str</em>)</p></li>
+<li><p><strong>config_path</strong> (<em>str</em>)</p></li>
+<li><p><strong>mode</strong> (<em>str</em>)</p></li>
+<li><p><strong>output_format</strong> (<em>str</em>)</p></li>
+<li><p><strong>clean</strong> (<em>bool</em>)</p></li>
+<li><p><strong>fast_mode</strong> (<em>bool</em>)</p></li>
+<li><p><strong>use_tmpfs</strong> (<em>bool</em>)</p></li>
+<li><p><strong>force_isolated_toolchain</strong> (<em>bool</em>)</p></li>
+<li><p><strong>use_host_toolchain</strong> (<em>bool</em>)</p></li>
+<li><p><strong>toolchain_debug</strong> (<em>bool</em>)</p></li>
+<li><p><strong>toolchain_debug_log</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>toolchain_pacman_retries</strong> (<em>int</em>)</p></li>
+<li><p><strong>desktop</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>kernel</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>bootloader</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>package_profiles</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>service_profiles</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>live_profile</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>live_user</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>live_groups</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>with_offline_repo</strong> (<em>bool</em>)</p></li>
+<li><p><strong>offline_repo_packages</strong> (<em>list</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.orchestrator.BuildOrchestrator.run_hooks">
+<span class="sig-name descname"><span class="pre">run_hooks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phase</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/orchestrator.html#BuildOrchestrator.run_hooks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.orchestrator.BuildOrchestrator.run_hooks" title="Link to this definition"></a></dt>
+<dd><p>Run project hook scripts for a named build phase.</p>
+<p>Host hooks receive build metadata through the environment. Chroot
+hooks are copied into the target rootfs and executed there, so scripts
+never accidentally operate on the host filesystem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>phase</strong> (<em>str</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="core.orchestrator.BuildOrchestrator.run_build">
 <span class="sig-name descname"><span class="pre">run_build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_iso</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/orchestrator.html#BuildOrchestrator.run_build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.orchestrator.BuildOrchestrator.run_build" title="Link to this definition"></a></dt>
 <dd><p>Run the full build pipeline by delegating to the builder.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>output_iso</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>output_iso</strong> (<em>str</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a></p>
+<dd class="field-even"><p><em>Path</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -305,18 +326,18 @@ It ties together configuration, the architecture engine, and the chroot environm
 <dl class="py exception">
 <dt class="sig sig-object py" id="core.config_loader.ConfigValidationError">
 <em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.config_loader.</span></span><span class="sig-name descname"><span class="pre">ConfigValidationError</span></span><a class="reference internal" href="_modules/core/config_loader.html#ConfigValidationError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.ConfigValidationError" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
 <p>Exception raised for configuration validation errors.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="core.config_loader.Config">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.config_loader.</span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#Config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.Config" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Data wrapper for configuration objects with dot-notation access.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>] </em><em>| </em><a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p>
+<dd class="field-odd"><p><strong>data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>] </em><em>| </em><a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -325,12 +346,12 @@ It ties together configuration, the architecture engine, and the chroot environm
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>default</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
+<li><p><strong>path</strong> (<em>str</em>)</p></li>
+<li><p><strong>default</strong> (<em>Any</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a></p>
+<dd class="field-even"><p><em>Any</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -340,7 +361,7 @@ It ties together configuration, the architecture engine, and the chroot environm
 <span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#Config.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.Config.to_dict" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>]</p>
+<dd class="field-odd"><p><em>Dict</em>[str, <em>Any</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -350,14 +371,14 @@ It ties together configuration, the architecture engine, and the chroot environm
 <dl class="py class">
 <dt class="sig sig-object py" id="core.config_loader.ConfigAssembler">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.config_loader.</span></span><span class="sig-name descname"><span class="pre">ConfigAssembler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_root</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#ConfigAssembler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.ConfigAssembler" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>The assembler is the composition brain.
 It reads the global manifest and merges the configuration of all components
 (architectures, desktops, bootloaders, and so on) into a single
 configuration object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config_root</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>config_root</strong> (<em>str</em>)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -371,15 +392,15 @@ configuration object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>target_arch</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>target_desktop</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>target_kernel</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>target_bootloader</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>package_profiles</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
-<li><p><strong>service_profiles</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
-<li><p><strong>target_live_profile</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>live_user</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>live_groups</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>target_arch</strong> (<em>str</em>)</p></li>
+<li><p><strong>target_desktop</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>target_kernel</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>target_bootloader</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>package_profiles</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>service_profiles</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>target_live_profile</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>live_user</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>live_groups</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -393,10 +414,10 @@ configuration object.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="core.config_loader.ConfigLoader">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.config_loader.</span></span><span class="sig-name descname"><span class="pre">ConfigLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#ConfigLoader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.config_loader.ConfigLoader" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config_root</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p>
+<dd class="field-odd"><p><strong>config_root</strong> (<em>str</em><em> | </em><em>None</em>)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -405,12 +426,12 @@ configuration object.</p>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>global_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>arch</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>global_path</strong> (<em>str</em>)</p></li>
+<li><p><strong>arch</strong> (<em>str</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>] | None</p>
+<dd class="field-even"><p><em>Dict</em>[str, <em>Any</em>] | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -432,12 +453,53 @@ configuration object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>arch_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>arch_name</strong> (<em>str</em>)</p></li>
 <li><p><strong>config</strong> (<a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p></li>
-<li><p><strong>toolchain</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>toolchain</strong> (<em>Any</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="core.iso_engine.Arm64Engine">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">Arm64Engine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#Arm64Engine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.Arm64Engine" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#core.iso_engine.ArchEngine" title="core.iso_engine.ArchEngine"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArchEngine</span></code></a></p>
+<p>Raspberry Pi 4 AArch64 target using the Arch Linux ARM rootfs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arch</strong> (<em>str</em>)</p></li>
+<li><p><strong>config</strong> (<a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p></li>
+<li><p><strong>toolchain</strong> (<em>Any</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.Arm64Engine.setup_chroot">
+<span class="sig-name descname"><span class="pre">setup_chroot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#Arm64Engine.setup_chroot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.Arm64Engine.setup_chroot" title="Link to this definition"></a></dt>
+<dd><p>Seed the target with the signed Arch Linux ARM Raspberry Pi rootfs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>workdir</strong> (<em>str</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.iso_engine.Arm64Engine.post_install_configure">
+<span class="sig-name descname"><span class="pre">post_install_configure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#Arm64Engine.post_install_configure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.Arm64Engine.post_install_configure" title="Link to this definition"></a></dt>
+<dd><p>Run post-install configuration steps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -448,9 +510,9 @@ configuration object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>arch</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>arch</strong> (<em>str</em>)</p></li>
 <li><p><strong>config</strong> (<a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p></li>
-<li><p><strong>toolchain</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
+<li><p><strong>toolchain</strong> (<em>Any</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -460,7 +522,7 @@ configuration object.</p>
 <dd><p>Prepare the chroot environment.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>workdir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>workdir</strong> (<em>str</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -505,7 +567,7 @@ configuration object.</p>
 </div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>mountpoint</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>mountpoint</strong> (<em>str</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -526,7 +588,7 @@ It handles all the complexity of:
 <p>In mock mode, this method only logs the intent without executing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>output_path</strong> (<em>str</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -555,9 +617,9 @@ It handles all the complexity of:
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>arch</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>arch</strong> (<em>str</em>)</p></li>
 <li><p><strong>config</strong> (<a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p></li>
-<li><p><strong>toolchain</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
+<li><p><strong>toolchain</strong> (<em>Any</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -566,10 +628,10 @@ It handles all the complexity of:
 <span class="sig-name descname"><span class="pre">setup_workdir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#BaseEngine.setup_workdir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.BaseEngine.setup_workdir" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>workdir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a><em> | </em><em>None</em>)</p>
+<dd class="field-odd"><p><strong>workdir</strong> (<em>str</em><em> | </em><em>Path</em><em> | </em><em>None</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a></p>
+<dd class="field-even"><p><em>Path</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -580,7 +642,7 @@ It handles all the complexity of:
 <dd><p>Prepare the chroot environment.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>workdir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>workdir</strong> (<em>str</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -605,7 +667,7 @@ It handles all the complexity of:
 <dd><p>Generate bootloader artifacts for the target architecture.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>mountpoint</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>mountpoint</strong> (<em>str</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -630,7 +692,7 @@ It handles all the complexity of:
 <dd><p>Produce the final ISO file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>output_path</strong> (<em>str</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -643,11 +705,11 @@ It handles all the complexity of:
 <dl class="py class">
 <dt class="sig sig-object py" id="core.iso_engine.Config">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#Config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.Config" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Data wrapper for configuration objects with dot-notation access.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>] </em><em>| </em><a class="reference internal" href="#core.iso_engine.Config" title="core.iso_engine.Config"><em>Config</em></a>)</p>
+<dd class="field-odd"><p><strong>data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>] </em><em>| </em><a class="reference internal" href="#core.iso_engine.Config" title="core.iso_engine.Config"><em>Config</em></a>)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -656,12 +718,12 @@ It handles all the complexity of:
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>default</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p></li>
+<li><p><strong>path</strong> (<em>str</em>)</p></li>
+<li><p><strong>default</strong> (<em>Any</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a></p>
+<dd class="field-even"><p><em>Any</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -671,7 +733,7 @@ It handles all the complexity of:
 <span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/config_loader.html#Config.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.Config.to_dict" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>]</p>
+<dd class="field-odd"><p><em>Dict</em>[str, <em>Any</em>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -681,14 +743,14 @@ It handles all the complexity of:
 <dl class="py class">
 <dt class="sig sig-object py" id="core.iso_engine.ISOBuilder">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">ISOBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_manager</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ISOBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ISOBuilder" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Canonical high-level build orchestrator used by the project.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>arch</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>arch</strong> (<em>str</em>)</p></li>
 <li><p><strong>config</strong> (<a class="reference internal" href="#core.config_loader.Config" title="core.config_loader.Config"><em>Config</em></a>)</p></li>
-<li><p><strong>toolchain</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>toolchain</strong> (<em>Any</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>chroot_manager</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
@@ -699,12 +761,12 @@ It handles all the complexity of:
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p></li>
-<li><p><strong>workdir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>output_path</strong> (<em>str</em><em> | </em><em>Path</em>)</p></li>
+<li><p><strong>workdir</strong> (<em>str</em><em> | </em><em>Path</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a></p>
+<dd class="field-even"><p><em>Path</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -714,10 +776,10 @@ It handles all the complexity of:
 <span class="sig-name descname"><span class="pre">build_iso</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/iso_engine.html#ISOBuilder.build_iso"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ISOBuilder.build_iso" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>output_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p>
+<dd class="field-odd"><p><strong>output_path</strong> (<em>str</em><em> | </em><em>Path</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a></p>
+<dd class="field-even"><p><em>Path</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -727,14 +789,14 @@ It handles all the complexity of:
 <dl class="py exception">
 <dt class="sig sig-object py" id="core.iso_engine.ISOBuilderError">
 <em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">ISOBuilderError</span></span><a class="reference internal" href="_modules/core/iso_engine.html#ISOBuilderError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ISOBuilderError" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
 <p>Raised when the build orchestration flow cannot proceed.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="core.iso_engine.ISOEngine">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.iso_engine.</span></span><span class="sig-name descname"><span class="pre">ISOEngine</span></span><a class="reference internal" href="_modules/core/iso_engine.html#ISOEngine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.iso_engine.ISOEngine" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
 <p>Abstract base for architecture-specific build engines.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="core.iso_engine.ISOEngine.register">
@@ -743,7 +805,7 @@ It handles all the complexity of:
 <p>Returns the subclass, to allow usage as a class decorator.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>arch_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>arch_name</strong> (<em>str</em>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -762,7 +824,7 @@ It handles all the complexity of:
 <dl class="py exception">
 <dt class="sig sig-object py" id="core.chroot_manager.ChrootManagerError">
 <em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.chroot_manager.</span></span><span class="sig-name descname"><span class="pre">ChrootManagerError</span></span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManagerError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManagerError" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
 <p>Raised when chroot lifecycle or command execution fails.</p>
 </dd></dl>
 
@@ -776,11 +838,11 @@ It handles all the complexity of:
 <dl class="py class">
 <dt class="sig sig-object py" id="core.chroot_manager.MockFSHandler">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.chroot_manager.</span></span><span class="sig-name descname"><span class="pre">MockFSHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#MockFSHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.MockFSHandler" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Simulates a minimal filesystem inside the chroot directory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>base_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>base_dir</strong> (<em>str</em>)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -790,8 +852,8 @@ It handles all the complexity of:
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>content</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>path</strong> (<em>str</em>)</p></li>
+<li><p><strong>content</strong> (<em>str</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -806,10 +868,10 @@ It handles all the complexity of:
 <dd><p>Simulate reading a file – logs the operation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a> | None</p>
+<dd class="field-even"><p>str | None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -820,10 +882,10 @@ It handles all the complexity of:
 <dd><p>Simulate directory listing – used by tests.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><em>List</em></a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>]</p>
+<dd class="field-even"><p><em>List</em>[str]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -833,19 +895,19 @@ It handles all the complexity of:
 <dl class="py class">
 <dt class="sig sig-object py" id="core.chroot_manager.ChrootManager">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.chroot_manager.</span></span><span class="sig-name descname"><span class="pre">ChrootManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chroot_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toolchain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManager" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Manages a chroot environment that can operate in two modes:
 *   Mock mode – pure Python simulation (no external processes).
 *   Real mode – spawns subprocesses with sudo/chroot (requires privileges).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>workdir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>chroot_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>chroot_mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>toolchain</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>arch</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>workdir</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>chroot_path</strong> (<em>Path</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>mode</strong> (<em>str</em>)</p></li>
+<li><p><strong>chroot_mode</strong> (<em>bool</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>toolchain</strong> (<em>Any</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>arch</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -866,7 +928,7 @@ It handles all the complexity of:
 <dd><p>Prepare the basic directory structure of the chroot.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+<dd class="field-odd"><p>str</p>
 </dd>
 </dl>
 </dd></dl>
@@ -890,12 +952,12 @@ It handles all the complexity of:
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>command</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>] </em><em>| </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>chroot_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>command</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>str</em>)</p></li>
+<li><p><strong>chroot_path</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+<dd class="field-even"><p>str</p>
 </dd>
 </dl>
 </dd></dl>
@@ -903,10 +965,9 @@ It handles all the complexity of:
 <dl class="py method">
 <dt class="sig sig-object py" id="core.chroot_manager.ChrootManager.install_packages">
 <span class="sig-name descname"><span class="pre">install_packages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">packages</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/chroot_manager.html#ChrootManager.install_packages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.chroot_manager.ChrootManager.install_packages" title="Link to this definition"></a></dt>
-<dd><p>Install official, local and AUR packages inside the chroot (mock or real).</p>
-<dl class="field-list simple">
+<dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>packages</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>] </em><em>| </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em>)</p>
+<dd class="field-odd"><p><strong>packages</strong> (<em>List</em><em>[</em><em>str</em><em>] </em><em>| </em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -920,7 +981,7 @@ It handles all the complexity of:
 <dd><p>Generate a simple /etc/fstab and persist it inside the chroot.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+<dd class="field-odd"><p>str</p>
 </dd>
 </dl>
 </dd></dl>
@@ -939,14 +1000,14 @@ It handles all the complexity of:
 <dl class="py exception">
 <dt class="sig sig-object py" id="core.customizer.ConfigError">
 <em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">ConfigError</span></span><a class="reference internal" href="_modules/core/customizer.html#ConfigError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.ConfigError" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
 <p>Exception raised for system configuration errors.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="core.customizer.SystemAction">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">SystemAction</span></span><a class="reference internal" href="_modules/core/customizer.html#SystemAction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.SystemAction" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Base class for a configuration action.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="core.customizer.SystemAction.execute">
@@ -955,7 +1016,7 @@ It handles all the complexity of:
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
-<li><p><strong>source_base</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -970,7 +1031,7 @@ It handles all the complexity of:
 <p>Execute a command directly inside the chroot.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>command</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p>
+<dd class="field-odd"><p><strong>command</strong> (<em>str</em>)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -980,7 +1041,7 @@ It handles all the complexity of:
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
-<li><p><strong>source_base</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -995,7 +1056,7 @@ It handles all the complexity of:
 <p>Create users and apply their related settings.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>user_config</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em>)</p>
+<dd class="field-odd"><p><strong>user_config</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -1005,7 +1066,7 @@ It handles all the complexity of:
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
-<li><p><strong>source_base</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1020,7 +1081,7 @@ It handles all the complexity of:
 <p>Enable systemd services.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>services</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em>)</p>
+<dd class="field-odd"><p><strong>services</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -1030,7 +1091,7 @@ It handles all the complexity of:
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
-<li><p><strong>source_base</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1045,7 +1106,7 @@ It handles all the complexity of:
 <p>Configure initramfs generation through mkinitcpio.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>initramfs_config</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em>)</p>
+<dd class="field-odd"><p><strong>initramfs_config</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -1055,7 +1116,7 @@ It handles all the complexity of:
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
-<li><p><strong>source_base</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1070,7 +1131,7 @@ It handles all the complexity of:
 <p>Copy an individual file from source_base to target destination in rootfs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>file_rule</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em>)</p>
+<dd class="field-odd"><p><strong>file_rule</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -1080,7 +1141,7 @@ It handles all the complexity of:
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
-<li><p><strong>source_base</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1095,7 +1156,7 @@ It handles all the complexity of:
 <p>Configure locales, timezone, hostname, and keymap.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a><em>]</em>)</p>
+<dd class="field-odd"><p><strong>config</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>)</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -1105,7 +1166,7 @@ It handles all the complexity of:
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
-<li><p><strong>source_base</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1121,9 +1182,9 @@ It handles all the complexity of:
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>customizations_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>copy_files_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.14)"><em>List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.14)"><em>Dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em><em>]</em>)</p></li>
-<li><p><strong>architecture</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>customizations_path</strong> (<em>str</em>)</p></li>
+<li><p><strong>copy_files_list</strong> (<em>List</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>)</p></li>
+<li><p><strong>architecture</strong> (<em>str</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1134,7 +1195,7 @@ It handles all the complexity of:
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>chroot</strong> (<a class="reference internal" href="#core.chroot_manager.ChrootManager" title="core.chroot_manager.ChrootManager"><em>ChrootManager</em></a>)</p></li>
-<li><p><strong>source_base</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p></li>
+<li><p><strong>source_base</strong> (<em>Path</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1145,7 +1206,7 @@ It handles all the complexity of:
 <dl class="py class">
 <dt class="sig sig-object py" id="core.customizer.SystemConfigurator">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.customizer.</span></span><span class="sig-name descname"><span class="pre">SystemConfigurator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#SystemConfigurator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.SystemConfigurator" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>The configurator is the system customization coordinator.
 It processes configuration “customizations” and applies them to the environment.</p>
 <dl class="field-list simple">
@@ -1160,10 +1221,15 @@ It processes configuration “customizations” and applies them to the environm
 from global_build.json, architecture.json, and other sources.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><em>Any</em></a>)</p>
+<dd class="field-odd"><p><strong>config</strong> (<em>Any</em>)</p>
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="core.customizer.SystemConfigurator.apply_theme_assets">
+<span class="sig-name descname"><span class="pre">apply_theme_assets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chroot</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/customizer.html#SystemConfigurator.apply_theme_assets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.customizer.SystemConfigurator.apply_theme_assets" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="core.customizer.SystemConfigurator.apply">
@@ -1171,7 +1237,7 @@ from global_build.json, architecture.json, and other sources.</p>
 <dd><p>Apply all registered actions to the chroot.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>source_base_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a><em> | </em><em>None</em>)</p>
+<dd class="field-odd"><p><strong>source_base_dir</strong> (<em>Path</em><em> | </em><em>None</em>)</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1190,19 +1256,20 @@ reproducibility across any Linux distribution.</p>
 </section>
 <dl class="py class">
 <dt class="sig sig-object py" id="core.toolchain.ToolchainManager">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.toolchain.</span></span><span class="sig-name descname"><span class="pre">ToolchainManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir_base</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_isolated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pacman_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics_enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics_log_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pacman_cache_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/toolchain.html#ToolchainManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.toolchain.ToolchainManager" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">core.toolchain.</span></span><span class="sig-name descname"><span class="pre">ToolchainManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir_base</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mock'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_isolated</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pacman_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics_enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics_log_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pacman_cache_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/toolchain.html#ToolchainManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.toolchain.ToolchainManager" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>workdir_base</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p></li>
-<li><p><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
-<li><p><strong>force_isolated</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
-<li><p><strong>pacman_retries</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>)</p></li>
-<li><p><strong>diagnostics_enabled</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>)</p></li>
-<li><p><strong>diagnostics_log_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>pacman_cache_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>arch</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>workdir_base</strong> (<em>Path</em>)</p></li>
+<li><p><strong>mode</strong> (<em>str</em>)</p></li>
+<li><p><strong>force_isolated</strong> (<em>bool</em>)</p></li>
+<li><p><strong>allow_host</strong> (<em>bool</em>)</p></li>
+<li><p><strong>pacman_retries</strong> (<em>int</em>)</p></li>
+<li><p><strong>diagnostics_enabled</strong> (<em>bool</em>)</p></li>
+<li><p><strong>diagnostics_log_path</strong> (<em>Path</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>pacman_cache_dir</strong> (<em>Path</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>arch</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
 </ul>
 </dd>
 </dl>
@@ -1217,19 +1284,20 @@ an <code class="docutils literal notranslate"><span class="pre">archlinux-bootst
 
 <dl class="py method">
 <dt class="sig sig-object py" id="core.toolchain.ToolchainManager.run_tool">
-<span class="sig-name descname"><span class="pre">run_tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/toolchain.html#ToolchainManager.run_tool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.toolchain.ToolchainManager.run_tool" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">run_tool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">command</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_chroot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/core/toolchain.html#ToolchainManager.run_tool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.toolchain.ToolchainManager.run_tool" title="Link to this definition"></a></dt>
 <dd><p>Execute a build tool.
 If the tools are available on the host, run the command directly.
 Otherwise, execute it inside the isolated build chroot.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>command</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>)</p></li>
-<li><p><strong>cwd</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><em>Path</em></a>)</p></li>
+<li><p><strong>command</strong> (<em>list</em>)</p></li>
+<li><p><strong>cwd</strong> (<em>Path</em>)</p></li>
+<li><p><strong>target_chroot</strong> (<em>Path</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/subprocess.html#subprocess.CompletedProcess" title="(in Python v3.14)"><em>CompletedProcess</em></a></p>
+<dd class="field-even"><p><em>CompletedProcess</em></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1241,12 +1309,12 @@ Otherwise, execute it inside the isolated build chroot.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>command</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>)</p></li>
-<li><p><strong>chroot_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>command</strong> (<em>list</em>)</p></li>
+<li><p><strong>chroot_path</strong> (<em>str</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+<dd class="field-even"><p>str</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1258,12 +1326,12 @@ Otherwise, execute it inside the isolated build chroot.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>command</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>)</p></li>
-<li><p><strong>chroot_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>)</p></li>
+<li><p><strong>command</strong> (<em>list</em>)</p></li>
+<li><p><strong>chroot_path</strong> (<em>str</em>)</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+<dd class="field-even"><p>str</p>
 </dd>
 </dl>
 </dd></dl>

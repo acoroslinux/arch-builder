@@ -1,16 +1,10 @@
 {
-    "name": "arch-base",
-    "description": "Minimal essential packages for Arch Linux ISO builds.",
+    "name": "base",
+    "description": "Core packages required by the default Arch Linux live ISO.",
     "packages": [
         "base",
         "linux",
         "linux-firmware",
-        "linux-firmware-marvell",
-        "linux-firmware-nfp",
-        "linux-firmware-qlogic",
-        "linux-firmware-bnx2x",
-        "linux-firmware-liquidio",
-        "linux-firmware-mellanox",
         "sof-firmware",
         "alsa-firmware",
         "wireless-regdb",
@@ -32,7 +26,7 @@
         "gzip",
         "bzip2",
         "xz",
-        "p7zip",
+        "7zip",
         "gvfs",
         "gvfs-smb",
         "gvfs-mtp",
@@ -66,6 +60,5 @@
         "xorg-setxkbmap",
         "iso-codes",
         "libxkbcommon-x11"
-    ],
-    "dependencies": ["pacman"]
+    ]
 }

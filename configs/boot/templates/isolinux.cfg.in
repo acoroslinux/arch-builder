@@ -6,7 +6,7 @@ ONTIMEOUT arch-live
 MENU TABMSG Press ENTER to boot or TAB to edit a menu entry
 MENU AUTOBOOT BIOS default device boot in # second{,s}...
 MENU TITLE @@BOOT_TITLE@@ @@DESKTOP@@ (@@ARCH@@)
-MENU BACKGROUND /isolinux/splash.png
+MENU BACKGROUND /boot/syslinux/splash.png
 MENU RESOLUTION 640 480
 MENU WIDTH 78
 MENU MARGIN 1

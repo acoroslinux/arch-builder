@@ -32,6 +32,19 @@ class _ToolchainStub:
         return "ok"
 
 
+class _RealToolchainStub(_ToolchainStub):
+    mode = "real"
+
+    def run_command(self, command, chroot_path=None):
+        super().run_command(command, chroot_path=chroot_path)
+        command_text = " ".join(command)
+        if "-O i386-pc" in command_text:
+            (Path(chroot_path) / "tmp" / "boot.img").write_bytes(b"bios")
+        elif "-O x86_64-efi" in command_text:
+            (Path(chroot_path) / "tmp" / "BOOTx64.EFI").write_bytes(b"efi")
+        return "ok"
+
+
 class TestGrubBootloaderGeneration(unittest.TestCase):
     def test_build_bootloaders_generates_grub_cfg_and_uses_root_source(self):
         with tempfile.TemporaryDirectory(prefix="arch_builder_grub_") as tmp:
@@ -126,6 +139,26 @@ class TestGrubBootloaderGeneration(unittest.TestCase):
                 # containing the formerly undefined 'arch' variable
                 res = loader.generate_boot_image(workdir, chroot_path=chroot)
                 self.assertTrue(res)
+
+    def test_grub_images_use_toolchain_target_chroot(self):
+        with tempfile.TemporaryDirectory(prefix="arch_builder_grub_real_") as tmp:
+            root = Path(tmp) / "airootfs"
+            staging = Path(tmp) / "iso-staging"
+            (root / "usr/lib/grub/i386-pc").mkdir(parents=True)
+            (root / "usr/lib/grub/x86_64-efi").mkdir(parents=True)
+            (root / "tmp").mkdir()
+
+            toolchain = _RealToolchainStub(root)
+            engine = ArchEngine("x86_64", _ConfigStub(), toolchain)
+            engine._generate_grub_boot_images(staging, root, "test-uuid")
+
+            self.assertEqual(len(toolchain.commands), 2)
+            for command, chroot_path in toolchain.commands:
+                self.assertEqual(command[0], "bash")
+                self.assertEqual(chroot_path, str(root))
+                self.assertNotIn("chroot", command)
+            self.assertEqual((staging / "boot/grub/boot.img").read_bytes(), b"bios")
+            self.assertEqual((staging / "EFI/BOOT/BOOTx64.EFI").read_bytes(), b"efi")
 
 
 if __name__ == "__main__":

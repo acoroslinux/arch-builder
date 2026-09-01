@@ -37,7 +37,8 @@ class DiskEngine:
                 __import__('shutil').copytree(offline_repo_dir, target_repo, dirs_exist_ok=True)
 
         rootfs_size = self._calculate_image_size(self.target_root)
-        efi_size = 300
+        bootloader_type = self.config.get("bootloader", {}).get("type", "grub2-hybrid")
+        efi_size = 1024 if bootloader_type == "u-boot-rpi4" else 300
         total_size = rootfs_size + efi_size + 4
 
         efi_img = self.workdir / "efi.img"
@@ -71,7 +72,7 @@ class DiskEngine:
 
         # Update rootfs_size because mkfs.btrfs -r dynamically expands the file size!
         rootfs_size = (root_img.stat().st_size // (1024 * 1024)) + 10
-        efi_size = self.config.get("bootloader", {}).get("efi_size", 300)
+        efi_size = self.config.get("bootloader", {}).get("efi_size", efi_size)
         total_size = rootfs_size + efi_size + 4
         
         logger.info(f"Generating FAT32 EFI filesystem ({efi_size} MB)...")
@@ -88,8 +89,6 @@ class DiskEngine:
         efi_boot_dir = self.workdir / "efi_tmp" / "EFI" / "BOOT"
         efi_boot_dir.mkdir(parents=True, exist_ok=True)
         
-        bootloader_type = self.config.get("bootloader", {}).get("type", "grub2-hybrid")
-        
         efi_arch_src = self.target_root / "boot" / "efi" / "EFI" / "arch"
         efi_boot_src = self.target_root / "boot" / "efi" / "EFI" / "BOOT"
         
@@ -101,7 +100,16 @@ class DiskEngine:
         kernel_params = self.config.get("boot", {}).get("kernel_params", "quiet rw")
         kernel_params = " ".join([p for p in kernel_params.split() if p != "rd.live.image"])
         
-        if bootloader_type == "systemd-boot":
+        if bootloader_type == "u-boot-rpi4":
+            # Raspberry Pi firmware reads the complete /boot tree from FAT32.
+            # This includes config.txt, DTBs, overlays, kernel and U-Boot assets.
+            for item in boot_dir.iterdir():
+                destination = self.workdir / "efi_tmp" / item.name
+                if item.is_dir():
+                    shutil.copytree(item, destination, dirs_exist_ok=True)
+                else:
+                    shutil.copy2(item, destination)
+        elif bootloader_type == "systemd-boot":
             import shutil
             # Install systemd-boot
             sd_boot_src = self.target_root / "usr" / "lib" / "systemd" / "boot" / "efi" / "systemd-bootx64.efi"
@@ -155,7 +163,13 @@ menuentry "Arch Linux" {{
 """)
 
         # Copy files to FAT image using mcopy
-        if self.toolchain:
+        if bootloader_type == "u-boot-rpi4":
+            copy_cmd = ["mcopy", "-s", "-i", str(efi_img), f"{self.workdir}/efi_tmp/*", "::/"]
+            if self.toolchain:
+                self.toolchain.run_in_build_host(copy_cmd, check=True)
+            else:
+                subprocess.run(copy_cmd, check=True)
+        elif self.toolchain:
             self.toolchain.run_in_build_host(["mcopy", "-s", "-i", str(efi_img), f"{self.workdir}/efi_tmp/EFI", "::/"], check=True)
             if (self.workdir / "efi_tmp" / "loader").exists():
                 self.toolchain.run_in_build_host(["mcopy", "-s", "-i", str(efi_img), f"{self.workdir}/efi_tmp/loader", "::/"], check=True)
@@ -171,9 +185,10 @@ menuentry "Arch Linux" {{
                 subprocess.run(["mcopy", "-i", str(efi_img), f"{self.workdir}/efi_tmp/{initrd}", "::/"], check=True)
 
         logger.info(f"Building partitioned disk image ({total_size} MB)...")
+        partition_table = "msdos" if bootloader_type == "u-boot-rpi4" else "gpt"
         if self.toolchain:
             self.toolchain.run_in_build_host(["dd", "if=/dev/zero", f"of={out_path}", "bs=1M", f"count={total_size}", "status=none"], check=True)
-            self.toolchain.run_in_build_host(["parted", "-s", str(out_path), "mktable", "gpt"], check=True)
+            self.toolchain.run_in_build_host(["parted", "-s", str(out_path), "mktable", partition_table], check=True)
             self.toolchain.run_in_build_host(["parted", "-s", str(out_path), "mkpart", "ESP", "fat32", "1MiB", f"{efi_size+1}MiB"], check=True)
             self.toolchain.run_in_build_host(["parted", "-s", str(out_path), "set", "1", "esp", "on"], check=True)
             self.toolchain.run_in_build_host(["parted", "-s", str(out_path), f"mkpart", "primary", fs_type, f"{efi_size+1}MiB", "100%"], check=True)
@@ -182,7 +197,7 @@ menuentry "Arch Linux" {{
             self.toolchain.run_in_build_host(["dd", f"if={root_img}", f"of={out_path}", "bs=1M", f"seek={efi_size+1}", "conv=notrunc", "status=none"], check=True)
         else:
             subprocess.run(["dd", "if=/dev/zero", f"of={out_path}", "bs=1M", f"count={total_size}", "status=none"], check=True)
-            subprocess.run(["parted", "-s", str(out_path), "mktable", "gpt"], check=True)
+            subprocess.run(["parted", "-s", str(out_path), "mktable", partition_table], check=True)
             subprocess.run(["parted", "-s", str(out_path), "mkpart", "ESP", "fat32", "1MiB", f"{efi_size+1}MiB"], check=True)
             subprocess.run(["parted", "-s", str(out_path), "set", "1", "esp", "on"], check=True)
             subprocess.run(["parted", "-s", str(out_path), f"mkpart", "primary", fs_type, f"{efi_size+1}MiB", "100%"], check=True)
@@ -192,8 +207,8 @@ menuentry "Arch Linux" {{
         bootloader_cfg = self.config.get("bootloader", "")
         bootloader_type = bootloader_cfg.get("type", "") if isinstance(bootloader_cfg, dict) else (bootloader_cfg or "")
         if bootloader_type.startswith("u-boot"):
-            if bootloader_type == "u-boot-pinebookpro":
-                logger.info("Injecting U-Boot for Pinebook Pro...")
+            if bootloader_type in ("u-boot-pinebookpro", "u-boot-rockpro64"):
+                logger.info("Injecting board U-Boot (%s)...", bootloader_type)
                 try:
                     if hasattr(self, 'toolchain') and self.toolchain:
                         self.toolchain.run_in_build_host(["dd", f"if={self.target_root}/boot/u-boot/idbloader.img", f"of={out_path}", "bs=512", "seek=64", "conv=notrunc"], check=False)
@@ -217,11 +232,15 @@ menuentry "Arch Linux" {{
             final_out = vm_out
             out_path = final_out
 
-        compression = self.config.get("compression", "zstd")
+        # VM container formats are already structured/compressed by qemu-img;
+        # leave them uncompressed so VirtualBox/QEMU/VMware can open them.
+        compression = None if target_format in {"qcow2", "vdi", "vmdk", "vhd", "vhdx"} else self.config.get("compression", "zstd")
         logger.info(f"Compressing disk image with {compression}...")
         
         final_path = out_path
-        if compression == "xz":
+        if compression is None:
+            cmd = None
+        elif compression == "xz":
             cmd = ["xz", "-z9", "-T0", str(out_path)]
             final_path = Path(f"{out_path}.xz")
         elif compression == "gz" or compression == "gzip":
@@ -232,10 +251,11 @@ menuentry "Arch Linux" {{
             cmd = ["zstd", zstd_level, "-f", "-T0", "-q", "--rm", str(out_path)]
             final_path = Path(f"{out_path}.zst")
             
-        if self.toolchain:
-            self.toolchain.run_in_build_host(cmd, check=True)
-        else:
-            subprocess.run(cmd, check=True)
+        if cmd:
+            if self.toolchain:
+                self.toolchain.run_in_build_host(cmd, check=True)
+            else:
+                subprocess.run(cmd, check=True)
             
         logger.info(f"Disk image generated successfully at {final_path}")
         return final_path

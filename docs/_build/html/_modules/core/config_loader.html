@@ -88,6 +88,7 @@
   <h1>Source code for core.config_loader</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
@@ -171,62 +172,112 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_root</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="n">config_root</span><span class="p">)</span>
+        <span class="n">configured_path</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="n">config_root</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">configured_path</span><span class="o">.</span><span class="n">suffix</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;.json&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">manifest_path</span> <span class="o">=</span> <span class="n">configured_path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">=</span> <span class="n">configured_path</span><span class="o">.</span><span class="n">parent</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">=</span> <span class="n">configured_path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">manifest_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">/</span> <span class="s2">&quot;global_build.json&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">_deep_merge</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">update</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">base</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">update</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">path</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(),</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Recursively merge two dictionaries and combine lists without losing data.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">update</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">current_path</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">path</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">base</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">value</span><span class="p">)</span>
+                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">value</span><span class="p">,</span> <span class="n">current_path</span><span class="p">)</span>
             <span class="k">elif</span> <span class="p">(</span>
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">base</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span>
             <span class="p">):</span>
+                <span class="k">if</span> <span class="n">current_path</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;customizations&quot;</span><span class="p">,</span> <span class="s2">&quot;users&quot;</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+                            <span class="k">continue</span>
+                        <span class="n">existing_index</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+                            <span class="p">(</span>
+                                <span class="n">index</span>
+                                <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">existing</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+                                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">existing</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+                                <span class="ow">and</span> <span class="n">existing</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
+                            <span class="p">),</span>
+                            <span class="kc">None</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">existing_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">existing_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                    <span class="k">continue</span>
                 <span class="c1"># Extend lists while avoiding duplicates where simple checks work.</span>
                 <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
-                        <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                        <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">base</span>
 
     <span class="k">def</span> <span class="nf">_load_json_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="k">return</span> <span class="p">{}</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Configuration file not found: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error reading </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="p">{}</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error reading </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Configuration root must be an object: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
 
     <span class="k">def</span> <span class="nf">_load_optional_profile</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">:</span> <span class="nb">str</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">category</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a profile JSON from configs/&lt;category&gt;/&lt;profile_name&gt;.json if it exists.&quot;&quot;&quot;</span>
         <span class="n">profile_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">/</span> <span class="n">category</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2">.json&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">profile_path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">&quot;software&quot;</span><span class="p">:</span>
+            <span class="n">profile_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">/</span> <span class="s2">&quot;packages&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2">.json&quot;</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">profile_path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">&quot;system&quot;</span><span class="p">:</span>
+            <span class="n">profile_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">/</span> <span class="s2">&quot;kernels&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2">.json&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">profile_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">required</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Profile &#39;</span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2">&#39; not found in &#39;</span><span class="si">{</span><span class="n">category</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">profile_path</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Profile &#39;</span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2">&#39; not found in &#39;</span><span class="si">{</span><span class="n">category</span><span class="si">}</span><span class="s2">&#39; at </span><span class="si">{</span><span class="n">profile_path</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="p">{}</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_file</span><span class="p">(</span><span class="n">profile_path</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_file</span><span class="p">(</span><span class="n">profile_path</span><span class="p">)</span>
+        <span class="n">configured_name</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">configured_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">configured_name</span> <span class="o">!=</span> <span class="n">profile_name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Profile name mismatch in </span><span class="si">{</span><span class="n">profile_path</span><span class="si">}</span><span class="s2">: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;expected &#39;</span><span class="si">{</span><span class="n">profile_name</span><span class="si">}</span><span class="s2">&#39;, found &#39;</span><span class="si">{</span><span class="n">configured_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_packages</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;software&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">,</span> <span class="p">[]))</span>
 
     <span class="k">def</span> <span class="nf">_apply_kernel_override</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set selected kernel and align related fields in platform_specific.&quot;&quot;&quot;</span>
         <span class="n">platform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;platform_specific&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">kernel_package</span> <span class="o">=</span> <span class="n">kernel_name</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="s2">&quot;vmlinuz-&quot;</span><span class="p">)</span>
         <span class="c1"># Convert kernel package name to kernel filename (e.g., &quot;linux&quot; -&gt; &quot;vmlinuz-linux&quot;)</span>
-        <span class="n">base_kernel</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">kernel_name</span>
-            <span class="k">if</span> <span class="n">kernel_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;vmlinuz-&quot;</span><span class="p">)</span>
-            <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;vmlinuz-</span><span class="si">{</span><span class="n">kernel_name</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
+        <span class="n">base_kernel</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;vmlinuz-</span><span class="si">{</span><span class="n">kernel_package</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">platform</span><span class="p">[</span><span class="s2">&quot;base_kernel&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base_kernel</span>
 
         <span class="c1"># Keep initramfs naming coherent with selected kernel.</span>
-        <span class="n">platform</span><span class="p">[</span><span class="s2">&quot;initramfs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;initramfs-</span><span class="si">{</span><span class="n">kernel_name</span><span class="si">}</span><span class="s2">.img&quot;</span>
+        <span class="n">platform</span><span class="p">[</span><span class="s2">&quot;initramfs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;initramfs-</span><span class="si">{</span><span class="n">kernel_package</span><span class="si">}</span><span class="s2">.img&quot;</span>
 
         <span class="n">kernel_candidates</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;linux&quot;</span><span class="p">,</span> <span class="s2">&quot;linux-lts&quot;</span><span class="p">,</span> <span class="s2">&quot;linux-zen&quot;</span><span class="p">,</span> <span class="s2">&quot;linux-hardened&quot;</span><span class="p">}</span>
 
@@ -236,25 +287,23 @@
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                     <span class="n">name</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">kernel_candidates</span><span class="p">:</span>
-                        <span class="n">pkg_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">kernel_name</span><span class="p">}</span>
+                        <span class="n">pkg_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">item</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">kernel_package</span><span class="p">}</span>
                         <span class="n">replaced</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">kernel_candidates</span><span class="p">:</span>
-                    <span class="n">pkg_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">kernel_name</span>
+                    <span class="n">pkg_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">kernel_package</span>
                     <span class="n">replaced</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">replaced</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">pkg_list</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pkg_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
-                    <span class="n">pkg_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">kernel_name</span><span class="p">})</span>
+                    <span class="n">pkg_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">kernel_package</span><span class="p">})</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">pkg_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kernel_name</span><span class="p">)</span>
+                    <span class="n">pkg_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kernel_package</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">replaced</span>
 
-        <span class="n">platform_pkgs</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">platform_pkgs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="n">replace_kernel_in_list</span><span class="p">(</span><span class="n">platform_pkgs</span><span class="p">)</span>
-
-        <span class="n">root_pkgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">root_pkgs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="n">replace_kernel_in_list</span><span class="p">(</span><span class="n">root_pkgs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="p">(</span><span class="n">platform</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">package_key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">,</span> <span class="s2">&quot;software&quot;</span><span class="p">):</span>
+                <span class="n">package_list</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">package_key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">package_list</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="n">replace_kernel_in_list</span><span class="p">(</span><span class="n">package_list</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_apply_live_user_override</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">live_user</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">live_groups</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -330,6 +379,213 @@
                 <span class="k">return</span> <span class="n">user</span>
         <span class="k">return</span> <span class="kc">None</span>
 
+    <span class="k">def</span> <span class="nf">_validate_assembled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_arch</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate the contracts consumed by the build engines.&quot;&quot;&quot;</span>
+        <span class="n">platform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;platform_specific&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">platform</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span><span class="s2">&quot;Missing object: platform_specific&quot;</span><span class="p">)</span>
+
+        <span class="n">configured_arch</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;architecture&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">configured_arch</span> <span class="o">!=</span> <span class="n">target_arch</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                <span class="s2">&quot;Architecture profile mismatch: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;requested &#39;</span><span class="si">{</span><span class="n">target_arch</span><span class="si">}</span><span class="s2">&#39;, configured &#39;</span><span class="si">{</span><span class="n">configured_arch</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">container_name</span><span class="p">,</span> <span class="n">container</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="p">(</span><span class="s2">&quot;root&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;platform_specific&quot;</span><span class="p">,</span> <span class="n">platform</span><span class="p">),</span>
+        <span class="p">):</span>
+            <span class="k">for</span> <span class="n">package_key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;software&quot;</span><span class="p">,</span> <span class="s2">&quot;packages&quot;</span><span class="p">):</span>
+                <span class="n">packages</span> <span class="o">=</span> <span class="n">container</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">package_key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">packages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">packages</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">container_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">package_key</span><span class="si">}</span><span class="s2"> must be a list&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">packages</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                    <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Invalid package entry in </span><span class="si">{</span><span class="n">container_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">package_key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">item</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="n">customizations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;customizations&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">customizations</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span><span class="s2">&quot;customizations must be an object&quot;</span><span class="p">)</span>
+
+        <span class="n">users</span> <span class="o">=</span> <span class="n">customizations</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;users&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span><span class="s2">&quot;customizations.users must be a list&quot;</span><span class="p">)</span>
+        <span class="n">user_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">users</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Invalid customizations.users entry: </span><span class="si">{</span><span class="n">user</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="n">user_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">user</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+        <span class="n">duplicates</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">user_names</span><span class="p">)</span> <span class="k">if</span> <span class="n">user_names</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">duplicates</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Duplicate users after configuration merge: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">duplicates</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">services</span> <span class="o">=</span> <span class="n">customizations</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;services&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">services</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">service</span> <span class="k">for</span> <span class="n">service</span> <span class="ow">in</span> <span class="n">services</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                <span class="s2">&quot;customizations.services must be a list of non-empty strings&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;hostname&quot;</span><span class="p">,</span> <span class="s2">&quot;timezone&quot;</span><span class="p">,</span> <span class="s2">&quot;locale&quot;</span><span class="p">,</span> <span class="s2">&quot;keymap&quot;</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">customizations</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">value</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;customizations.</span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2"> must be a non-empty string&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">user</span> <span class="ow">in</span> <span class="n">users</span><span class="p">:</span>
+            <span class="n">groups</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;groups&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">group</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;groups for user &#39;</span><span class="si">{</span><span class="n">user</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39; must be non-empty strings&quot;</span>
+                <span class="p">)</span>
+            <span class="n">password</span> <span class="o">=</span> <span class="n">user</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;password&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">password</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">password</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;password for user &#39;</span><span class="si">{</span><span class="n">user</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39; must be a string&quot;</span>
+                <span class="p">)</span>
+
+        <span class="n">package_sources</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;package_sources&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">package_sources</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span><span class="s2">&quot;package_sources must be an object&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;official&quot;</span><span class="p">,</span> <span class="s2">&quot;aur&quot;</span><span class="p">,</span> <span class="s2">&quot;local_packages&quot;</span><span class="p">):</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">package_sources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;package_sources.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> must be a list of non-empty strings&quot;</span>
+                <span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;local_dir&quot;</span><span class="p">,</span> <span class="s2">&quot;local_glob&quot;</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">package_sources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">value</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;package_sources.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> must be a non-empty string&quot;</span>
+                <span class="p">)</span>
+        <span class="k">for</span> <span class="n">package_path</span> <span class="ow">in</span> <span class="n">package_sources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;local_packages&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="n">resolved_package</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="n">package_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">resolved_package</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Configured local package not found: </span><span class="si">{</span><span class="n">package_path</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+        <span class="n">local_dir</span> <span class="o">=</span> <span class="n">package_sources</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;local_dir&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">local_dir</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="n">local_dir</span><span class="p">)</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Configured local package directory not found: </span><span class="si">{</span><span class="n">local_dir</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">initramfs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;initramfs_config&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">initramfs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">initramfs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span><span class="s2">&quot;initramfs_config must be an object&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;modules&quot;</span><span class="p">,</span> <span class="s2">&quot;binaries&quot;</span><span class="p">,</span> <span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="s2">&quot;hooks&quot;</span><span class="p">):</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="n">initramfs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span>
+                <span class="p">):</span>
+                    <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;initramfs_config.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> must be a list of non-empty strings&quot;</span>
+                    <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">initramfs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hooks&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span><span class="s2">&quot;initramfs_config.hooks cannot be empty&quot;</span><span class="p">)</span>
+
+        <span class="n">system_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system_config&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">system_config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span><span class="s2">&quot;system_config must be an object&quot;</span><span class="p">)</span>
+        <span class="n">commands</span> <span class="o">=</span> <span class="n">system_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;commands&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">commands</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">command</span> <span class="k">for</span> <span class="n">command</span> <span class="ow">in</span> <span class="n">commands</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                <span class="s2">&quot;system_config.commands must be a list of non-empty strings&quot;</span>
+            <span class="p">)</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="n">system_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span><span class="s2">&quot;system_config.files must be a list&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Invalid system_config.files entry: </span><span class="si">{</span><span class="n">rule</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="n">src</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">),</span> <span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dest&quot;</span><span class="p">),</span> <span class="n">rule</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">src</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span><span class="s2">&quot;system_config.files src is required&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="n">src</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;system_config.files source not found: </span><span class="si">{</span><span class="n">src</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">dest</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;system_config.files dest must be absolute: </span><span class="si">{</span><span class="n">dest</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">parsed_mode</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">mode</span><span class="p">),</span> <span class="mi">8</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Invalid system_config.files mode: </span><span class="si">{</span><span class="n">mode</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+                <span class="k">if</span> <span class="n">parsed_mode</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">parsed_mode</span> <span class="o">&gt;</span> <span class="mo">0o7777</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Invalid system_config.files mode: </span><span class="si">{</span><span class="n">mode</span><span class="si">!r}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="n">bootloader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bootloader&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bootloader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bootloader</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bootloader</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">),</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="n">bootloader</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                <span class="s2">&quot;bootloader must be an object with a non-empty type&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_normalize_package_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Collapse legacy package keys to the canonical engine contracts.&quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">package_names</span><span class="p">(</span><span class="o">*</span><span class="n">package_lists</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+            <span class="n">normalized</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">package_list</span> <span class="ow">in</span> <span class="n">package_lists</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">package_list</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">package_list</span><span class="p">:</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">item</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">normalized</span><span class="p">:</span>
+                        <span class="n">normalized</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">normalized</span>
+
+        <span class="n">root_packages</span> <span class="o">=</span> <span class="n">package_names</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;software&quot;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">[</span><span class="s2">&quot;software&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">root_packages</span>
+
+        <span class="n">platform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;platform_specific&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">platform_packages</span> <span class="o">=</span> <span class="n">package_names</span><span class="p">(</span>
+            <span class="n">platform</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">),</span>
+            <span class="n">platform</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;software&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">platform</span><span class="p">[</span><span class="s2">&quot;packages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">platform_packages</span>
+
 <div class="viewcode-block" id="ConfigAssembler.assemble">
 <a class="viewcode-back" href="../../api.html#core.config_loader.ConfigAssembler.assemble">[docs]</a>
     <span class="k">def</span> <span class="nf">assemble</span><span class="p">(</span>
@@ -354,7 +610,7 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting configuration assembly for </span><span class="si">{</span><span class="n">target_arch</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
 
         <span class="c1"># 1. Global manifest</span>
-        <span class="n">global_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">/</span> <span class="s2">&quot;global_build.json&quot;</span>
+        <span class="n">global_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manifest_path</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">global_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
             <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Global manifest not found at </span><span class="si">{</span><span class="n">global_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
@@ -363,11 +619,12 @@
         <span class="c1"># 2. Architecture (for example: configs/architectures/x86_64.json)</span>
         <span class="c1"># Note: global_build may embed config data or point to an external file.</span>
         <span class="n">arch_config_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_root</span> <span class="o">/</span> <span class="s2">&quot;architectures&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">target_arch</span><span class="si">}</span><span class="s2">.json&quot;</span>
-        <span class="k">if</span> <span class="n">arch_config_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="n">arch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_file</span><span class="p">(</span><span class="n">arch_config_path</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">arch_data</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No architecture-specific file found at </span><span class="si">{</span><span class="n">arch_config_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">arch_config_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Architecture profile not found: </span><span class="si">{</span><span class="n">arch_config_path</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">arch_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_file</span><span class="p">(</span><span class="n">arch_config_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">arch_data</span><span class="p">)</span>
 
         <span class="c1"># 3. Desktop profile (if requested)</span>
         <span class="k">if</span> <span class="n">target_desktop</span><span class="p">:</span>
@@ -375,45 +632,68 @@
             <span class="k">if</span> <span class="n">desktop_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                 <span class="n">desktop_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_json_file</span><span class="p">(</span><span class="n">desktop_path</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">desktop_data</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">[</span><span class="s2">&quot;desktop&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_desktop</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Desktop &#39;</span><span class="si">{</span><span class="n">target_desktop</span><span class="si">}</span><span class="s2">&#39; not found at </span><span class="si">{</span><span class="n">desktop_path</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">raise</span> <span class="n">ConfigValidationError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Desktop profile not found: </span><span class="si">{</span><span class="n">desktop_path</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
 
         <span class="c1"># 4. Optional profile selections</span>
         <span class="k">if</span> <span class="n">target_kernel</span><span class="p">:</span>
-            <span class="n">kernel_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span><span class="s2">&quot;kernels&quot;</span><span class="p">,</span> <span class="n">target_kernel</span><span class="p">)</span>
+            <span class="n">kernel_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span>
+                <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="n">target_kernel</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">kernel_data</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">kernel_data</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_apply_kernel_override</span><span class="p">(</span><span class="n">target_kernel</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">target_bootloader</span><span class="p">:</span>
-            <span class="n">bootloader_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span>
-                <span class="s2">&quot;bootloaders&quot;</span><span class="p">,</span> <span class="n">target_bootloader</span>
-            <span class="p">)</span>
-            <span class="k">if</span> <span class="n">bootloader_data</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">bootloader_data</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target_bootloader</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;bootloader&quot;</span><span class="p">:</span> <span class="n">target_bootloader</span><span class="p">})</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">bootloader_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span>
+                    <span class="s2">&quot;boot&quot;</span><span class="p">,</span> <span class="n">target_bootloader</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">bootloader_data</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">bootloader_data</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">[</span><span class="s2">&quot;bootloader&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">target_bootloader</span><span class="p">}</span>
 
         <span class="c1"># Always load the base package profile as it is common to all builds.</span>
-        <span class="n">base_package_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">,</span> <span class="s2">&quot;base&quot;</span><span class="p">)</span>
+        <span class="n">base_package_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span><span class="s2">&quot;software&quot;</span><span class="p">,</span> <span class="s2">&quot;base&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">base_package_data</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">base_package_data</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">pkg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_packages</span><span class="p">(</span><span class="n">base_package_data</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;software&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="k">if</span> <span class="n">pkg</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">[</span><span class="s2">&quot;software&quot;</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">[</span><span class="s2">&quot;software&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pkg</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">profile_name</span> <span class="ow">in</span> <span class="n">package_profiles</span> <span class="ow">or</span> <span class="p">[]:</span>
             <span class="k">if</span> <span class="n">profile_name</span> <span class="o">==</span> <span class="s2">&quot;base&quot;</span><span class="p">:</span>
                 <span class="k">continue</span>
-            <span class="n">package_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span><span class="s2">&quot;packages&quot;</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">)</span>
+            <span class="n">package_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span>
+                <span class="s2">&quot;software&quot;</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">package_data</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">package_data</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">pkg</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_packages</span><span class="p">(</span><span class="n">package_data</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;software&quot;</span><span class="p">,</span> <span class="p">[])</span>
+                    <span class="k">if</span> <span class="n">pkg</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">[</span><span class="s2">&quot;software&quot;</span><span class="p">]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">[</span><span class="s2">&quot;software&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pkg</span><span class="p">)</span>
+
+        <span class="c1"># Apply this after every package profile so no later merge can restore</span>
+        <span class="c1"># a different kernel package.</span>
+        <span class="k">if</span> <span class="n">target_kernel</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apply_kernel_override</span><span class="p">(</span><span class="n">target_kernel</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">profile_name</span> <span class="ow">in</span> <span class="n">service_profiles</span> <span class="ow">or</span> <span class="p">[]:</span>
-            <span class="n">services_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span><span class="s2">&quot;services&quot;</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">)</span>
+            <span class="n">services_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span>
+                <span class="s2">&quot;services&quot;</span><span class="p">,</span> <span class="n">profile_name</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">services_data</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">services_data</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">target_live_profile</span><span class="p">:</span>
             <span class="n">live_profile_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_optional_profile</span><span class="p">(</span>
-                <span class="s2">&quot;live-users&quot;</span><span class="p">,</span> <span class="n">target_live_profile</span>
+                <span class="s2">&quot;live-users&quot;</span><span class="p">,</span> <span class="n">target_live_profile</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">live_profile_data</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">live_profile_data</span><span class="p">)</span>
@@ -435,18 +715,8 @@
         <span class="k">if</span> <span class="n">initramfs_profile</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_deep_merge</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">,</span> <span class="n">initramfs_profile</span><span class="p">)</span>
 
-        <span class="c1"># 5. Additional components (bootloaders, etc.)</span>
-        <span class="c1"># The global &quot;components&quot; section can be used to discover extra modules.</span>
-        <span class="n">components</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;components&quot;</span><span class="p">,</span> <span class="p">{})</span>
-        <span class="k">for</span> <span class="n">comp_name</span><span class="p">,</span> <span class="n">comp_data</span> <span class="ow">in</span> <span class="n">components</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">comp_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">comp_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;module_binary&quot;</span><span class="p">:</span>
-                <span class="c1"># Placeholder for loading binary bootloader modules if needed.</span>
-                <span class="k">pass</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">comp_data</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">comp_data</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;module_binary&quot;</span><span class="p">:</span>
-                        <span class="k">pass</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_package_keys</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_assembled</span><span class="p">(</span><span class="n">target_arch</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Configuration assembly completed successfully.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">master_config</span><span class="p">)</span></div>
 </div>
@@ -466,7 +736,7 @@
     <span class="k">def</span> <span class="nf">load_arch_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">global_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">arch</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># The assembler needs the config root to load the remaining components.</span>
-            <span class="n">assembler</span> <span class="o">=</span> <span class="n">ConfigAssembler</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">resolve_from_project</span><span class="p">(</span><span class="n">global_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="p">))</span>
+            <span class="n">assembler</span> <span class="o">=</span> <span class="n">ConfigAssembler</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">resolve_from_project</span><span class="p">(</span><span class="n">global_path</span><span class="p">)))</span>
             <span class="n">config_obj</span> <span class="o">=</span> <span class="n">assembler</span><span class="o">.</span><span class="n">assemble</span><span class="p">(</span><span class="n">arch</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">config_obj</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>

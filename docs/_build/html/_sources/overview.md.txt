@@ -1,6 +1,6 @@
 # Overview
 
-Arch-Builder builds customized Arch Linux ISO images from composable JSON profiles.
+Arch-Builder builds customized Arch Linux ISO and board disk images from composable JSON profiles.
 It is designed around a clear separation of concerns:
 
 - configuration assembly
@@ -8,7 +8,7 @@ It is designed around a clear separation of concerns:
 - chroot/package execution
 - customization application
 - bootloader generation
-- final ISO packaging
+- final ISO or disk-image packaging
 
 ## Architecture At A Glance
 
@@ -22,13 +22,13 @@ flowchart LR
 	ASSEMBLER --> CONFIGS[configs/*.json]
 	BUILDER --> ENGINE[ArchEngine]
 	ENGINE --> CUSTOMIZER[SystemConfigurator]
-	ENGINE --> ISO[Final ISO]
+	ENGINE --> ISO[Final ISO or disk image]
 	TOOLCHAIN --> CACHE[Reusable pacman cache]
 </pre>
 
 ## Goals
 
-- Support repeatable ISO generation from a workspace-local build tree.
+- Support repeatable ISO and board-image generation from a workspace-local build tree.
 - Allow real builds on non-Arch Linux systems through an isolated Arch toolchain.
 - Keep configuration modular so architecture, desktop, kernel, service, and live-user choices can be combined.
 - Keep cache reusable across runs while allowing deterministic pre-build cleanup.
@@ -45,7 +45,7 @@ flowchart LR
 
 ## Real mode
 
-`real` mode performs the actual build flow, including package installation and ISO generation.
+`real` mode performs the actual build flow, including package installation and ISO/disk-image generation.
 It can either use host tooling or bootstrap an isolated Arch build host.
 
 ## Default Workspace Layout
@@ -55,8 +55,9 @@ The default visible build paths are:
 ```text
 arch-builder/
 ├── cache/pacman/pkg/
-├── fallback/
-└── workdir/
+├── fallback/<architecture>/
+├── output/
+└── workdir/<architecture>/
 ```
 
 ## Profile Composition Model

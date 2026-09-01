@@ -6,11 +6,5 @@
       { "name": "grub" },
       { "name": "efibootmgr" }
     ]
-  },
-  "system": {
-    "binaries": {
-      "grub-mkrescue": "/usr/bin/grub-mkrescue",
-      "grub_mkrescue": "/usr/bin/grub-mkrescue"
-    }
   }
 }
