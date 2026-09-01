@@ -89,7 +89,7 @@
              
   <section id="arch-builder-documentation">
 <h1>Arch-Builder Documentation<a class="headerlink" href="#arch-builder-documentation" title="Link to this heading"></a></h1>
-<p>Arch-Builder is a modular Arch Linux ISO builder with profile-driven configuration,
+<p>Arch-Builder is a modular Arch Linux ISO and board-image builder with profile-driven configuration,
 real isolated build-host support, and workspace-local artifact management.</p>
 <div class="toctree-wrapper compound">
 <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
@@ -127,6 +127,8 @@ real isolated build-host support, and workspace-local artifact management.</p>
 <li class="toctree-l2"><a class="reference internal" href="cli-reference.html#mock-build-with-xfce">Mock build with XFCE</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cli-reference.html#real-build-with-isolated-toolchain-and-debug-logging">Real build with isolated toolchain and debug logging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="cli-reference.html#real-build-reusing-previous-state">Real build reusing previous state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#arm-board-image">ARM board image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli-reference.html#virtual-machine-disks">Virtual machine disks</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a><ul>
@@ -165,6 +167,7 @@ real isolated build-host support, and workspace-local artifact management.</p>
 <li class="toctree-l2"><a class="reference internal" href="examples.html#security-and-diagnostics-image">7. Security and diagnostics image</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html#real-build-on-a-non-arch-host">8. Real build on a non-Arch host</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html#reusing-previous-build-state">9. Reusing previous build state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples.html#arm-board-images">10. ARM board images</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html#tutorial-installing-aur-packages-e-g-pamac-aur-yay">10. Tutorial: Installing AUR Packages (e.g. pamac-aur, yay)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="examples.html#tutorial-installing-local-custom-packages-e-g-calamares">11. Tutorial: Installing Local Custom Packages (e.g. Calamares)</a></li>
 </ul>
@@ -172,6 +175,7 @@ real isolated build-host support, and workspace-local artifact management.</p>
 <li class="toctree-l1"><a class="reference internal" href="build-pipeline.html">Build Pipeline</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#execution-flow-diagram">Execution Flow Diagram</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#cli-parsing">1. CLI parsing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#hook-phases">Hook phases</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#configuration-assembly">2. Configuration assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#workdir-resolution">3. Workdir resolution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#chroot-manager-setup">4. Chroot manager setup</a></li>
@@ -179,7 +183,7 @@ real isolated build-host support, and workspace-local artifact management.</p>
 <li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#package-installation">6. Package installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#post-install-customization">7. Post-install customization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#bootloader-generation">8. Bootloader generation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#final-iso-export">9. Final ISO export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#final-artifact-export">9. Final artifact export</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#cleanup-behavior">Cleanup behavior</a></li>
 <li class="toctree-l2"><a class="reference internal" href="build-pipeline.html#real-mode-isolation-diagram">Real-Mode Isolation Diagram</a></li>
 </ul>
@@ -233,7 +237,7 @@ real isolated build-host support, and workspace-local artifact management.</p>
 <li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-chroot-commands-run-in-the-wrong-rootfs">Symptom: chroot commands run in the wrong rootfs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-customization-fails-on-missing-groups-or-initramfs-config-placement">Symptom: customization fails on missing groups or initramfs config placement</a></li>
 <li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-bootloader-creation-fails">Symptom: bootloader creation fails</a></li>
-<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-final-iso-packaging-fails-or-the-iso-is-left-inside-the-isolated-rootfs">Symptom: final ISO packaging fails or the ISO is left inside the isolated rootfs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-final-artifact-packaging-fails-or-the-output-is-left-inside-the-isolated-rootfs">Symptom: final artifact packaging fails or the output is left inside the isolated rootfs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-cleanup-prints-noisy-unmount-warnings">Symptom: cleanup prints noisy unmount warnings</a></li>
 <li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#symptom-workspace-local-fallback-path-becomes-unwritable-after-sudo-builds">Symptom: workspace-local fallback path becomes unwritable after <code class="docutils literal notranslate"><span class="pre">sudo</span></code> builds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="troubleshooting-isolated-builds.html#recommended-recovery-workflow">Recommended recovery workflow</a></li>

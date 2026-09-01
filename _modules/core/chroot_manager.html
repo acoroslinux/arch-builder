@@ -216,11 +216,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">fs_handler</span> <span class="o">=</span> <span class="n">MockFSHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_workdir</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">toolchain</span> <span class="o">=</span> <span class="n">toolchain</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">arch</span> <span class="o">=</span> <span class="p">(</span><span class="n">arch</span> <span class="ow">or</span> <span class="s2">&quot;x86_64&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arch</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;x86_64&quot;</span><span class="p">,</span> <span class="s2">&quot;x86-64&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">ChrootManagerError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Architecture &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">arch</span><span class="si">}</span><span class="s2">&#39; is not supported. Only x86_64 is supported.&quot;</span>
-            <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">arch</span> <span class="o">=</span> <span class="s2">&quot;x86_64&quot;</span>
 
         <span class="c1"># Each manager gets its own logger (useful for debugging)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">setup_logger</span><span class="p">(</span><span class="s2">&quot;chroot&quot;</span><span class="p">,</span> <span class="s2">&quot;chroot.log&quot;</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -458,7 +453,7 @@
                 <span class="p">[</span>
                     <span class="s2">&quot;sudo&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;pacman&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;-S&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;-Sy&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;--needed&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;--noconfirm&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;git&quot;</span><span class="p">,</span>
@@ -574,7 +569,7 @@
 
         <span class="c1"># Prepare build prerequisites and non-root builder account.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
-            <span class="p">[</span><span class="s2">&quot;pacman&quot;</span><span class="p">,</span> <span class="s2">&quot;-S&quot;</span><span class="p">,</span> <span class="s2">&quot;--needed&quot;</span><span class="p">,</span> <span class="s2">&quot;--noconfirm&quot;</span><span class="p">,</span> <span class="s2">&quot;git&quot;</span><span class="p">,</span> <span class="s2">&quot;base-devel&quot;</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">&quot;pacman&quot;</span><span class="p">,</span> <span class="s2">&quot;-Sy&quot;</span><span class="p">,</span> <span class="s2">&quot;--needed&quot;</span><span class="p">,</span> <span class="s2">&quot;--noconfirm&quot;</span><span class="p">,</span> <span class="s2">&quot;git&quot;</span><span class="p">,</span> <span class="s2">&quot;base-devel&quot;</span><span class="p">],</span>
             <span class="n">chroot_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">run_path</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
@@ -646,14 +641,16 @@
         <span class="k">for</span> <span class="n">subdir</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;var/lib/pacman&quot;</span><span class="p">,</span> <span class="s2">&quot;var/cache/pacman/pkg&quot;</span><span class="p">,</span> <span class="s2">&quot;etc/pacman.d&quot;</span><span class="p">]:</span>
             <span class="p">(</span><span class="n">airootfs_path</span> <span class="o">/</span> <span class="n">subdir</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-        <span class="c1"># Copy pacman config and mirrorlist from the build chroot into airootfs</span>
         <span class="n">build_chroot</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">run_path</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">conf_file</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;etc/pacman.conf&quot;</span><span class="p">,</span> <span class="s2">&quot;etc/pacman.d/mirrorlist&quot;</span><span class="p">]:</span>
-            <span class="n">src</span> <span class="o">=</span> <span class="n">build_chroot</span> <span class="o">/</span> <span class="n">conf_file</span>
-            <span class="n">dst</span> <span class="o">=</span> <span class="n">airootfs_path</span> <span class="o">/</span> <span class="n">conf_file</span>
-            <span class="k">if</span> <span class="n">src</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-                <span class="n">dst</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+        <span class="c1"># ARM rootfs archives have their own repository and signing keyring.</span>
+        <span class="n">is_arm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arch</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;aarch64&quot;</span><span class="p">,</span> <span class="s2">&quot;armv7h&quot;</span><span class="p">,</span> <span class="s2">&quot;armv6h&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_arm</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">conf_file</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;etc/pacman.conf&quot;</span><span class="p">,</span> <span class="s2">&quot;etc/pacman.d/mirrorlist&quot;</span><span class="p">]:</span>
+                <span class="n">src</span> <span class="o">=</span> <span class="n">build_chroot</span> <span class="o">/</span> <span class="n">conf_file</span>
+                <span class="n">dst</span> <span class="o">=</span> <span class="n">airootfs_path</span> <span class="o">/</span> <span class="n">conf_file</span>
+                <span class="k">if</span> <span class="n">src</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                    <span class="n">dst</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
 
         <span class="c1"># Ensure the target architecture and mirrors are correctly configured in the target configs</span>
         <span class="n">pacman_conf_dst</span> <span class="o">=</span> <span class="n">airootfs_path</span> <span class="o">/</span> <span class="s2">&quot;etc&quot;</span> <span class="o">/</span> <span class="s2">&quot;pacman.conf&quot;</span>
@@ -675,7 +672,7 @@
             <span class="n">pacman_conf_dst</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
 
         <span class="c1"># Copy the target&#39;s mirrorlist to the build host chroot&#39;s /etc/pacman.d/mirrorlist as well</span>
-        <span class="k">if</span> <span class="n">mirrorlist_dst</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">mirrorlist_dst</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_arm</span><span class="p">:</span>
             <span class="n">build_host_mirrorlist</span> <span class="o">=</span> <span class="n">build_chroot</span> <span class="o">/</span> <span class="s2">&quot;etc&quot;</span> <span class="o">/</span> <span class="s2">&quot;pacman.d&quot;</span> <span class="o">/</span> <span class="s2">&quot;mirrorlist&quot;</span>
             <span class="n">build_host_mirrorlist</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">mirrorlist_dst</span><span class="p">,</span> <span class="n">build_host_mirrorlist</span><span class="p">)</span>
@@ -687,26 +684,27 @@
             <span class="s2">&quot;[airootfs] Initializing pacman keyring and database in airootfs...&quot;</span>
         <span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Use pacman-key from the build host to initialize the gpg directory inside airootfs.</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="s2">&quot;pacman-key&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;--gpgdir&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;/airootfs/etc/pacman.d/gnupg&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;--init&quot;</span><span class="p">,</span>
-                <span class="p">],</span>
-                <span class="n">chroot_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">run_path</span><span class="p">),</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
-                <span class="p">[</span>
-                    <span class="s2">&quot;pacman-key&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;--gpgdir&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;/airootfs/etc/pacman.d/gnupg&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;--populate&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;archlinux&quot;</span><span class="p">,</span>
-                <span class="p">],</span>
-                <span class="n">chroot_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">run_path</span><span class="p">),</span>
-            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_arm</span><span class="p">:</span>
+                <span class="c1"># The ARM archive already carries the Arch Linux ARM keyring.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="s2">&quot;pacman-key&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;--gpgdir&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;/airootfs/etc/pacman.d/gnupg&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;--init&quot;</span><span class="p">,</span>
+                    <span class="p">],</span>
+                    <span class="n">chroot_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">run_path</span><span class="p">),</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
+                    <span class="p">[</span>
+                        <span class="s2">&quot;pacman-key&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;--gpgdir&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;/airootfs/etc/pacman.d/gnupg&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;--populate&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;archlinux&quot;</span><span class="p">,</span>
+                    <span class="p">],</span>
+                    <span class="n">chroot_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">run_path</span><span class="p">),</span>
+                <span class="p">)</span>
 
             <span class="c1"># Ensure the airootfs keyring directory was created.</span>
             <span class="n">target_gpgdir</span> <span class="o">=</span> <span class="n">airootfs_path</span> <span class="o">/</span> <span class="s2">&quot;etc&quot;</span> <span class="o">/</span> <span class="s2">&quot;pacman.d&quot;</span> <span class="o">/</span> <span class="s2">&quot;gnupg&quot;</span>
@@ -760,7 +758,7 @@
                     <span class="p">[</span>
                         <span class="s2">&quot;sudo&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;pacman&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;-S&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;-Sy&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;--needed&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;--noconfirm&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;--root&quot;</span><span class="p">,</span>
@@ -780,7 +778,7 @@
                     <span class="n">command</span> <span class="o">=</span> <span class="p">[</span>
                         <span class="s2">&quot;sudo&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;pacman&quot;</span><span class="p">,</span>
-                        <span class="s2">&quot;-S&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;-Sy&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;--needed&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;--noconfirm&quot;</span><span class="p">,</span>
                         <span class="s2">&quot;--disable-download-timeout&quot;</span><span class="p">,</span>
@@ -842,7 +840,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">keyring_cmd</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="s2">&quot;pacman&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;-S&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;-Sy&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;--needed&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;--noconfirm&quot;</span><span class="p">,</span>
                 <span class="o">*</span><span class="n">root_flag</span><span class="p">,</span>
@@ -859,7 +857,7 @@
                 <span class="c1"># separate from the build toolchain.</span>
                 <span class="n">command</span> <span class="o">=</span> <span class="p">[</span>
                     <span class="s2">&quot;pacman&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;-S&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;-Sy&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;--needed&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;--noconfirm&quot;</span><span class="p">,</span>
                     <span class="s2">&quot;--disable-download-timeout&quot;</span><span class="p">,</span>
@@ -909,14 +907,40 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Mount /proc, /sys, and /dev inside the chroot path.&quot;&quot;&quot;</span>
         <span class="kn">import</span> <span class="nn">os</span>
         <span class="kn">import</span> <span class="nn">subprocess</span>
-
+        <span class="kn">import</span> <span class="nn">platform</span>
+        <span class="kn">import</span> <span class="nn">shutil</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;arch&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">arch</span><span class="p">:</span>
+            <span class="n">host_arch</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">machine</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arch</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="n">host_arch</span><span class="p">:</span>
+                <span class="n">qemu_arch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arch</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">qemu_arch</span> <span class="o">==</span> <span class="s2">&quot;arm64&quot;</span><span class="p">:</span> <span class="n">qemu_arch</span> <span class="o">=</span> <span class="s2">&quot;aarch64&quot;</span>
+                <span class="k">if</span> <span class="n">qemu_arch</span> <span class="o">==</span> <span class="s2">&quot;amd64&quot;</span><span class="p">:</span> <span class="n">qemu_arch</span> <span class="o">=</span> <span class="s2">&quot;x86_64&quot;</span>
+                <span class="n">qemu_bin</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;qemu-</span><span class="si">{</span><span class="n">qemu_arch</span><span class="si">}</span><span class="s2">-static&quot;</span>
+                <span class="n">qemu_src</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="n">qemu_bin</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">qemu_src</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/usr/bin/</span><span class="si">{</span><span class="n">qemu_bin</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">):</span>
+                    <span class="n">qemu_src</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;/usr/bin/</span><span class="si">{</span><span class="n">qemu_bin</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="k">if</span> <span class="n">qemu_src</span><span class="p">:</span>
+                    <span class="n">dest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;usr&quot;</span> <span class="o">/</span> <span class="s2">&quot;bin&quot;</span> <span class="o">/</span> <span class="n">qemu_bin</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dest</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;sudo&quot;</span><span class="p">,</span> <span class="s2">&quot;cp&quot;</span><span class="p">,</span> <span class="n">qemu_src</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">dest</span><span class="p">)]</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">geteuid</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">[</span><span class="s2">&quot;cp&quot;</span><span class="p">,</span> <span class="n">qemu_src</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">dest</span><span class="p">)]</span>
+                    <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="s2">&quot;[chroot] Mounting essential filesystems (/proc, /sys, /dev)...&quot;</span>
         <span class="p">)</span>
+        <span class="kn">from</span> <span class="nn">core.path_utils</span> <span class="kn">import</span> <span class="n">resolve_from_project</span>
+        <span class="n">cache_dir</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="s2">&quot;cache/pacman/pkg&quot;</span><span class="p">)</span>
+        <span class="kn">import</span> <span class="nn">os</span>
+        <span class="kn">import</span> <span class="nn">subprocess</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">geteuid</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cache_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;sudo&quot;</span><span class="p">,</span> <span class="s2">&quot;mkdir&quot;</span><span class="p">,</span> <span class="s2">&quot;-p&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">)])</span>
+
         <span class="n">mounts</span> <span class="o">=</span> <span class="p">[</span>
             <span class="p">(</span><span class="s2">&quot;/proc&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;proc&quot;</span><span class="p">,</span> <span class="s2">&quot;--bind&quot;</span><span class="p">),</span>
             <span class="p">(</span><span class="s2">&quot;/sys&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;sys&quot;</span><span class="p">,</span> <span class="s2">&quot;--bind&quot;</span><span class="p">),</span>
             <span class="p">(</span><span class="s2">&quot;/dev&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;dev&quot;</span><span class="p">,</span> <span class="s2">&quot;--bind&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;var&quot;</span> <span class="o">/</span> <span class="s2">&quot;cache&quot;</span> <span class="o">/</span> <span class="s2">&quot;pacman&quot;</span> <span class="o">/</span> <span class="s2">&quot;pkg&quot;</span><span class="p">,</span> <span class="s2">&quot;--bind&quot;</span><span class="p">),</span>
         <span class="p">]</span>
 
         <span class="k">def</span> <span class="nf">_sudo_run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -952,6 +976,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[chroot] Unmounting essential filesystems...&quot;</span><span class="p">)</span>
         <span class="n">mounts</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;var&quot;</span> <span class="o">/</span> <span class="s2">&quot;cache&quot;</span> <span class="o">/</span> <span class="s2">&quot;pacman&quot;</span> <span class="o">/</span> <span class="s2">&quot;pkg&quot;</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;dev&quot;</span> <span class="o">/</span> <span class="s2">&quot;shm&quot;</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;proc&quot;</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;sys&quot;</span><span class="p">,</span>
@@ -970,6 +995,23 @@
 <div class="viewcode-block" id="ChrootManager.install_packages">
 <a class="viewcode-back" href="../../api.html#core.chroot_manager.ChrootManager.install_packages">[docs]</a>
     <span class="k">def</span> <span class="nf">install_packages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">packages</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="c1"># Optimize pacman for speed</span>
+        <span class="n">pacman_conf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="s2">&quot;etc&quot;</span> <span class="o">/</span> <span class="s2">&quot;pacman.conf&quot;</span>
+        <span class="k">if</span> <span class="n">pacman_conf</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">conf_data</span> <span class="o">=</span> <span class="n">pacman_conf</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+                <span class="n">conf_data</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">if</span> <span class="s2">&quot;ParallelDownloads = 10&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">conf_data</span><span class="p">:</span>
+                <span class="n">conf_data</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;#?ParallelDownloads\s*=\s*\d+&#39;</span><span class="p">,</span> <span class="s1">&#39;ParallelDownloads = 10&#39;</span><span class="p">,</span> <span class="n">conf_data</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;ParallelDownloads = 10&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">conf_data</span><span class="p">:</span>
+                    <span class="n">conf_data</span> <span class="o">=</span> <span class="n">conf_data</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;[options]&#39;</span><span class="p">,</span> <span class="s1">&#39;[options]</span><span class="se">\n</span><span class="s1">ParallelDownloads = 10&#39;</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pacman_conf</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">conf_data</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Install official, local and AUR packages inside the chroot (mock or real).&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Starting package installation with cache management.&quot;</span><span class="p">)</span>
         <span class="n">plan</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_normalize_package_plan</span><span class="p">(</span><span class="n">packages</span><span class="p">)</span>
@@ -1007,7 +1049,7 @@
     <span class="k">def</span> <span class="nf">generate_fstab</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a simple /etc/fstab and persist it inside the chroot.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_mock</span><span class="p">:</span>
-            <span class="n">content</span> <span class="o">=</span> <span class="s2">&quot;/dev/sda1  /   ext4    defaults    0 1</span><span class="se">\n</span><span class="s2">/dev/sda2  swap   swap    defaults    0 0</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="s2">&quot;/dev/sda1  /   ext4    defaults,noatime,commit=60    0 1</span><span class="se">\n</span><span class="s2">/dev/sda2  swap   swap    defaults,noatime,commit=60    0 0</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">fs_handler</span><span class="o">.</span><span class="n">create_file</span><span class="p">(</span><span class="s2">&quot;etc/fstab&quot;</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;chroot&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="s2">&quot;[MOCK FS] /etc/fstab simulated successfully, content:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">content</span>
@@ -1021,7 +1063,7 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">fstab_dir</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
                 <span class="n">fstab_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-            <span class="n">content</span> <span class="o">=</span> <span class="s2">&quot;/dev/sda1  /   ext4    defaults    0 1</span><span class="se">\n</span><span class="s2">/dev/sda2  swap   swap    defaults    0 0</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="s2">&quot;/dev/sda1  /   ext4    defaults,noatime,commit=60    0 1</span><span class="se">\n</span><span class="s2">/dev/sda2  swap   swap    defaults,noatime,commit=60    0 0</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="n">fstab_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[REAL] /etc/fstab created successfully.&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;[REAL] /etc/fstab created at </span><span class="si">{</span><span class="n">fstab_path</span><span class="si">}</span><span class="s2">&quot;</span>

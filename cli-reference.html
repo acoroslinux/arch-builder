@@ -59,6 +59,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#mock-build-with-xfce">Mock build with XFCE</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#real-build-with-isolated-toolchain-and-debug-logging">Real build with isolated toolchain and debug logging</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#real-build-reusing-previous-state">Real build reusing previous state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#arm-board-image">ARM board image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#virtual-machine-disks">Virtual machine disks</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a></li>
@@ -113,7 +115,8 @@
 <section id="core-arguments">
 <h2>Core arguments<a class="headerlink" href="#core-arguments" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">architecture</span></code>: target architecture, default <code class="docutils literal notranslate"><span class="pre">x86_64</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">architecture</span></code>: target architecture, default <code class="docutils literal notranslate"><span class="pre">x86_64</span></code>; supported engines are <code class="docutils literal notranslate"><span class="pre">x86_64</span></code> and <code class="docutils literal notranslate"><span class="pre">aarch64</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--device</span> <span class="pre">NAME</span></code>: hardware profile (<code class="docutils literal notranslate"><span class="pre">rpi4</span></code>, <code class="docutils literal notranslate"><span class="pre">odroid-n2</span></code>, <code class="docutils literal notranslate"><span class="pre">pinebookpro</span></code>, <code class="docutils literal notranslate"><span class="pre">rockpro64</span></code>, or <code class="docutils literal notranslate"><span class="pre">generic-uefi</span></code>).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">-c,</span> <span class="pre">--config</span></code>: global configuration file path.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--mode</span> <span class="pre">{mock,real}</span></code>: build execution mode.</p></li>
 </ul>
@@ -157,9 +160,9 @@
 <section id="output-control">
 <h2>Output control<a class="headerlink" href="#output-control" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">-o,</span> <span class="pre">--output</span> <span class="pre">PATH</span></code>: explicit ISO output path.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-o,</span> <span class="pre">--output</span> <span class="pre">PATH</span></code>: explicit ISO or disk-image output path.</p></li>
 </ul>
-<p>When omitted, the output name is generated automatically using desktop and architecture (<code class="docutils literal notranslate"><span class="pre">arch-builder-&lt;desktop&gt;-&lt;architecture&gt;.iso</span></code>). Upon build completion, SHA256 (<code class="docutils literal notranslate"><span class="pre">.sha256</span></code>) and MD5 (<code class="docutils literal notranslate"><span class="pre">.md5</span></code>) checksum files are automatically generated alongside the final ISO image.</p>
+<p>When omitted, the output name is generated automatically using desktop and architecture. ISO builds use <code class="docutils literal notranslate"><span class="pre">.iso</span></code>; device/disk builds use <code class="docutils literal notranslate"><span class="pre">.img</span></code>. SHA256 (<code class="docutils literal notranslate"><span class="pre">.sha256</span></code>) and MD5 (<code class="docutils literal notranslate"><span class="pre">.md5</span></code>) checksum files are generated alongside the final artifact.</p>
 </section>
 <section id="example-commands">
 <h2>Example commands<a class="headerlink" href="#example-commands" title="Link to this heading"></a></h2>
@@ -188,6 +191,22 @@
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--mode<span class="w"> </span>real<span class="w"> </span>--no-clean
 </pre></div>
 </div>
+</section>
+<section id="arm-board-image">
+<h2>ARM board image<a class="headerlink" href="#arm-board-image" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>--device<span class="w"> </span>rpi4<span class="w"> </span>--mode<span class="w"> </span>real<span class="w"> </span>--format<span class="w"> </span>img<span class="w"> </span>--desktop<span class="w"> </span>xfce
+sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>--device<span class="w"> </span>odroid-n2<span class="w"> </span>--mode<span class="w"> </span>real<span class="w"> </span>--format<span class="w"> </span>img<span class="w"> </span>--desktop<span class="w"> </span>xfce
+</pre></div>
+</div>
+</section>
+<section id="virtual-machine-disks">
+<h2>Virtual machine disks<a class="headerlink" href="#virtual-machine-disks" title="Link to this heading"></a></h2>
+<p>Disk builds can be converted directly with <code class="docutils literal notranslate"><span class="pre">qemu-img</span></code>. VM formats are left uncompressed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--mode<span class="w"> </span>real<span class="w"> </span>--format<span class="w"> </span>vdi<span class="w"> </span>--desktop<span class="w"> </span>xfce
+sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--mode<span class="w"> </span>real<span class="w"> </span>--format<span class="w"> </span>vmdk<span class="w"> </span>--desktop<span class="w"> </span>xfce
+</pre></div>
+</div>
+<p>The resulting <code class="docutils literal notranslate"><span class="pre">.vdi</span></code> or <code class="docutils literal notranslate"><span class="pre">.vmdk</span></code> files are written to <code class="docutils literal notranslate"><span class="pre">output/</span></code> alongside their checksums.</p>
 </section>
 </section>
 

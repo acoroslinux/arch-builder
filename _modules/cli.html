@@ -88,6 +88,7 @@
   <h1>Source code for cli</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
@@ -109,21 +110,64 @@
     <span class="k">return</span> <span class="n">normalized</span> <span class="ow">or</span> <span class="n">fallback</span>
 
 
+<span class="k">def</span> <span class="nf">_parse_list_arg</span><span class="p">(</span><span class="n">arg_value</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">arg_value</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">arg_value</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">inner</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
+                    <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">inner</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()])</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()])</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg_value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">arg_value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()])</span>
+    <span class="k">return</span> <span class="n">items</span>
+
+
 <span class="k">def</span> <span class="nf">_resolve_output_name</span><span class="p">(</span>
     <span class="n">architecture</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">desktop</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">output</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">output_dir</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">output</span>
+        <span class="n">requested</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">requested</span><span class="o">.</span><span class="n">is_absolute</span><span class="p">():</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">requested</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">requested</span><span class="o">.</span><span class="n">parts</span> <span class="ow">and</span> <span class="n">requested</span><span class="o">.</span><span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;output&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">resolve_from_project</span><span class="p">(</span><span class="n">requested</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="n">requested</span><span class="p">)</span>
 
     <span class="n">desktop_label</span> <span class="o">=</span> <span class="n">_slugify_name</span><span class="p">(</span><span class="n">desktop</span> <span class="ow">or</span> <span class="s2">&quot;base&quot;</span><span class="p">,</span> <span class="s2">&quot;base&quot;</span><span class="p">)</span>
     <span class="n">arch_label</span> <span class="o">=</span> <span class="n">_slugify_name</span><span class="p">(</span><span class="n">architecture</span><span class="p">,</span> <span class="s2">&quot;x86_64&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;arch-builder-</span><span class="si">{</span><span class="n">desktop_label</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">arch_label</span><span class="si">}</span><span class="s2">.iso&quot;</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;arch-builder-</span><span class="si">{</span><span class="n">desktop_label</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">arch_label</span><span class="si">}</span><span class="s2">.iso&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_config_path_from_argv</span><span class="p">(</span><span class="n">argv</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve the manifest early so its defaults can configure argparse.&quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">add_help</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;--config&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;configs/global_build.json&quot;</span><span class="p">)</span>
+    <span class="n">known</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_known_args</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="n">known</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_restore_invoking_user_ownership</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return root-created build artifacts to the user who invoked sudo.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">geteuid</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">sudo_uid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SUDO_UID&quot;</span><span class="p">)</span>
+    <span class="n">sudo_gid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SUDO_GID&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">sudo_uid</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">sudo_gid</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">uid</span><span class="p">,</span> <span class="n">gid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sudo_uid</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">sudo_gid</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chown</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">uid</span><span class="p">,</span> <span class="n">gid</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../api.html#cli.main">[docs]</a>
 <span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-    <span class="n">default_config_path</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="s2">&quot;configs/global_build.json&quot;</span><span class="p">)</span>
+    <span class="n">default_config_path</span> <span class="o">=</span> <span class="n">_config_path_from_argv</span><span class="p">()</span>
     <span class="n">defaults</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">default_config_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
@@ -139,10 +183,17 @@
 
     <span class="c1"># Required/Primary Arguments</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--device&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Hardware device profile (supported ARM targets: rpi4, odroid-n2, pinebookpro, rockpro64).&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;architecture&quot;</span><span class="p">,</span>
         <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;?&quot;</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="s2">&quot;x86_64&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Target architecture (e.g., x86_64, arm64). Default: x86_64&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x86_64&quot;</span><span class="p">,</span> <span class="s2">&quot;aarch64&quot;</span><span class="p">],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Target architecture. Supported: x86_64 and aarch64 (Raspberry Pi 4). Default: x86_64&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Configuration and Environment</span>
@@ -150,7 +201,7 @@
         <span class="s2">&quot;-c&quot;</span><span class="p">,</span>
         <span class="s2">&quot;--config&quot;</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">resolve_from_project</span><span class="p">(</span><span class="s2">&quot;configs/global_build.json&quot;</span><span class="p">)),</span>
+        <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">default_config_path</span><span class="p">),</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the global configuration JSON file. Default: configs/global_build.json&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
@@ -159,6 +210,14 @@
         <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mock&quot;</span><span class="p">,</span> <span class="s2">&quot;real&quot;</span><span class="p">],</span>
         <span class="n">default</span><span class="o">=</span><span class="s2">&quot;mock&quot;</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Execution mode: &#39;mock&#39; (simulation, no root required) or &#39;real&#39; (actual build, requires root/chroot). Default: mock&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-f&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--format&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;iso&quot;</span><span class="p">,</span> <span class="s2">&quot;img&quot;</span><span class="p">,</span> <span class="s2">&quot;raw&quot;</span><span class="p">,</span> <span class="s2">&quot;qcow2&quot;</span><span class="p">,</span> <span class="s2">&quot;vmdk&quot;</span><span class="p">,</span> <span class="s2">&quot;vhd&quot;</span><span class="p">,</span> <span class="s2">&quot;vhdx&quot;</span><span class="p">,</span> <span class="s2">&quot;vdi&quot;</span><span class="p">,</span> <span class="s2">&quot;tarball&quot;</span><span class="p">,</span> <span class="s2">&quot;container&quot;</span><span class="p">],</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;iso&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Build artifact format: iso, img, raw, qcow2, vmdk, vhd, vhdx, vdi, tarball, container. Default: iso&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">clean_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_mutually_exclusive_group</span><span class="p">()</span>
@@ -179,7 +238,13 @@
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--force-isolated-toolchain&quot;</span><span class="p">,</span>
         <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Force isolated Arch bootstrap toolchain in real mode, even if host tools are available.&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Force isolated Arch bootstrap toolchain in real mode. Real mode is isolated by default.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--use-host-toolchain&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Compatibility/debug option: allow real mode to use host Arch build tools if they are available.&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
@@ -207,7 +272,7 @@
         <span class="s2">&quot;--kernel&quot;</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kernel&quot;</span><span class="p">),</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Kernel selection (profile in configs/kernels or direct package name, e.g. linux-lts).&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Kernel selection (profile in configs/system or direct package name, e.g. linux-lts).&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
@@ -223,23 +288,29 @@
         <span class="s2">&quot;--bootloader&quot;</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bootloader&quot;</span><span class="p">),</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Bootloader profile name from configs/bootloaders.&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Bootloader profile name from configs/boot.&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;-p&quot;</span><span class="p">,</span>
         <span class="s2">&quot;--package-profile&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--packages&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--package&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
         <span class="n">action</span><span class="o">=</span><span class="s2">&quot;append&quot;</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;package_profiles&quot;</span><span class="p">,</span> <span class="p">[]),</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Package profile from configs/packages. Can be provided multiple times.&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Package profile from configs/software. Can be provided multiple times, space or comma separated.&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;-s&quot;</span><span class="p">,</span>
         <span class="s2">&quot;--service-profile&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--services&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--service&quot;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
         <span class="n">action</span><span class="o">=</span><span class="s2">&quot;append&quot;</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="n">defaults</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;service_profiles&quot;</span><span class="p">,</span> <span class="p">[]),</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Common services profile from configs/services. Can be provided multiple times.&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Common services profile from configs/services. Can be provided multiple times, space or comma separated.&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
@@ -260,6 +331,19 @@
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Comma-separated group list for live user (e.g. wheel,audio,video).&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--with-offline-repo&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Embed an offline package repository on the ISO/Image.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--offline-repo-packages&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Comma-separated list of packages to include in the offline repository.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--list-options&quot;</span><span class="p">,</span>
         <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
@@ -272,7 +356,7 @@
         <span class="s2">&quot;--output&quot;</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
         <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output ISO file name. Default: arch-builder-&lt;desktop&gt;-&lt;architecture&gt;.iso&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output file name. Relative names are created in output/. Default: output/arch-builder-&lt;desktop&gt;-&lt;architecture&gt;.iso&quot;</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># Verbosity</span>
@@ -280,20 +364,101 @@
         <span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="s2">&quot;--verbose&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Enable verbose logging.&quot;</span>
     <span class="p">)</span>
 
+    
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--fast&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--quick&quot;</span><span class="p">,</span>
+        <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;fast_mode&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Enable ultra-fast build mode (multi-threaded zstd level 3, fast block sizes, and optimized staging).&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--tmpfs&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Mount working directory as tmpfs in RAM for extreme build speed.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">architecture</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;x86_64&quot;</span><span class="p">,</span> <span class="s2">&quot;x86-64&quot;</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Error: Architecture &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">architecture</span><span class="si">}</span><span class="s2">&#39; is not supported. Only x86_64 is supported.&quot;</span>
-        <span class="p">)</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">args</span><span class="o">.</span><span class="n">architecture</span> <span class="o">=</span> <span class="s2">&quot;x86_64&quot;</span>
+    <span class="n">config_path</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">config_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;configuration file not found: </span><span class="si">{</span><span class="n">config_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># ── Handle Device Profile ───────────────────────────────────────────────────</span>
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;device&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">device_file</span> <span class="o">=</span> <span class="n">config_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;hardware&quot;</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">.json&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">device_file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;hardware profile not found: </span><span class="si">{</span><span class="n">device_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">device_file</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">dev_cfg</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;invalid hardware profile &#39;</span><span class="si">{</span><span class="n">device_file</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dev_cfg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;hardware profile must be a JSON object: </span><span class="si">{</span><span class="n">device_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">device_name</span> <span class="o">=</span> <span class="n">dev_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">device_name</span><span class="p">:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;hardware profile is missing a non-empty name: </span><span class="si">{</span><span class="n">device_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dev_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;architecture&quot;</span><span class="p">),</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">dev_cfg</span><span class="p">[</span><span class="s2">&quot;architecture&quot;</span><span class="p">]:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;hardware profile is missing an architecture: </span><span class="si">{</span><span class="n">device_file</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">bootloader_cfg</span> <span class="o">=</span> <span class="n">dev_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bootloader&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bootloader_cfg</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bootloader_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">),</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="n">bootloader_cfg</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;hardware profile requires bootloader.type: </span><span class="si">{</span><span class="n">device_file</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">allowed_formats</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;iso&quot;</span><span class="p">,</span> <span class="s2">&quot;img&quot;</span><span class="p">,</span> <span class="s2">&quot;raw&quot;</span><span class="p">,</span> <span class="s2">&quot;qcow2&quot;</span><span class="p">,</span> <span class="s2">&quot;vmdk&quot;</span><span class="p">,</span> <span class="s2">&quot;vhd&quot;</span><span class="p">,</span> <span class="s2">&quot;vhdx&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;vdi&quot;</span><span class="p">,</span> <span class="s2">&quot;tarball&quot;</span><span class="p">,</span> <span class="s2">&quot;container&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="s2">&quot;output_format&quot;</span> <span class="ow">in</span> <span class="n">dev_cfg</span> <span class="ow">and</span> <span class="n">dev_cfg</span><span class="p">[</span><span class="s2">&quot;output_format&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_formats</span><span class="p">:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;unsupported output_format in hardware profile &#39;</span><span class="si">{</span><span class="n">device_file</span><span class="si">}</span><span class="s2">&#39;: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dev_cfg</span><span class="p">[</span><span class="s1">&#39;output_format&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">device_arch</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dev_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;architecture&quot;</span><span class="p">,</span> <span class="s2">&quot;x86_64&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">device_arch</span> <span class="o">==</span> <span class="s2">&quot;aarch64&quot;</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">device</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;rpi4&quot;</span><span class="p">,</span> <span class="s2">&quot;odroid-n2&quot;</span><span class="p">,</span> <span class="s2">&quot;pinebookpro&quot;</span><span class="p">,</span> <span class="s2">&quot;rockpro64&quot;</span><span class="p">):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;hardware profile &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">&#39; is not implemented yet; &quot;</span>
+                <span class="s2">&quot;supported targets are rpi4, odroid-n2, pinebookpro and rockpro64&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">device_arch</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;x86_64&quot;</span><span class="p">,</span> <span class="s2">&quot;x86-64&quot;</span><span class="p">,</span> <span class="s2">&quot;aarch64&quot;</span><span class="p">):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;hardware profile &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">device</span><span class="si">}</span><span class="s2">&#39; requires unsupported &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;architecture &#39;</span><span class="si">{</span><span class="n">device_arch</span><span class="si">}</span><span class="s2">&#39;; this builder supports only x86_64&quot;</span>
+            <span class="p">)</span>
+            
+        <span class="n">args</span><span class="o">.</span><span class="n">architecture</span> <span class="o">=</span> <span class="s2">&quot;x86_64&quot;</span> <span class="k">if</span> <span class="n">device_arch</span> <span class="o">==</span> <span class="s2">&quot;x86-64&quot;</span> <span class="k">else</span> <span class="n">device_arch</span>
+            
+        <span class="k">if</span> <span class="s2">&quot;output_format&quot;</span> <span class="ow">in</span> <span class="n">dev_cfg</span> <span class="ow">and</span> <span class="s2">&quot;--format&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="ow">and</span> <span class="s2">&quot;-f&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="n">dev_cfg</span><span class="p">[</span><span class="s2">&quot;output_format&quot;</span><span class="p">]</span>
+                
+        <span class="k">if</span> <span class="s2">&quot;bootloader&quot;</span> <span class="ow">in</span> <span class="n">dev_cfg</span> <span class="ow">and</span> <span class="s2">&quot;--bootloader&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="ow">and</span> <span class="s2">&quot;-b&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">bootloader</span> <span class="o">=</span> <span class="n">dev_cfg</span><span class="p">[</span><span class="s2">&quot;bootloader&quot;</span><span class="p">]</span>
+                
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">architecture</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;x86-64&quot;</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">architecture</span> <span class="o">=</span> <span class="s2">&quot;x86_64&quot;</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">architecture</span> <span class="o">==</span> <span class="s2">&quot;aarch64&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">device</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;rpi4&quot;</span><span class="p">,</span> <span class="s2">&quot;odroid-n2&quot;</span><span class="p">,</span> <span class="s2">&quot;pinebookpro&quot;</span><span class="p">,</span> <span class="s2">&quot;rockpro64&quot;</span><span class="p">):</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;aarch64 builds require a supported ARM board profile&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">format</span> <span class="o">!=</span> <span class="s2">&quot;img&quot;</span><span class="p">:</span>
+            <span class="n">parser</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;ARM board builds must use --format img&quot;</span><span class="p">)</span>
     <span class="n">output_name</span> <span class="o">=</span> <span class="n">_resolve_output_name</span><span class="p">(</span>
         <span class="n">architecture</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span>
         <span class="n">desktop</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">desktop</span><span class="p">,</span>
         <span class="n">output</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">output</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">architecture</span> <span class="o">==</span> <span class="s2">&quot;aarch64&quot;</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">output</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">output_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">output_name</span><span class="p">)</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="s2">&quot;.img&quot;</span><span class="p">))</span>
 
-    <span class="n">config_root</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="s2">&quot;configs&quot;</span><span class="p">)</span>
+    <span class="n">config_root</span> <span class="o">=</span> <span class="n">config_path</span><span class="o">.</span><span class="n">parent</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">list_options</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Available build selections:&quot;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span>
@@ -303,13 +468,13 @@
             <span class="sa">f</span><span class="s2">&quot;- desktops:      </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_available_profiles</span><span class="p">(</span><span class="n">config_root</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;desktops&#39;</span><span class="p">))</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;(none)&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;- kernels:       </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_available_profiles</span><span class="p">(</span><span class="n">config_root</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;kernels&#39;</span><span class="p">))</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;(none)&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- kernels:       </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_available_profiles</span><span class="p">(</span><span class="n">config_root</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;system&#39;</span><span class="p">))</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;(none)&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;- bootloaders:   </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_available_profiles</span><span class="p">(</span><span class="n">config_root</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;bootloaders&#39;</span><span class="p">))</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;(none)&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- bootloaders:   </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_available_profiles</span><span class="p">(</span><span class="n">config_root</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;boot&#39;</span><span class="p">))</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;(none)&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;- packages:      </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_available_profiles</span><span class="p">(</span><span class="n">config_root</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;packages&#39;</span><span class="p">))</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;(none)&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;- packages:      </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_available_profiles</span><span class="p">(</span><span class="n">config_root</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;software&#39;</span><span class="p">))</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;(none)&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;- services:      </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_available_profiles</span><span class="p">(</span><span class="n">config_root</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;services&#39;</span><span class="p">))</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;(none)&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -319,12 +484,6 @@
         <span class="p">)</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="c1"># Prepare paths</span>
-    <span class="n">config_path</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">config_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: Configuration file &#39;</span><span class="si">{</span><span class="n">config_path</span><span class="si">}</span><span class="s2">&#39; not found.&quot;</span><span class="p">)</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-
     <span class="c1"># Initialize Orchestrator</span>
     <span class="n">parsed_live_groups</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">live_groups</span><span class="p">:</span>
@@ -332,31 +491,41 @@
             <span class="n">g</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">live_groups</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">g</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="p">]</span>
 
+    <span class="n">parsed_package_profiles</span> <span class="o">=</span> <span class="n">_parse_list_arg</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">package_profile</span><span class="p">)</span>
+    <span class="n">parsed_service_profiles</span> <span class="o">=</span> <span class="n">_parse_list_arg</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">service_profile</span><span class="p">)</span>
+
     <span class="n">orchestrator</span> <span class="o">=</span> <span class="n">BuildOrchestrator</span><span class="p">(</span>
         <span class="n">arch</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">architecture</span><span class="p">,</span>
         <span class="n">config_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">config_path</span><span class="p">),</span>
         <span class="n">mode</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span>
+        <span class="n">output_format</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
         <span class="n">clean</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">clean</span><span class="p">,</span>
         <span class="n">force_isolated_toolchain</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">force_isolated_toolchain</span><span class="p">,</span>
+        <span class="n">use_host_toolchain</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">use_host_toolchain</span><span class="p">,</span>
         <span class="n">toolchain_debug</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">toolchain_debug</span><span class="p">,</span>
         <span class="n">toolchain_debug_log</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">toolchain_debug_log</span><span class="p">,</span>
         <span class="n">toolchain_pacman_retries</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">toolchain_pacman_retries</span><span class="p">,</span>
         <span class="n">desktop</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">desktop</span><span class="p">,</span>
         <span class="n">kernel</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span>
         <span class="n">bootloader</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">bootloader</span><span class="p">,</span>
-        <span class="n">package_profiles</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">package_profile</span><span class="p">,</span>
-        <span class="n">service_profiles</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">service_profile</span><span class="p">,</span>
+        <span class="n">package_profiles</span><span class="o">=</span><span class="n">parsed_package_profiles</span><span class="p">,</span>
+        <span class="n">service_profiles</span><span class="o">=</span><span class="n">parsed_service_profiles</span><span class="p">,</span>
         <span class="n">live_profile</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">live_profile</span><span class="p">,</span>
         <span class="n">live_user</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">live_user</span><span class="p">,</span>
         <span class="n">live_groups</span><span class="o">=</span><span class="n">parsed_live_groups</span><span class="p">,</span>
-    <span class="p">)</span>
+        <span class="n">fast_mode</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;fast_mode&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="n">use_tmpfs</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;tmpfs&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="n">with_offline_repo</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;with_offline_repo&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+        <span class="n">offline_repo_packages</span><span class="o">=</span><span class="n">_parse_list_arg</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;offline_repo_packages&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)),)</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--- Arch-Builder Execution ---&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Target Arch: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">architecture</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mode:        </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Clean:       </span><span class="si">{</span><span class="s1">&#39;yes&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">args</span><span class="o">.</span><span class="n">clean</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;no&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">force_isolated_toolchain</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Toolchain:   forced isolated bootstrap&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">use_host_toolchain</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Toolchain:   isolated bootstrap in workdir&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">use_host_toolchain</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Toolchain:   host toolchain allowed&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">toolchain_debug</span><span class="p">:</span>
         <span class="n">debug_log_target</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">toolchain_debug_log</span> <span class="ow">or</span> <span class="s2">&quot;&lt;workdir&gt;/toolchain-debug.log&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Diag Log:    </span><span class="si">{</span><span class="n">debug_log_target</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -368,10 +537,10 @@
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Desktop:    </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">desktop</span><span class="si">}</span><span class="s2"> (Override)&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">bootloader</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bootloader: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">bootloader</span><span class="si">}</span><span class="s2"> (Override)&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">package_profile</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Profiles:   </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">package_profile</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">service_profile</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Services:   </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">service_profile</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">parsed_package_profiles</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Profiles:   </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parsed_package_profiles</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">parsed_service_profiles</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Services:   </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parsed_service_profiles</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">live_profile</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Live Prof.: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">live_profile</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">live_user</span><span class="p">:</span>
@@ -399,6 +568,9 @@
             <span class="n">md5_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">result_iso</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.md5&quot;</span><span class="p">)</span>
             <span class="n">sha256_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sha256_val</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">Path</span><span class="p">(</span><span class="n">result_iso</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">md5_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">md5_val</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">Path</span><span class="p">(</span><span class="n">result_iso</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">_restore_invoking_user_ownership</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">Path</span><span class="p">(</span><span class="n">result_iso</span><span class="p">),</span> <span class="n">sha256_file</span><span class="p">,</span> <span class="n">md5_file</span><span class="p">]</span>
+            <span class="p">)</span>
 
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   SHA256: </span><span class="si">{</span><span class="n">sha256_val</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">sha256_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;   MD5:    </span><span class="si">{</span><span class="n">md5_val</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">md5_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

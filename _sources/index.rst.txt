@@ -1,7 +1,7 @@
 Arch-Builder Documentation
 ==========================
 
-Arch-Builder is a modular Arch Linux ISO builder with profile-driven configuration,
+Arch-Builder is a modular Arch Linux ISO and board-image builder with profile-driven configuration,
 real isolated build-host support, and workspace-local artifact management.
 
 .. toctree::

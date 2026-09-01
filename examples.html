@@ -62,6 +62,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#security-and-diagnostics-image">7. Security and diagnostics image</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#real-build-on-a-non-arch-host">8. Real build on a non-Arch host</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#reusing-previous-build-state">9. Reusing previous build state</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#arm-board-images">10. ARM board images</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#tutorial-installing-aur-packages-e-g-pamac-aur-yay">10. Tutorial: Installing AUR Packages (e.g. pamac-aur, yay)</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#step-1-create-or-edit-an-aur-package-profile">Step 1: Create or edit an AUR package profile</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#step-2-build-the-iso-with-the-aur-profile">Step 2: Build the ISO with the AUR profile</a></li>
@@ -233,6 +234,17 @@ flowchart TD
 </pre></div>
 </div>
 <p>Useful when iterating on a build and you intentionally want to preserve the existing tree.</p>
+</section>
+<section id="arm-board-images">
+<h2>10. ARM board images<a class="headerlink" href="#arm-board-images" title="Link to this heading"></a></h2>
+<p>Board images require the matching hardware profile and always use <code class="docutils literal notranslate"><span class="pre">img</span></code> output:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>--device<span class="w"> </span>rpi4<span class="w"> </span>--mode<span class="w"> </span>real<span class="w"> </span>--format<span class="w"> </span>img<span class="w"> </span>--desktop<span class="w"> </span>xfce
+sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>--device<span class="w"> </span>odroid-n2<span class="w"> </span>--mode<span class="w"> </span>real<span class="w"> </span>--format<span class="w"> </span>img<span class="w"> </span>--desktop<span class="w"> </span>xfce
+sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>--device<span class="w"> </span>pinebookpro<span class="w"> </span>--mode<span class="w"> </span>real<span class="w"> </span>--format<span class="w"> </span>img<span class="w"> </span>--desktop<span class="w"> </span>xfce
+sudo<span class="w"> </span>python3<span class="w"> </span>cli.py<span class="w"> </span>--device<span class="w"> </span>rockpro64<span class="w"> </span>--mode<span class="w"> </span>real<span class="w"> </span>--format<span class="w"> </span>img<span class="w"> </span>--desktop<span class="w"> </span>xfce
+</pre></div>
+</div>
+<p>These images are hardware-specific and must be boot-tested on the corresponding board. <code class="docutils literal notranslate"><span class="pre">visionfive2</span></code> and <code class="docutils literal notranslate"><span class="pre">asahi</span></code> are profile placeholders and are not currently supported.</p>
 </section>
 <hr class="docutils" />
 <section id="tutorial-installing-aur-packages-e-g-pamac-aur-yay">

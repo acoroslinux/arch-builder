@@ -7,8 +7,8 @@ This page documents the JSON files that define the core build substrate: global 
 ### `configs/global_build.json`
 
 - Purpose: master manifest for build defaults and shared binary paths.
-- Important keys: `metadata`, `build_environment`, `system`, `components`.
-- Notable values: visible workspace workdir at `arch-builder/workdir`, ISO label `ARCH-MODERN`, binary paths for `grub-mkrescue` and `genisoimage`.
+- Important keys: `metadata`, `system`, `system_config`.
+- Notable values: workspace-local workdir/cache paths and ISO/disk output under `output/`.
 - Use when: changing workspace layout, default binaries, or globally available component declarations.
 
 ## Architecture profiles
@@ -26,6 +26,11 @@ Common pattern across all architecture files:
 | File | Purpose | Notable settings |
 | --- | --- | --- |
 | `configs/architectures/x86_64.json` | Main 64-bit x86 profile. | Locale `en_US.UTF-8`, timezone `UTC`, keymap `us`, live user with wheel/video/audio/networkmanager. |
+| `configs/architectures/aarch64.json` | ARM64 board foundation. | Raspberry Pi 4, ODROID-N2, PineBook Pro and RockPro64 target metadata; board selection comes from `--device`. |
+
+## Hardware profiles
+
+Hardware profiles live under `configs/hardware/` and select the architecture, bootloader and output format. Use them with `--device`; do not combine an ARM device with `x86_64`-only local packages. `visionfive2` and `asahi` remain placeholders and are rejected for real builds.
 
 ### Example use
 

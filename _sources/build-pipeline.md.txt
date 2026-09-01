@@ -15,12 +15,20 @@ flowchart TD
 	TOOLCHAIN --> PKG[Install packages]
 	PKG --> CUSTOM[Apply customizations]
 	CUSTOM --> BOOT[Generate bootloader artifacts]
-	BOOT --> FINAL[Export final ISO]
+	BOOT --> FINAL[Export final ISO or disk image]
 </pre>
 
 ## 1. CLI parsing
 
 `cli.py` parses user input, resolves a default output name when necessary, and constructs a `BuildOrchestrator`.
+
+## Hook phases
+
+Optional scripts under `configs/hooks/<phase>/` run at these points:
+`pre_build`, `pre_chroot`, `post_chroot`, `pre_packages`, `post_packages`,
+`pre_customize`, `post_customize`, `pre_boot`, `pre_iso`, `post_iso`, and
+`post_build`. Chroot phases execute inside the target rootfs; host phases
+execute from the repository root.
 
 ## 2. Configuration assembly
 
@@ -73,11 +81,11 @@ The selected engine computes a normalized package plan and installs official pac
 
 ## 8. Bootloader generation
 
-The engine runs `grub-mkrescue` or other configured tooling against the prepared rootfs/boot path.
+For ISO targets the engine generates GRUB/Syslinux artifacts. For board images, the disk engine prepares the board-specific boot partition and U-Boot layout.
 
-## 9. Final ISO export
+## 9. Final artifact export
 
-The final ISO is either copied out from the isolated chroot or created directly with the configured ISO tooling.
+The final artifact is written to `output/`. ISO targets produce `.iso`; disk targets produce `.img` (or the requested conversion/compression format). Checksum files are written beside it.
 
 ## Cleanup behavior
 

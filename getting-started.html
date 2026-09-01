@@ -122,7 +122,7 @@
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>cli.py<span class="w"> </span>x86_64<span class="w"> </span>--desktop<span class="w"> </span>xfce
 </pre></div>
 </div>
-<p>This will use a dynamic ISO output name unless <code class="docutils literal notranslate"><span class="pre">-o</span></code> is provided.</p>
+<p>This will use a dynamic output name unless <code class="docutils literal notranslate"><span class="pre">-o</span></code> is provided.</p>
 </section>
 <section id="first-real-build">
 <h2>First real build<a class="headerlink" href="#first-real-build" title="Link to this heading"></a></h2>
@@ -142,7 +142,9 @@
 <section id="output-naming">
 <h2>Output naming<a class="headerlink" href="#output-naming" title="Link to this heading"></a></h2>
 <p>If <code class="docutils literal notranslate"><span class="pre">-o</span></code> is omitted, the output file becomes:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>arch-builder-&lt;desktop&gt;-&lt;architecture&gt;.iso
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>arch-builder-&lt;desktop&gt;-&lt;architecture&gt;.&lt;format&gt;
+
+PC builds default to `.iso`; hardware profiles such as `rpi4`, `odroid-n2`, `pinebookpro`, and `rockpro64` produce `.img` files in `output/`.
 </pre></div>
 </div>
 <p>If no desktop override is supplied, <code class="docutils literal notranslate"><span class="pre">base</span></code> is used in the generated name.</p>

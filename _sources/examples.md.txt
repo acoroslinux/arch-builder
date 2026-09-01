@@ -133,6 +133,19 @@ sudo python3 cli.py x86_64 \
 
 Useful when iterating on a build and you intentionally want to preserve the existing tree.
 
+## 10. ARM board images
+
+Board images require the matching hardware profile and always use `img` output:
+
+```bash
+sudo python3 cli.py --device rpi4 --mode real --format img --desktop xfce
+sudo python3 cli.py --device odroid-n2 --mode real --format img --desktop xfce
+sudo python3 cli.py --device pinebookpro --mode real --format img --desktop xfce
+sudo python3 cli.py --device rockpro64 --mode real --format img --desktop xfce
+```
+
+These images are hardware-specific and must be boot-tested on the corresponding board. `visionfive2` and `asahi` are profile placeholders and are not currently supported.
+
 
 ---
 

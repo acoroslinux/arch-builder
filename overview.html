@@ -100,7 +100,7 @@
              
   <section id="overview">
 <h1>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h1>
-<p>Arch-Builder builds customized Arch Linux ISO images from composable JSON profiles.
+<p>Arch-Builder builds customized Arch Linux ISO and board disk images from composable JSON profiles.
 It is designed around a clear separation of concerns:</p>
 <ul class="simple">
 <li><p>configuration assembly</p></li>
@@ -108,7 +108,7 @@ It is designed around a clear separation of concerns:</p>
 <li><p>chroot/package execution</p></li>
 <li><p>customization application</p></li>
 <li><p>bootloader generation</p></li>
-<li><p>final ISO packaging</p></li>
+<li><p>final ISO or disk-image packaging</p></li>
 </ul>
 <section id="architecture-at-a-glance">
 <h2>Architecture At A Glance<a class="headerlink" href="#architecture-at-a-glance" title="Link to this heading"></a></h2>
@@ -122,14 +122,14 @@ flowchart LR
 	ASSEMBLER --> CONFIGS[configs/*.json]
 	BUILDER --> ENGINE[ArchEngine]
 	ENGINE --> CUSTOMIZER[SystemConfigurator]
-	ENGINE --> ISO[Final ISO]
+	ENGINE --> ISO[Final ISO or disk image]
 	TOOLCHAIN --> CACHE[Reusable pacman cache]
 </pre>
 </section>
 <section id="goals">
 <h2>Goals<a class="headerlink" href="#goals" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p>Support repeatable ISO generation from a workspace-local build tree.</p></li>
+<li><p>Support repeatable ISO and board-image generation from a workspace-local build tree.</p></li>
 <li><p>Allow real builds on non-Arch Linux systems through an isolated Arch toolchain.</p></li>
 <li><p>Keep configuration modular so architecture, desktop, kernel, service, and live-user choices can be combined.</p></li>
 <li><p>Keep cache reusable across runs while allowing deterministic pre-build cleanup.</p></li>
@@ -149,7 +149,7 @@ flowchart LR
 </section>
 <section id="real-mode">
 <h2>Real mode<a class="headerlink" href="#real-mode" title="Link to this heading"></a></h2>
-<p><code class="docutils literal notranslate"><span class="pre">real</span></code> mode performs the actual build flow, including package installation and ISO generation.
+<p><code class="docutils literal notranslate"><span class="pre">real</span></code> mode performs the actual build flow, including package installation and ISO/disk-image generation.
 It can either use host tooling or bootstrap an isolated Arch build host.</p>
 </section>
 <section id="default-workspace-layout">
@@ -157,8 +157,9 @@ It can either use host tooling or bootstrap an isolated Arch build host.</p>
 <p>The default visible build paths are:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>arch-builder/
 ├── cache/pacman/pkg/
-├── fallback/
-└── workdir/
+├── fallback/&lt;architecture&gt;/
+├── output/
+└── workdir/&lt;architecture&gt;/
 </pre></div>
 </div>
 </section>

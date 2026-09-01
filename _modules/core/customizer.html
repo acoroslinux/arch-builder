@@ -95,6 +95,8 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
@@ -109,6 +111,59 @@
 <span class="k">class</span> <span class="nc">ConfigError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Exception raised for system configuration errors.&quot;&quot;&quot;</span></div>
 
+
+
+<span class="k">def</span> <span class="nf">_resolve_within</span><span class="p">(</span><span class="n">base</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">relative_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve a configured path without allowing it to escape its base.&quot;&quot;&quot;</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+    <span class="n">candidate</span> <span class="o">=</span> <span class="p">(</span><span class="n">base</span> <span class="o">/</span> <span class="nb">str</span><span class="p">(</span><span class="n">relative_path</span><span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">candidate</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">description</span><span class="si">}</span><span class="s2"> escapes its allowed root: </span><span class="si">{</span><span class="n">relative_path</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+    <span class="k">return</span> <span class="n">candidate</span>
+
+
+<span class="k">def</span> <span class="nf">_normalized_file_mode</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">return</span> <span class="mo">0o755</span> <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_mode</span> <span class="o">&amp;</span> <span class="mo">0o111</span> <span class="k">else</span> <span class="mo">0o644</span>
+
+
+<span class="k">def</span> <span class="nf">_copy_path</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">destination</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merge a source into rootfs with deterministic ownership-independent modes.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;.gitkeep&quot;</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">is_symlink</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">destination</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="n">destination</span><span class="o">.</span><span class="n">is_symlink</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">destination</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">destination</span><span class="o">.</span><span class="n">is_symlink</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Cannot replace destination directory with symlink: </span><span class="si">{</span><span class="n">destination</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="n">destination</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+        <span class="n">destination</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">destination</span><span class="o">.</span><span class="n">symlink_to</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">readlink</span><span class="p">(</span><span class="n">source</span><span class="p">))</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">destination</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">destination</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot merge source directory into non-directory: </span><span class="si">{</span><span class="n">destination</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">destination</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">destination</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="mo">0o755</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">source</span><span class="o">.</span><span class="n">iterdir</span><span class="p">():</span>
+            <span class="n">_copy_path</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">destination</span> <span class="o">/</span> <span class="n">child</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">source</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported copy source type: </span><span class="si">{</span><span class="n">source</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">destination</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">and</span> <span class="n">destination</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot replace destination directory with file: </span><span class="si">{</span><span class="n">destination</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">destination</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">destination</span><span class="p">)</span>
+    <span class="n">destination</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">_normalized_file_mode</span><span class="p">(</span><span class="n">source</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="SystemAction">
@@ -183,6 +238,7 @@
 
             <span class="c1"># Ensure home directory exists and has correct ownership</span>
             <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mkdir -p /home/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cp -a /etc/skel/. /home/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">/&quot;</span><span class="p">)</span>
             <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;chown -R </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> /home/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
             <span class="c1"># Set the password.</span>
@@ -283,27 +339,25 @@
             <span class="k">return</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [File] Copying file: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">src</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">src_path</span> <span class="o">=</span> <span class="n">source_base</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">src</span>
-        <span class="n">dest_path</span> <span class="o">=</span> <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">)</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+        <span class="n">src_path</span> <span class="o">=</span> <span class="n">_resolve_within</span><span class="p">(</span><span class="n">source_base</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">src</span><span class="p">,</span> <span class="s2">&quot;File source&quot;</span><span class="p">)</span>
+        <span class="n">dest_path</span> <span class="o">=</span> <span class="n">_resolve_within</span><span class="p">(</span><span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="s2">&quot;File destination&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">src_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [File] Source file does not exist: </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="k">return</span>
+                <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File source does not exist: </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">src_path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File source is not a regular file: </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-            <span class="n">dest_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="kn">import</span> <span class="nn">shutil</span>
-            <span class="kn">import</span> <span class="nn">os</span>
-            <span class="kn">import</span> <span class="nn">subprocess</span>
-
-            <span class="n">cmd_copy</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cp&quot;</span><span class="p">,</span> <span class="s2">&quot;-a&quot;</span><span class="p">,</span> <span class="s2">&quot;--no-preserve=ownership&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">src_path</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">dest_path</span><span class="p">)]</span>
-            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">geteuid</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;sudo&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">cmd_copy</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd_copy</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">_copy_path</span><span class="p">(</span><span class="n">src_path</span><span class="p">,</span> <span class="n">dest_path</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">:</span>
-                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;chmod </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2"> &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dest</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">mode</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">),</span> <span class="mi">8</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid file mode: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+                <span class="k">if</span> <span class="n">mode</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">mode</span> <span class="o">&gt;</span> <span class="mo">0o7777</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid file mode: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">dest_path</span><span class="o">.</span><span class="n">chmod</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] Copy file </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">dest_path</span><span class="si">}</span><span class="s2"> (mode: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
 </div>
@@ -396,51 +450,22 @@
             <span class="c1"># Format destinations that contain python_version</span>
             <span class="n">dest_rel</span> <span class="o">=</span> <span class="n">dest_rel</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">python_version</span><span class="o">=</span><span class="n">py_ver</span><span class="p">)</span>
 
-            <span class="n">src_path</span> <span class="o">=</span> <span class="n">source_base</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">customizations_path</span> <span class="o">/</span> <span class="n">src_rel</span>
-            <span class="n">dest_path</span> <span class="o">=</span> <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span> <span class="o">/</span> <span class="n">dest_rel</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+            <span class="n">copy_root</span> <span class="o">=</span> <span class="n">_resolve_within</span><span class="p">(</span>
+                <span class="n">source_base</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">customizations_path</span><span class="p">),</span> <span class="s2">&quot;Customizations path&quot;</span>
+            <span class="p">)</span>
+            <span class="n">src_path</span> <span class="o">=</span> <span class="n">_resolve_within</span><span class="p">(</span><span class="n">copy_root</span><span class="p">,</span> <span class="n">src_rel</span><span class="p">,</span> <span class="s2">&quot;Structured copy source&quot;</span><span class="p">)</span>
+            <span class="n">dest_path</span> <span class="o">=</span> <span class="n">_resolve_within</span><span class="p">(</span>
+                <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span><span class="p">,</span> <span class="n">dest_rel</span><span class="p">,</span> <span class="s2">&quot;Structured copy destination&quot;</span>
+            <span class="p">)</span>
 
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [StructuredCopy] Copying: </span><span class="si">{</span><span class="n">src_rel</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">dest_rel</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">chroot</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;real&quot;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">src_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;  [StructuredCopy] Source path does not exist: </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Structured copy source does not exist: </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
-                    <span class="k">continue</span>
-
-                <span class="kn">import</span> <span class="nn">os</span>
-                <span class="kn">import</span> <span class="nn">subprocess</span>
-
-                <span class="c1"># Ensure destination parent directory exists</span>
-                <span class="n">dest_dir</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">dest_path</span>
-                    <span class="k">if</span> <span class="n">src_path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dest_rel</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">src_path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-                    <span class="k">else</span> <span class="n">dest_path</span><span class="o">.</span><span class="n">parent</span>
-                <span class="p">)</span>
-                <span class="n">dest_dir_in_chroot</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="o">/</span> <span class="n">dest_dir</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span>
-                    <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span>
-                <span class="p">)</span>
-
-                <span class="n">chroot</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mkdir -p </span><span class="si">{</span><span class="n">dest_dir_in_chroot</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-                <span class="c1"># Copy file/directory preserving all attributes except ownership and merging contents (-T)</span>
-                <span class="n">cmd_copy</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="s2">&quot;cp&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;-a&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;--no-preserve=ownership&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;-T&quot;</span><span class="p">,</span>
-                    <span class="nb">str</span><span class="p">(</span><span class="n">src_path</span><span class="p">),</span>
-                    <span class="nb">str</span><span class="p">(</span><span class="n">dest_path</span><span class="p">),</span>
-                <span class="p">]</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">geteuid</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;sudo&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">cmd_copy</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd_copy</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;  [StructuredCopy] Failed to copy </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">dest_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="p">)</span>
+                <span class="n">_copy_path</span><span class="p">(</span><span class="n">src_path</span><span class="p">,</span> <span class="n">dest_path</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    [Mock] Copy </span><span class="si">{</span><span class="n">src_path</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">dest_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
@@ -491,11 +516,12 @@
 
         <span class="c1"># 4. Users</span>
         <span class="n">users</span> <span class="o">=</span> <span class="n">cust_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;users&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">user_actions</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">users</span><span class="p">:</span>
             <span class="c1"># Unwrap Config dict instances.</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="s2">&quot;_data&quot;</span><span class="p">):</span>
                 <span class="n">u</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">_data</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UserAction</span><span class="p">(</span><span class="n">u</span><span class="p">))</span>
+            <span class="n">user_actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">UserAction</span><span class="p">(</span><span class="n">u</span><span class="p">))</span>
 
         <span class="c1"># 5. Services</span>
         <span class="n">services</span> <span class="o">=</span> <span class="n">cust_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;services&quot;</span><span class="p">,</span> <span class="p">[])</span>
@@ -505,12 +531,13 @@
         <span class="k">if</span> <span class="n">services</span><span class="p">:</span>
             <span class="c1"># List of strings.</span>
             <span class="n">srv_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">services</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ServiceAction</span><span class="p">(</span><span class="n">srv_list</span><span class="p">))</span>
+            <span class="n">service_action</span> <span class="o">=</span> <span class="n">ServiceAction</span><span class="p">(</span><span class="n">srv_list</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">service_action</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># 6. Commands (generic post-install scripts)</span>
         <span class="n">commands</span> <span class="o">=</span> <span class="n">cust_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;commands&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;commands&quot;</span><span class="p">,</span> <span class="p">[])</span>
-        <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="n">commands</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CommandAction</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cmd</span><span class="p">)))</span>
+        <span class="n">command_actions</span> <span class="o">=</span> <span class="p">[</span><span class="n">CommandAction</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cmd</span><span class="p">))</span> <span class="k">for</span> <span class="n">cmd</span> <span class="ow">in</span> <span class="n">commands</span><span class="p">]</span>
 
         <span class="c1"># 7. Initramfs (mkinitcpio configuration)</span>
         <span class="n">initramfs</span> <span class="o">=</span> <span class="p">(</span>
@@ -524,13 +551,14 @@
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">initramfs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MkinitcpioAction</span><span class="p">(</span><span class="n">initramfs</span><span class="p">))</span>
 
-        <span class="c1"># 7b. Explicit files (system_config.files / customizations.files)</span>
+        <span class="c1"># Explicit files are applied after common/desktop copies so they are final overrides.</span>
         <span class="n">files_list</span> <span class="o">=</span> <span class="n">sys_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="n">cust_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;files&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">explicit_file_actions</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">f_rule</span> <span class="ow">in</span> <span class="n">files_list</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">f_rule</span><span class="p">,</span> <span class="s2">&quot;_data&quot;</span><span class="p">):</span>
                 <span class="n">f_rule</span> <span class="o">=</span> <span class="n">f_rule</span><span class="o">.</span><span class="n">_data</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f_rule</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">FileAction</span><span class="p">(</span><span class="n">f_rule</span><span class="p">))</span>
+                <span class="n">explicit_file_actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">FileAction</span><span class="p">(</span><span class="n">f_rule</span><span class="p">))</span>
 
         <span class="c1"># 8. Structured Copy (Desktop-environment file copying)</span>
         <span class="n">desktop_env</span> <span class="o">=</span> <span class="n">_safe_get</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;desktop_environment&quot;</span><span class="p">)</span>
@@ -576,7 +604,49 @@
                     <span class="n">arch</span> <span class="o">=</span> <span class="n">_safe_get</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;platform_specific.architecture&quot;</span><span class="p">,</span> <span class="s2">&quot;x86_64&quot;</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                         <span class="n">StructuredCopyAction</span><span class="p">(</span><span class="n">custom_path</span><span class="p">,</span> <span class="n">final_copy_list</span><span class="p">,</span> <span class="n">arch</span><span class="p">)</span>
-                    <span class="p">)</span></div>
+                    <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">explicit_file_actions</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">user_actions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">service_action</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">service_action</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actions</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">command_actions</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="SystemConfigurator.apply_theme_assets">
+<a class="viewcode-back" href="../../api.html#core.customizer.SystemConfigurator.apply_theme_assets">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_theme_assets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chroot</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">json</span>
+        <span class="kn">import</span> <span class="nn">shutil</span>
+        <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">core.path_utils</span> <span class="kn">import</span> <span class="n">resolve_from_project</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">resolve_from_project</span><span class="p">(</span><span class="n">p</span><span class="p">):</span> <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            
+        <span class="n">mapping_file</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="s2">&quot;configs/assets/theme_mapping.json&quot;</span><span class="p">)</span>
+        <span class="n">assets_dir</span> <span class="o">=</span> <span class="n">resolve_from_project</span><span class="p">(</span><span class="s2">&quot;configs/assets&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mapping_file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">return</span>
+            
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">mapping_file</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">mapping</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                
+            <span class="k">for</span> <span class="n">asset_name</span><span class="p">,</span> <span class="n">paths</span> <span class="ow">in</span> <span class="n">mapping</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">src</span> <span class="o">=</span> <span class="n">assets_dir</span> <span class="o">/</span> <span class="n">asset_name</span>
+                <span class="k">if</span> <span class="n">src</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+                        <span class="n">target_path</span> <span class="o">=</span> <span class="n">_resolve_within</span><span class="p">(</span>
+                            <span class="n">chroot</span><span class="o">.</span><span class="n">chroot_path</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="s2">&quot;Theme asset destination&quot;</span>
+                        <span class="p">)</span>
+                        <span class="n">_copy_path</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">target_path</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Theme asset source does not exist: </span><span class="si">{</span><span class="n">src</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to apply theme assets: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span></div>
 
 
 <div class="viewcode-block" id="SystemConfigurator.apply">
@@ -600,7 +670,11 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">action</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chroot</span><span class="p">,</span> <span class="n">source_base_dir</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to execute configuration action: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+                <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">action</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">apply_theme_assets</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chroot</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

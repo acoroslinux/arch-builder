@@ -55,6 +55,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Build Pipeline</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#execution-flow-diagram">Execution Flow Diagram</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#cli-parsing">1. CLI parsing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hook-phases">Hook phases</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#configuration-assembly">2. Configuration assembly</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#workdir-resolution">3. Workdir resolution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#chroot-manager-setup">4. Chroot manager setup</a></li>
@@ -62,7 +63,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#package-installation">6. Package installation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#post-install-customization">7. Post-install customization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#bootloader-generation">8. Bootloader generation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#final-iso-export">9. Final ISO export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#final-artifact-export">9. Final artifact export</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#cleanup-behavior">Cleanup behavior</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#real-mode-isolation-diagram">Real-Mode Isolation Diagram</a></li>
 </ul>
@@ -118,12 +119,20 @@ flowchart TD
 	TOOLCHAIN --> PKG[Install packages]
 	PKG --> CUSTOM[Apply customizations]
 	CUSTOM --> BOOT[Generate bootloader artifacts]
-	BOOT --> FINAL[Export final ISO]
+	BOOT --> FINAL[Export final ISO or disk image]
 </pre>
 </section>
 <section id="cli-parsing">
 <h2>1. CLI parsing<a class="headerlink" href="#cli-parsing" title="Link to this heading"></a></h2>
 <p><code class="docutils literal notranslate"><span class="pre">cli.py</span></code> parses user input, resolves a default output name when necessary, and constructs a <code class="docutils literal notranslate"><span class="pre">BuildOrchestrator</span></code>.</p>
+</section>
+<section id="hook-phases">
+<h2>Hook phases<a class="headerlink" href="#hook-phases" title="Link to this heading"></a></h2>
+<p>Optional scripts under <code class="docutils literal notranslate"><span class="pre">configs/hooks/&lt;phase&gt;/</span></code> run at these points:
+<code class="docutils literal notranslate"><span class="pre">pre_build</span></code>, <code class="docutils literal notranslate"><span class="pre">pre_chroot</span></code>, <code class="docutils literal notranslate"><span class="pre">post_chroot</span></code>, <code class="docutils literal notranslate"><span class="pre">pre_packages</span></code>, <code class="docutils literal notranslate"><span class="pre">post_packages</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pre_customize</span></code>, <code class="docutils literal notranslate"><span class="pre">post_customize</span></code>, <code class="docutils literal notranslate"><span class="pre">pre_boot</span></code>, <code class="docutils literal notranslate"><span class="pre">pre_iso</span></code>, <code class="docutils literal notranslate"><span class="pre">post_iso</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">post_build</span></code>. Chroot phases execute inside the target rootfs; host phases
+execute from the repository root.</p>
 </section>
 <section id="configuration-assembly">
 <h2>2. Configuration assembly<a class="headerlink" href="#configuration-assembly" title="Link to this heading"></a></h2>
@@ -179,11 +188,11 @@ flowchart TD
 </section>
 <section id="bootloader-generation">
 <h2>8. Bootloader generation<a class="headerlink" href="#bootloader-generation" title="Link to this heading"></a></h2>
-<p>The engine runs <code class="docutils literal notranslate"><span class="pre">grub-mkrescue</span></code> or other configured tooling against the prepared rootfs/boot path.</p>
+<p>For ISO targets the engine generates GRUB/Syslinux artifacts. For board images, the disk engine prepares the board-specific boot partition and U-Boot layout.</p>
 </section>
-<section id="final-iso-export">
-<h2>9. Final ISO export<a class="headerlink" href="#final-iso-export" title="Link to this heading"></a></h2>
-<p>The final ISO is either copied out from the isolated chroot or created directly with the configured ISO tooling.</p>
+<section id="final-artifact-export">
+<h2>9. Final artifact export<a class="headerlink" href="#final-artifact-export" title="Link to this heading"></a></h2>
+<p>The final artifact is written to <code class="docutils literal notranslate"><span class="pre">output/</span></code>. ISO targets produce <code class="docutils literal notranslate"><span class="pre">.iso</span></code>; disk targets produce <code class="docutils literal notranslate"><span class="pre">.img</span></code> (or the requested conversion/compression format). Checksum files are written beside it.</p>
 </section>
 <section id="cleanup-behavior">
 <h2>Cleanup behavior<a class="headerlink" href="#cleanup-behavior" title="Link to this heading"></a></h2>
@@ -198,7 +207,8 @@ flowchart LR
 	CACHE[arch-builder/cache/pacman/pkg] --> BUILDHOST
 	ROOTFS --> BOOT[boot artifacts]
 	BOOT --> IMAGE[output ISO]
-</pre></section>
+</pre>
+</section>
 </section>
 
 
